@@ -925,9 +925,10 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   background: var(--card);
   border: 1px solid var(--line2);
   border-radius: var(--r);
-  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
   z-index: 100;
-  width: 300px;
+  width: 100%;
+  min-width: 280px;
   overflow: hidden;
   display: none;
 }
@@ -988,12 +989,13 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   text-align: center;
   font-size: 14px;
   font-weight: 500;
-  padding: 7px 4px;
+  padding: 10px 4px;
   border-radius: 8px;
   cursor: pointer;
   color: var(--ink);
   transition: background .1s, color .1s;
   border: 1.5px solid transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 .dp-day:hover { background: var(--card2); }
 .dp-day.today { border-color: var(--yellow); color: var(--ink); }
@@ -1010,24 +1012,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 [data-theme="dark"] .dp-day.range-end { background: var(--yellow); color: #000; }
 .dp-day.range-start.range-end { border-radius: 8px; }
 
-.dp-native {
-  display: none;
-  width: 100%;
-  background: var(--bg);
-  border: 1.5px solid var(--line2);
-  border-radius: var(--r-sm);
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: 16px;
-  padding: 11px 14px;
-  outline: none;
-  -webkit-appearance: none;
-}
-.dp-native:focus { border-color: var(--ink); }
-/* iOS mode — toggled via JS */
-.ios-mode .dp-input   { display: none !important; }
-.ios-mode .dp-dropdown { display: none !important; }
-.ios-mode .dp-native  { display: block !important; }
+.dp-native { display: none !important; }
 </style>
 </head>
 <body>
@@ -2230,11 +2215,6 @@ function dpUpdateRangeDisplay(id){
 
 function dpGetRangeDates(id){
   const state = DP[id];
-  // iOS native input fallback
-  const native = document.getElementById(id);
-  if(document.body.classList.contains('ios-mode') && native && native.value){
-    return [native.value];
-  }
   if(!state || !state.rangeStart) return [];
   if(!state.rangeEnd) return [state.rangeStart];
   const dates = [];
@@ -2291,12 +2271,18 @@ function dpRender(id){
     daysHTML += '<div class="'+cls+'" data-id="'+id+'" data-date="'+dateStr+'" onclick="dpSelectEl(this)">'+(d)+'</div>';
   }
 
+  const isRange = (id === 'do-date');
+  const rangeHint = isRange
+    ? `<div style="text-align:center;font-size:11px;color:var(--ink3);padding:6px 12px 0;">${state.rangeStart && !state.rangeEnd ? 'Now tap the end date' : 'Tap start date, then end date'}</div>`
+    : '';
+
   drop.innerHTML = `
     <div class="dp-header">
       <button class="dp-nav-btn" onclick="dpNav('${id}',-1)">‹</button>
       <div class="dp-month-label">${monthNames[month]} ${year}</div>
       <button class="dp-nav-btn" onclick="dpNav('${id}',1)">›</button>
     </div>
+    ${rangeHint}
     <div class="dp-weekdays">
       ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>'<div class="dp-weekday">'+d+'</div>').join('')}
     </div>
@@ -2318,22 +2304,10 @@ function dpSetValue(id, dateStr){
 }
 
 function dpGetValue(id){
-  // On iOS, native input is shown directly
-  const native = document.getElementById(id);
-  if(document.body.classList.contains('ios-mode')){
-    return native ? native.value : '';
-  }
-  // On desktop, use DP state
   const state = DP[id];
   if(state && state.selected) return state.selected;
+  const native = document.getElementById(id);
   return native ? native.value : '';
-}
-
-function detectIOS(){
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  if(isIOS) document.body.classList.add('ios-mode');
-  return isIOS;
 }
 
 function toggleTheme(){
@@ -2355,7 +2329,6 @@ function loadTheme(){
 
 window.onload=()=>{
   loadTheme();
-  detectIOS();
   loadSettings();
   initSettingsFmt();
   generateAppIcon();
