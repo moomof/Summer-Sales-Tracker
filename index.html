@@ -1010,12 +1010,6 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 [data-theme="dark"] .dp-day.range-end { background: var(--yellow); color: #000; }
 .dp-day.range-start.range-end { border-radius: 8px; }
 
-/* On iOS, use native date input instead */
-@supports (-webkit-touch-callout: none) {
-  .dp-wrap .dp-input { display: none !important; }
-  .dp-wrap .dp-dropdown { display: none !important; }
-  .dp-wrap .dp-native { display: block !important; }
-}
 .dp-native {
   display: none;
   width: 100%;
@@ -1030,6 +1024,10 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   -webkit-appearance: none;
 }
 .dp-native:focus { border-color: var(--ink); }
+/* iOS mode — toggled via JS */
+.ios-mode .dp-input   { display: none !important; }
+.ios-mode .dp-dropdown { display: none !important; }
+.ios-mode .dp-native  { display: block !important; }
 </style>
 </head>
 <body>
@@ -2232,6 +2230,11 @@ function dpUpdateRangeDisplay(id){
 
 function dpGetRangeDates(id){
   const state = DP[id];
+  // iOS native input fallback
+  const native = document.getElementById(id);
+  if(document.body.classList.contains('ios-mode') && native && native.value){
+    return [native.value];
+  }
   if(!state || !state.rangeStart) return [];
   if(!state.rangeEnd) return [state.rangeStart];
   const dates = [];
@@ -2247,6 +2250,7 @@ function dpGetRangeDates(id){
 function dpNativeChange(id, val){
   if(!DP[id]) DP[id] = {};
   DP[id].selected = val;
+  // For days off on iOS, single date — just add it directly
   const valEl = document.getElementById('dp-'+id+'-val');
   if(valEl && val){
     const d = new Date(val+'T00:00:00');
@@ -2314,8 +2318,22 @@ function dpSetValue(id, dateStr){
 }
 
 function dpGetValue(id){
+  // On iOS, native input is shown directly
   const native = document.getElementById(id);
+  if(document.body.classList.contains('ios-mode')){
+    return native ? native.value : '';
+  }
+  // On desktop, use DP state
+  const state = DP[id];
+  if(state && state.selected) return state.selected;
   return native ? native.value : '';
+}
+
+function detectIOS(){
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  if(isIOS) document.body.classList.add('ios-mode');
+  return isIOS;
 }
 
 function toggleTheme(){
@@ -2337,6 +2355,7 @@ function loadTheme(){
 
 window.onload=()=>{
   loadTheme();
+  detectIOS();
   loadSettings();
   initSettingsFmt();
   generateAppIcon();
