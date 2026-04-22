@@ -31,7 +31,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); min-hei
 /* TOP BAR */
 .topbar {
   background:var(--card); border-bottom:1px solid var(--line);
-  padding:0 28px; display:flex; align-items:center;
+  padding:0 20px; display:flex; align-items:center;
   justify-content:space-between; height:56px; gap:16px;
   position:sticky; top:0; z-index:50;
 }
@@ -43,17 +43,17 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); min-hei
   letter-spacing:1px; padding:3px 10px; border-radius:100px;
 }
 .topbar-right { display:flex; align-items:center; gap:10px; }
-.save-status { font-family:var(--mono); font-size:11px; color:var(--sub); display:flex; align-items:center; gap:6px; }
-.dot { width:7px; height:7px; border-radius:50%; background:var(--ghost); flex-shrink:0; }
-.dot.saved  { background:var(--green); }
-.dot.saving { background:var(--yellow); animation:blink .8s infinite; }
-.dot.error  { background:var(--red); }
+.sync-status { font-family:var(--mono); font-size:11px; color:var(--sub); display:flex; align-items:center; gap:6px; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--ghost); flex-shrink:0; transition: background .3s; }
+.dot.synced  { background:var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.syncing { background:var(--yellow); animation:blink .8s infinite; }
+.dot.error   { background:var(--red); }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
 /* NAV */
 .nav {
   background:var(--card); border-bottom:1px solid var(--line);
-  display:flex; padding:0 28px; overflow-x:auto;
+  display:flex; padding:0 20px; overflow-x:auto;
 }
 .nav-btn {
   background:none; border:none; border-bottom:2px solid transparent;
@@ -64,7 +64,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); min-hei
 .nav-btn.active { color:var(--yellow); border-bottom-color:var(--yellow); }
 
 /* LAYOUT */
-.page { display:none; padding:28px; max-width:1060px; }
+.page { display:none; padding:20px; max-width:1060px; }
 .page.active { display:block; }
 .section-label {
   font-family:var(--mono); font-size:11px; letter-spacing:2px;
@@ -76,7 +76,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); min-hei
 .card+.card { margin-top:12px; }
 
 /* KPIs */
-.kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+.kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
 .kpi-card {
   background:var(--card); border:1px solid var(--line); border-radius:var(--r);
   padding:18px 20px; position:relative; overflow:hidden;
@@ -93,10 +93,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); min-hei
 .prog-nums    { font-family:var(--mono); font-size:13px; font-weight:500; }
 .prog-track   { height:10px; background:var(--line2); border-radius:99px; position:relative; overflow:visible; }
 .prog-fill    { height:100%; border-radius:99px; transition:width .5s ease; }
-.prog-marker  {
-  position:absolute; top:-4px; height:18px; width:2px;
-  background:var(--ghost); border-radius:1px;
-}
+.prog-marker  { position:absolute; top:-4px; height:18px; width:2px; background:var(--ghost); border-radius:1px; }
 .prog-marker::after {
   content:attr(data-label); position:absolute; top:20px; left:50%;
   transform:translateX(-50%); font-size:10px; font-family:var(--mono);
@@ -139,6 +136,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--sans); min-hei
   border-radius:var(--r); cursor:pointer; transition:background .15s;
 }
 .add-btn:hover { background:#f7ea60; }
+.add-btn:disabled { opacity:.5; cursor:not-allowed; }
 
 /* LOG TABLE */
 .log-table-wrap { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:var(--r); }
@@ -182,7 +180,6 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
 .export-block { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:24px; margin-bottom:16px; }
 .export-block h2 { font-size:17px; font-weight:600; margin-bottom:6px; }
 .export-block p  { font-size:13px; color:var(--sub); margin-bottom:16px; line-height:1.6; }
-.export-block p a { color:var(--yellow); }
 .btn-row { display:flex; flex-wrap:wrap; gap:10px; }
 .btn { font-family:var(--sans); font-size:13px; font-weight:600; padding:9px 18px; border-radius:var(--r); border:none; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
 .btn-solid   { background:var(--yellow); color:#000; }
@@ -191,11 +188,6 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
 .btn-outline:hover { border-color:var(--sub); }
 .btn-red     { background:transparent; color:var(--red); border:1px solid rgba(255,69,96,.3); }
 .btn-red:hover { background:rgba(255,69,96,.08); }
-.code-block {
-  background:var(--bg); border:1px solid var(--line); border-radius:var(--r);
-  padding:16px; font-family:var(--mono); font-size:11px; color:var(--green);
-  white-space:pre-wrap; line-height:1.6; margin-top:14px; max-height:200px; overflow-y:auto;
-}
 .sheets-wrap { overflow-x:auto; margin-top:14px; border:1px solid var(--line); border-radius:var(--r); }
 .sheets-tbl { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px; }
 .sheets-tbl th { padding:10px 14px; text-align:left; color:var(--sub); font-size:11px; border-bottom:1px solid var(--line); background:var(--card2); }
@@ -219,25 +211,22 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
 .modal { background:var(--card); border:1px solid var(--line2); border-radius:10px; padding:28px; max-width:460px; width:100%; }
 .modal h2  { font-size:20px; font-weight:700; margin-bottom:12px; }
 .modal p   { font-size:13px; color:var(--sub); line-height:1.7; margin-bottom:18px; }
-.modal p a { color:var(--yellow); }
-.modal input {
-  width:100%; background:var(--bg); border:1px solid var(--line2); border-radius:var(--r);
-  color:var(--text); font-family:var(--mono); font-size:13px; padding:10px 14px;
-  margin-bottom:14px; outline:none;
-}
-.modal input:focus { border-color:var(--yellow); }
 .modal-btns { display:flex; gap:10px; justify-content:flex-end; }
+
+/* LOADING */
+.loading { text-align:center; padding:48px 24px; color:var(--sub); font-size:14px; }
+.loading .spin { display:inline-block; width:24px; height:24px; border:2px solid var(--line2); border-top-color:var(--yellow); border-radius:50%; animation:spin .7s linear infinite; margin-bottom:12px; }
+@keyframes spin { to{transform:rotate(360deg)} }
 
 /* EMPTY */
 .empty { text-align:center; padding:48px 24px; color:var(--sub); font-size:14px; border:1px dashed var(--line2); border-radius:var(--r); }
 .empty .ei { font-size:32px; margin-bottom:12px; }
 
 /* UTILS */
-.c-y { color:var(--yellow); } .c-g { color:var(--green); }
-.c-o { color:var(--orange); } .c-r { color:var(--red); }
-.c-s { color:var(--sub); }   .c-b { color:var(--blue); }
-.mono { font-family:var(--mono); }
-.mt24 { margin-top:24px; }
+.c-y{color:var(--yellow);} .c-g{color:var(--green);}
+.c-o{color:var(--orange);} .c-r{color:var(--red);}
+.c-s{color:var(--sub);}    .c-b{color:var(--blue);}
+.mono{font-family:var(--mono);}
 </style>
 </head>
 <body>
@@ -249,11 +238,10 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
     <div class="season-pill">2026</div>
   </div>
   <div class="topbar-right">
-    <div class="save-status">
-      <div class="dot" id="save-dot"></div>
-      <span id="save-text">Auto-saving locally</span>
+    <div class="sync-status">
+      <div class="dot" id="sync-dot"></div>
+      <span id="sync-text">Connecting…</span>
     </div>
-    <button class="btn btn-outline" onclick="openDriveModal()" style="font-size:12px;padding:6px 14px;">☁ Google Drive</button>
   </div>
 </div>
 
@@ -262,19 +250,15 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
   <button class="nav-btn active" onclick="showPage('dashboard',this)">Dashboard</button>
   <button class="nav-btn" onclick="showPage('log',this)">Log a Day</button>
   <button class="nav-btn" onclick="showPage('weekly',this)">Weekly</button>
-  <button class="nav-btn" onclick="showPage('export',this)">Export / Backup</button>
+  <button class="nav-btn" onclick="showPage('export',this)">Export</button>
 </nav>
 
-
-<!-- ══ DASHBOARD ══ -->
+<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
-
   <div class="kpi-row" id="kpi-row"></div>
-
   <div class="section-label">Season Progress</div>
   <div class="card" style="margin-bottom:24px;">
     <div class="prog-section" style="margin-bottom:0">
-
       <div>
         <div class="prog-head">
           <span class="prog-label">Accounts Sold</span>
@@ -285,7 +269,6 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
           <div class="prog-marker" style="left:46.8%" data-label="2025 (131)"></div>
         </div>
       </div>
-
       <div>
         <div class="prog-head">
           <span class="prog-label">Revenue</span>
@@ -296,7 +279,6 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
           <div class="prog-marker" style="left:46.8%" data-label="2025 ($117K)"></div>
         </div>
       </div>
-
       <div>
         <div class="prog-head">
           <span class="prog-label">Season Days Elapsed</span>
@@ -306,41 +288,33 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
           <div class="prog-fill" id="pf-day" style="width:0%;background:var(--ghost)"></div>
         </div>
       </div>
-
     </div>
   </div>
-
   <div class="section-label">Pace Check</div>
   <div class="pace-grid" id="pace-grid"></div>
-
 </div>
 
-
-<!-- ══ LOG A DAY ══ -->
+<!-- LOG A DAY -->
 <div class="page" id="page-log">
-
   <div class="log-form">
     <div class="log-form-title">Log a Day</div>
     <div class="fields-row">
       <div class="field"><label>Date</label><input type="date" id="f-date"></div>
       <div class="field"><label>Accounts Sold</label><input type="number" id="f-accts" min="0" max="20" placeholder="0"></div>
       <div class="field"><label>Revenue ($)</label><input type="number" id="f-rev" min="0" placeholder="0"></div>
-      <div class="field"><button class="add-btn" onclick="addDay()">+ Log Day</button></div>
+      <div class="field"><button class="add-btn" id="add-btn" onclick="addDay()">+ Log Day</button></div>
     </div>
     <div class="notes-row">
       <input type="text" id="f-notes" placeholder="Notes — area, weather, anything worth tracking (optional)">
     </div>
   </div>
-
   <div class="section-label">History</div>
   <div id="log-container">
-    <div class="empty"><div class="ei">📋</div>No days logged yet.</div>
+    <div class="loading"><div class="spin"></div><br>Loading…</div>
   </div>
-
 </div>
 
-
-<!-- ══ WEEKLY ══ -->
+<!-- WEEKLY -->
 <div class="page" id="page-weekly">
   <div class="section-label">All 18 Weeks — Actual vs Target</div>
   <div class="week-wrap">
@@ -358,15 +332,13 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
   </div>
 </div>
 
-
-<!-- ══ EXPORT ══ -->
+<!-- EXPORT -->
 <div class="page" id="page-export">
-
   <div class="export-block">
     <h2>📊 Export to Google Sheets</h2>
-    <p>Fastest path. Click copy, open any Google Sheet, press Ctrl+V / Cmd+V — done. All your data pastes in perfectly formatted.</p>
+    <p>Click copy, open any Google Sheet, press Ctrl+V / Cmd+V — pastes in perfectly formatted.</p>
     <div class="btn-row">
-      <button class="btn btn-solid" onclick="copyTSV()">📋 Copy Data for Google Sheets</button>
+      <button class="btn btn-solid" onclick="copyTSV()">📋 Copy for Google Sheets</button>
       <button class="btn btn-outline" onclick="exportCSV()">⬇ Download CSV</button>
     </div>
     <div class="sheets-wrap">
@@ -376,72 +348,30 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
       </table>
     </div>
   </div>
-
   <div class="export-block">
-    <h2>☁ Google Drive Auto-Save</h2>
-    <p>Set up once and your data saves to Google Drive every time you log a day. Takes ~5 minutes. Full instructions inside the setup window.</p>
+    <h2>💾 Backup</h2>
+    <p>Download a local backup of your data.</p>
     <div class="btn-row">
-      <button class="btn btn-solid" onclick="openDriveModal()">Connect Google Drive</button>
-      <button class="btn btn-outline" onclick="saveToDrive()">Save to Drive Now</button>
-      <button class="btn btn-outline" onclick="loadFromDrive()">Load from Drive</button>
+      <button class="btn btn-outline" onclick="exportJSON()">⬇ Download JSON Backup</button>
     </div>
   </div>
-
-  <div class="export-block">
-    <h2>💾 Local Backup</h2>
-    <p>Download a JSON backup or restore from a previous one. Your data also auto-saves in your browser on every log.</p>
-    <div class="btn-row">
-      <button class="btn btn-outline" onclick="exportJSON()">⬇ Download Backup</button>
-      <button class="btn btn-outline" onclick="document.getElementById('file-in').click()">⬆ Restore from Backup</button>
-      <input type="file" id="file-in" accept=".json" style="display:none" onchange="importJSON(event)">
-    </div>
-  </div>
-
   <div class="export-block">
     <h2>⚠ Danger Zone</h2>
-    <p>Permanently delete all logged data. Download a backup first.</p>
+    <p>Permanently delete all data from the database. Cannot be undone.</p>
     <div class="btn-row">
       <button class="btn btn-red" onclick="openConfirm()">🗑 Clear All Data</button>
     </div>
   </div>
-
 </div>
-
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
-
-
-<!-- DRIVE MODAL -->
-<div class="modal-bg" id="drive-modal">
-  <div class="modal">
-    <h2>☁ Connect Google Drive</h2>
-    <p>
-      Uses a free Google Apps Script to save your data to your own Drive — nothing goes anywhere else.<br><br>
-      <strong style="color:var(--text)">One-time setup (~5 min):</strong><br>
-      1. Go to <a href="https://script.google.com" target="_blank">script.google.com</a> → New Project<br>
-      2. Delete all the code in the editor and paste the code below<br>
-      3. Click <strong style="color:var(--text)">Deploy → New Deployment → Web App</strong><br>
-      4. Set: Execute as "Me", Who has access "Anyone"<br>
-      5. Copy the Web App URL and paste it below
-    </p>
-    <div style="font-size:11px;color:var(--sub);margin-bottom:6px;font-family:var(--mono);letter-spacing:1px;">PASTE THIS INTO APPS SCRIPT:</div>
-    <div class="code-block" id="script-display"></div>
-    <div style="margin-top:14px;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--sub);">Your Web App URL:</div>
-    <input type="text" id="drive-url-input" placeholder="https://script.google.com/macros/s/.../exec">
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeDriveModal()">Cancel</button>
-      <button class="btn btn-solid" onclick="saveDriveUrl()">Save & Connect</button>
-    </div>
-  </div>
-</div>
-
 
 <!-- CONFIRM MODAL -->
 <div class="modal-bg" id="confirm-modal">
   <div class="modal">
     <h2>Clear All Data?</h2>
-    <p>This permanently deletes every logged day. It cannot be undone. Download a backup first if you need to keep the data.</p>
+    <p>This permanently deletes every logged day from the database. It cannot be undone.</p>
     <div class="modal-btns">
       <button class="btn btn-outline" onclick="document.getElementById('confirm-modal').classList.remove('open')">Cancel</button>
       <button class="btn btn-red" onclick="clearAll()">Yes, Delete Everything</button>
@@ -449,36 +379,76 @@ tr.wk-cur td:first-child { border-left:3px solid var(--yellow); }
   </div>
 </div>
 
-
 <script>
-// ── CONSTANTS ──────────────────────────────────
-const TARGET_ACCTS  = 280;
-const TARGET_REV    = 250000;
-const K_DAYS        = 101;
-const AVG_TICKET    = 893;
-const APD           = 2.77;
+// ── SUPABASE CONFIG ─────────────────────────────
+const SB_URL  = 'https://kludlwcobfwmrrvnhknz.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdWRsd2NvYmZ3bXJydm5oa256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTczNjIsImV4cCI6MjA5MjM5MzM2Mn0.tK7M2yh0seeWzhb6aSkGjLooaViukVZ-DOMbxLc-KIM';
+const TABLE   = 'days';
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SB_KEY,
+  'Authorization': `Bearer ${SB_KEY}`,
+  'Prefer': 'return=representation'
+};
+
+async function sbGet() {
+  const r = await fetch(`${SB_URL}/rest/v1/${TABLE}?select=*&order=date.asc`, { headers: HEADERS });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbInsert(row) {
+  const r = await fetch(`${SB_URL}/rest/v1/${TABLE}`, {
+    method: 'POST', headers: HEADERS, body: JSON.stringify(row)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbUpsert(row) {
+  const r = await fetch(`${SB_URL}/rest/v1/${TABLE}?on_conflict=date`, {
+    method: 'POST',
+    headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify(row)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbDelete(date) {
+  const r = await fetch(`${SB_URL}/rest/v1/${TABLE}?date=eq.${date}`, {
+    method: 'DELETE', headers: HEADERS
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function sbDeleteAll() {
+  const r = await fetch(`${SB_URL}/rest/v1/${TABLE}?date=neq.____`, {
+    method: 'DELETE', headers: HEADERS
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ── CONSTANTS ───────────────────────────────────
+const TARGET_ACCTS = 280, TARGET_REV = 250000, K_DAYS = 101, AVG_TICKET = 893, APD = 2.77;
 
 const OFF = new Set();
 (()=>{
   let d=new Date('2026-05-01'), end=new Date('2026-08-29');
-  while(d<=end){
-    const s=d.toISOString().slice(0,10);
-    if(d.getDay()===0) OFF.add(s);
-    d=new Date(d.getTime()+86400000);
-  }
+  while(d<=end){ const s=d.toISOString().slice(0,10); if(d.getDay()===0) OFF.add(s); d=new Date(d.getTime()+86400000); }
   ['2026-05-20','2026-05-21','2026-05-22'].forEach(x=>OFF.add(x));
 })();
 
 const WEEKS=[
-  {n:1, s:'2026-05-01',e:'2026-05-03',kd:3},
-  {n:2, s:'2026-05-04',e:'2026-05-10',kd:6},
-  {n:3, s:'2026-05-11',e:'2026-05-17',kd:6},
-  {n:4, s:'2026-05-18',e:'2026-05-24',kd:3,note:'✈ Wedding'},
-  {n:5, s:'2026-05-25',e:'2026-05-31',kd:5},
-  {n:6, s:'2026-06-01',e:'2026-06-07',kd:6},
-  {n:7, s:'2026-06-08',e:'2026-06-14',kd:6},
-  {n:8, s:'2026-06-15',e:'2026-06-21',kd:6},
-  {n:9, s:'2026-06-22',e:'2026-06-28',kd:6},
+  {n:1,s:'2026-05-01',e:'2026-05-03',kd:3},
+  {n:2,s:'2026-05-04',e:'2026-05-10',kd:6},
+  {n:3,s:'2026-05-11',e:'2026-05-17',kd:6},
+  {n:4,s:'2026-05-18',e:'2026-05-24',kd:3,note:'✈ Wedding'},
+  {n:5,s:'2026-05-25',e:'2026-05-31',kd:5},
+  {n:6,s:'2026-06-01',e:'2026-06-07',kd:6},
+  {n:7,s:'2026-06-08',e:'2026-06-14',kd:6},
+  {n:8,s:'2026-06-15',e:'2026-06-21',kd:6},
+  {n:9,s:'2026-06-22',e:'2026-06-28',kd:6},
   {n:10,s:'2026-06-29',e:'2026-07-05',kd:6},
   {n:11,s:'2026-07-06',e:'2026-07-12',kd:6},
   {n:12,s:'2026-07-13',e:'2026-07-19',kd:6},
@@ -490,89 +460,63 @@ const WEEKS=[
   {n:18,s:'2026-08-24',e:'2026-08-29',kd:5},
 ];
 
-const APPS_SCRIPT=`function doPost(e) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  try {
-    // Accept either URL-encoded form data or raw JSON
-    var jsonStr;
-    if (e.postData.type === 'application/x-www-form-urlencoded') {
-      jsonStr = e.parameter.data;
-    } else {
-      jsonStr = e.postData.contents;
-    }
-    var data = JSON.parse(jsonStr);
-    var files = DriveApp.getFilesByName('trent_sales_2026.json');
-    if (files.hasNext()) {
-      files.next().setContent(JSON.stringify(data));
-    } else {
-      DriveApp.createFile('trent_sales_2026.json', JSON.stringify(data));
-    }
-    output.setContent(JSON.stringify({status:'ok'}));
-  } catch(err) {
-    output.setContent(JSON.stringify({status:'error', message: err.toString()}));
-  }
-  return output;
+// ── STATE ───────────────────────────────────────
+let days = []; // array of {id, date, accounts, revenue, notes}
+
+// ── SYNC STATUS ─────────────────────────────────
+function setSync(cls, txt) {
+  document.getElementById('sync-dot').className = 'dot ' + cls;
+  document.getElementById('sync-text').textContent = txt;
 }
 
-function doGet(e) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
+// ── LOAD FROM DB ────────────────────────────────
+async function loadDays() {
+  setSync('syncing', 'Syncing…');
   try {
-    var files = DriveApp.getFilesByName('trent_sales_2026.json');
-    if (files.hasNext()) {
-      output.setContent(files.next().getBlob().getDataAsString());
-    } else {
-      output.setContent('{}');
-    }
-  } catch(err) {
-    output.setContent('{}');
+    days = await sbGet();
+    setSync('synced', 'Synced');
+    render();
+  } catch(e) {
+    setSync('error', 'Sync error');
+    toast('Could not connect to database.', true);
+    console.error(e);
   }
-  return output;
-}`;
+}
 
-// ── STATE ──────────────────────────────────────
-let state={days:[],driveUrl:''};
-
-// ── STATS ──────────────────────────────────────
-function stats(){
-  const days=state.days;
-  const accts=days.reduce((a,d)=>a+d.accounts,0);
-  const rev  =days.reduce((a,d)=>a+d.revenue,0);
-  const n    =days.length;
-  const avgTkt=n&&accts?rev/accts:0;
-  const apd  =n?accts/n:0;
-
-  const today=new Date(), start=new Date('2026-05-01'), end=new Date('2026-08-29');
-  let elapsed=0;
-  let d=new Date(start);
-  while(d<=today&&d<=end){
-    if(!OFF.has(d.toISOString().slice(0,10))) elapsed++;
-    d=new Date(d.getTime()+86400000);
-  }
-  const rem  =K_DAYS-elapsed;
-  const expA =Math.round(elapsed*APD);
-  const expR =Math.round(expA*AVG_TICKET);
-  const dA   =accts-expA;
-  const dR   =rev-expR;
-  const needA=rem>0?(TARGET_ACCTS-accts)/rem:0;
-  const needR=rem>0?(TARGET_REV-rev)/rem:0;
+// ── STATS ───────────────────────────────────────
+function stats() {
+  const accts = days.reduce((a,d)=>a+d.accounts,0);
+  const rev   = days.reduce((a,d)=>a+d.revenue,0);
+  const n     = days.length;
+  const avgTkt= n&&accts ? rev/accts : 0;
+  const apd   = n ? accts/n : 0;
+  const today = new Date(), start=new Date('2026-05-01'), end=new Date('2026-08-29');
+  let elapsed = 0;
+  let d = new Date(start);
+  while(d<=today&&d<=end){ if(!OFF.has(d.toISOString().slice(0,10))) elapsed++; d=new Date(d.getTime()+86400000); }
+  const rem   = K_DAYS - elapsed;
+  const expA  = Math.round(elapsed*APD);
+  const expR  = Math.round(expA*AVG_TICKET);
+  const dA    = accts - expA;
+  const dR    = rev - expR;
+  const needA = rem>0 ? (TARGET_ACCTS-accts)/rem : 0;
+  const needR = rem>0 ? (TARGET_REV-rev)/rem : 0;
   return {accts,rev,n,avgTkt,apd,elapsed,rem,expA,expR,dA,dR,needA,needR};
 }
 
-// ── FORMAT ─────────────────────────────────────
-const $k =n=>n>=1000?'$'+(n/1000).toFixed(1)+'K':'$'+Math.round(n).toLocaleString();
-const $$  =n=>'$'+Math.round(n).toLocaleString();
-const pct =(a,b)=>Math.min(Math.round(a/b*100),100);
-const sgn =n=>(n>=0?'+':'')+n;
-const sgn$=n=>(n>=0?'+':'')+$$(n);
-const dayTag=a=>a>=3?{c:'tag-great',t:'🔥 Great'}:a===2?{c:'tag-good',t:'✓ On Pace'}:a===1?{c:'tag-slow',t:'▲ Slow'}:{c:'tag-zero',t:'✕ Zero'};
+// ── FORMAT ──────────────────────────────────────
+const $k  = n => n>=1000 ? '$'+(n/1000).toFixed(1)+'K' : '$'+Math.round(n).toLocaleString();
+const $$  = n => '$'+Math.round(n).toLocaleString();
+const pct = (a,b) => Math.min(Math.round(a/b*100),100);
+const sgn = n => (n>=0?'+':'')+n;
+const sgn$= n => (n>=0?'+':'')+$$(n);
+const dayTag = a => a>=3?{c:'tag-great',t:'🔥 Great'}:a===2?{c:'tag-good',t:'✓ On Pace'}:a===1?{c:'tag-slow',t:'▲ Slow'}:{c:'tag-zero',t:'✕ Zero'};
 
-// ── RENDER ─────────────────────────────────────
-function render(){ renderDash(); renderLog(); renderWeekly(); renderSheets(); }
+// ── RENDER ──────────────────────────────────────
+function render() { renderDash(); renderLog(); renderWeekly(); renderSheets(); }
 
-function renderDash(){
-  const s=stats();
+function renderDash() {
+  const s = stats();
   document.getElementById('kpi-row').innerHTML=`
     <div class="kpi-card"><div class="kpi-accent" style="background:var(--yellow)"></div><div class="kpi-name">Accounts Sold</div><div class="kpi-number c-y">${s.accts}</div><div class="kpi-note">of 280 target</div></div>
     <div class="kpi-card"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-name">Revenue</div><div class="kpi-number c-g">${$k(s.rev)}</div><div class="kpi-note">of $250K target</div></div>
@@ -582,12 +526,11 @@ function renderDash(){
     <div class="kpi-card"><div class="kpi-accent" style="background:var(--sub)"></div><div class="kpi-name">Days Left</div><div class="kpi-number">${s.rem}</div><div class="kpi-note">need ${s.needA>0?s.needA.toFixed(2):'—'}/day</div></div>
   `;
   document.getElementById('pf-acct').style.width=pct(s.accts,TARGET_ACCTS)+'%';
-  document.getElementById('pf-rev' ).style.width=pct(s.rev,  TARGET_REV  )+'%';
-  document.getElementById('pf-day' ).style.width=pct(s.elapsed,K_DAYS    )+'%';
+  document.getElementById('pf-rev' ).style.width=pct(s.rev,TARGET_REV)+'%';
+  document.getElementById('pf-day' ).style.width=pct(s.elapsed,K_DAYS)+'%';
   document.getElementById('pn-acct').textContent=`${s.accts} of ${TARGET_ACCTS}`;
   document.getElementById('pn-rev' ).textContent=`${$$(s.rev)} of $250,000`;
   document.getElementById('pn-day' ).textContent=`${s.elapsed} of ${K_DAYS}`;
-
   const ac=s.dA>=0?'c-g':s.dA>=-10?'c-o':'c-r';
   const rc=s.dR>=0?'c-g':s.dR>=-5000?'c-o':'c-r';
   const pc=s.needA<=2.77?'c-g':s.needA<=3.5?'c-o':'c-r';
@@ -611,15 +554,14 @@ function renderDash(){
   `;
 }
 
-function renderLog(){
-  const sorted=[...state.days].sort((a,b)=>a.date.localeCompare(b.date));
-  if(!sorted.length){
-    document.getElementById('log-container').innerHTML='<div class="empty"><div class="ei">📋</div>No days logged yet. Fill in the form above.</div>';
+function renderLog() {
+  if(!days.length){
+    document.getElementById('log-container').innerHTML='<div class="empty"><div class="ei">📋</div>No days logged yet.</div>';
     return;
   }
   let ca=0,cr=0; const cum={};
-  sorted.forEach(d=>{ca+=d.accounts;cr+=d.revenue;cum[d.date]={ca,cr};});
-  const rows=[...sorted].reverse().map(d=>{
+  [...days].sort((a,b)=>a.date.localeCompare(b.date)).forEach(d=>{ca+=d.accounts;cr+=d.revenue;cum[d.date]={ca,cr};});
+  const rows=[...days].sort((a,b)=>b.date.localeCompare(a.date)).map(d=>{
     const tag=dayTag(d.accounts), c=cum[d.date];
     return `<tr>
       <td class="mono">${d.date}</td>
@@ -641,8 +583,8 @@ function renderLog(){
     </div>`;
 }
 
-function renderWeekly(){
-  const sorted=[...state.days].sort((a,b)=>a.date.localeCompare(b.date));
+function renderWeekly() {
+  const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
   const today=new Date().toISOString().slice(0,10);
   let cumA=0,cumR=0;
   document.getElementById('week-tbody').innerHTML=WEEKS.map(w=>{
@@ -650,7 +592,7 @@ function renderWeekly(){
     const wa=wd.reduce((s,d)=>s+d.accounts,0), wr=wd.reduce((s,d)=>s+d.revenue,0);
     cumA+=wa; cumR+=wr;
     const tgt=Math.round(w.kd*APD), tgtR=Math.round(tgt*AVG_TICKET);
-    const isCur=today>=w.s&&today<=w.e, isPast=today>w.e, isFut=today<w.s;
+    const isCur=today>=w.s&&today<=w.e, isFut=today<w.s;
     let badge;
     if(isFut) badge='<span class="pb pb-f">Upcoming</span>';
     else{ const r=wa/tgt; badge=r>=1.05?'<span class="pb pb-a">Ahead</span>':r>=.9?'<span class="pb pb-o">On Pace</span>':r>=.7?'<span class="pb pb-b">Behind</span>':'<span class="pb pb-w">Way Behind</span>'; }
@@ -668,8 +610,8 @@ function renderWeekly(){
   }).join('');
 }
 
-function renderSheets(){
-  const sorted=[...state.days].sort((a,b)=>a.date.localeCompare(b.date));
+function renderSheets() {
+  const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
   if(!sorted.length){ document.getElementById('sheets-tbody').innerHTML='<tr><td colspan="7" style="padding:16px;color:var(--sub);font-size:12px">No data yet.</td></tr>'; return; }
   let ca=0,cr=0;
   document.getElementById('sheets-tbody').innerHTML=sorted.map(d=>{
@@ -678,107 +620,93 @@ function renderSheets(){
   }).join('');
 }
 
-// ── ACTIONS ────────────────────────────────────
-function addDay(){
-  const date=document.getElementById('f-date').value;
-  const accts=parseInt(document.getElementById('f-accts').value)||0;
-  const rev=parseFloat(document.getElementById('f-rev').value)||0;
-  const notes=document.getElementById('f-notes').value.trim();
-  if(!date) return toast('Pick a date.',true);
-  if(date<'2026-05-01'||date>'2026-08-29') return toast('Date outside season (May 1 – Aug 29).',true);
-  state.days=state.days.filter(d=>d.date!==date);
-  state.days.push({date,accounts:accts,revenue:rev,notes});
-  ['f-accts','f-rev','f-notes'].forEach(id=>document.getElementById(id).value='');
-  render(); autoSave();
-  toast(`Logged: ${accts} accts / ${$$(rev)} ✓`);
+// ── ACTIONS ─────────────────────────────────────
+async function addDay() {
+  const date  = document.getElementById('f-date').value;
+  const accts = parseInt(document.getElementById('f-accts').value)||0;
+  const rev   = parseFloat(document.getElementById('f-rev').value)||0;
+  const notes = document.getElementById('f-notes').value.trim();
+  if(!date) return toast('Pick a date.', true);
+  if(date<'2026-05-01'||date>'2026-08-29') return toast('Date outside season (May 1 – Aug 29).', true);
+
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  setSync('syncing', 'Saving…');
+
+  try {
+    await sbUpsert({date, accounts:accts, revenue:rev, notes});
+    ['f-accts','f-rev','f-notes'].forEach(id=>document.getElementById(id).value='');
+    await loadDays();
+    toast(`Logged: ${accts} accts / ${$$(rev)} ✓`);
+  } catch(e) {
+    toast('Save failed — check connection.', true);
+    setSync('error', 'Save failed');
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = '+ Log Day';
+  }
 }
 
-function deleteDay(date){ state.days=state.days.filter(d=>d.date!==date); render(); autoSave(); toast(`Removed ${date}`); }
-function clearAll(){ state.days=[]; document.getElementById('confirm-modal').classList.remove('open'); render(); autoSave(); toast('All data cleared.'); }
-
-// ── SAVE ───────────────────────────────────────
-function autoSave(){
-  setSave('saving','Saving…');
-  localStorage.setItem('sales2026',JSON.stringify(state));
-  setTimeout(()=>setSave('saved','Saved'),600);
-  if(state.driveUrl) saveToDrive();
+async function deleteDay(date) {
+  setSync('syncing', 'Deleting…');
+  try {
+    await sbDelete(date);
+    await loadDays();
+    toast(`Removed ${date}`);
+  } catch(e) {
+    toast('Delete failed.', true);
+    setSync('error', 'Error');
+    console.error(e);
+  }
 }
-function setSave(c,t){ document.getElementById('save-dot').className='dot '+c; document.getElementById('save-text').textContent=t; }
 
-// ── EXPORT ─────────────────────────────────────
-function copyTSV(){
-  const s=[...state.days].sort((a,b)=>a.date.localeCompare(b.date));
+async function clearAll() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  setSync('syncing', 'Clearing…');
+  try {
+    await sbDeleteAll();
+    await loadDays();
+    toast('All data cleared.');
+  } catch(e) {
+    toast('Clear failed.', true);
+    console.error(e);
+  }
+}
+
+// ── EXPORT ──────────────────────────────────────
+function copyTSV() {
+  const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
   let ca=0,cr=0;
   const rows=[['Date','Accounts','Revenue','Avg Ticket','Running Accts','Running Rev','Notes']];
-  s.forEach(d=>{ ca+=d.accounts; cr+=d.revenue; rows.push([d.date,d.accounts,d.revenue,d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',ca,cr,d.notes||'']); });
+  sorted.forEach(d=>{ ca+=d.accounts; cr+=d.revenue; rows.push([d.date,d.accounts,d.revenue,d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',ca,cr,d.notes||'']); });
   navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>toast('Copied! Open Google Sheets → Ctrl+V / Cmd+V ✓'));
 }
-function exportCSV(){
-  const s=[...state.days].sort((a,b)=>a.date.localeCompare(b.date));
+
+function exportCSV() {
+  const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
   let ca=0,cr=0;
   const rows=[['Date','Accounts','Revenue','Avg Ticket','Running Accts','Running Rev','Notes']];
-  s.forEach(d=>{ ca+=d.accounts; cr+=d.revenue; rows.push([d.date,d.accounts,d.revenue,d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',ca,cr,d.notes||'']); });
+  sorted.forEach(d=>{ ca+=d.accounts; cr+=d.revenue; rows.push([d.date,d.accounts,d.revenue,d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',ca,cr,d.notes||'']); });
   dl(rows.map(r=>r.join(',')).join('\n'),'text/csv','season2026.csv');
   toast('CSV downloaded ✓');
 }
-function exportJSON(){ dl(JSON.stringify(state,null,2),'application/json','season2026_backup.json'); toast('Backup downloaded ✓'); }
-function importJSON(e){
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(d.days){ state.days=d.days; render(); autoSave(); toast('Data restored ✓'); } else toast('Invalid file.',true); }catch{ toast('Could not read file.',true); } };
-  r.readAsText(f);
+
+function exportJSON() {
+  dl(JSON.stringify({days},null,2),'application/json','season2026_backup.json');
+  toast('Backup downloaded ✓');
 }
+
 function dl(c,m,fn){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([c],{type:m})); a.download=fn; a.click(); }
 
-// ── DRIVE ──────────────────────────────────────
-function openDriveModal(){ document.getElementById('script-display').textContent=APPS_SCRIPT; document.getElementById('drive-url-input').value=state.driveUrl||''; document.getElementById('drive-modal').classList.add('open'); }
-function closeDriveModal(){ document.getElementById('drive-modal').classList.remove('open'); }
-function saveDriveUrl(){ state.driveUrl=document.getElementById('drive-url-input').value.trim(); closeDriveModal(); if(state.driveUrl){ toast('Google Drive connected ✓'); saveToDrive(); } }
-async function saveToDrive(){
-  if(!state.driveUrl) return;
-  setSave('saving','Saving to Drive…');
-  try{
-    const params=new URLSearchParams({data:JSON.stringify(state)});
-    const r=await fetch(state.driveUrl,{method:'POST',body:params});
-    await r.text();
-    setSave('saved','Saved to Drive ✓');
-    toast('Saved to Drive ✓');
-  }catch(err){
-    setSave('error','Drive save failed');
-    toast('Drive save failed — data safe locally.',true);
-    console.error('Drive error:',err);
-  }
-}
-async function loadFromDrive(){
-  if(!state.driveUrl) return toast('Connect Google Drive first.',true);
-  try{
-    const r=await fetch(state.driveUrl);
-    const txt=await r.text();
-    if(!txt||txt==='{}') return toast('No saved data on Drive yet.',true);
-    const d=JSON.parse(txt);
-    if(d&&d.days){ state={...d,driveUrl:state.driveUrl}; render(); toast('Loaded from Drive ✓'); }
-    else toast('No data found on Drive.',true);
-  }catch(err){
-    toast('Could not load from Drive. Try Import JSON instead.',true);
-    console.error('Drive load error:',err);
-  }
-}
-
-// ── MODALS ─────────────────────────────────────
+// ── UI ──────────────────────────────────────────
 function openConfirm(){ document.getElementById('confirm-modal').classList.add('open'); }
-
-// ── TOAST ──────────────────────────────────────
-function toast(msg,isErr=false){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(isErr?' err':''); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000); }
-
-// ── NAV ────────────────────────────────────────
+function toast(msg,isErr=false){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(isErr?' err':''); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3200); }
 function showPage(id,btn){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('page-'+id).classList.add('active'); btn.classList.add('active'); if(id==='export') renderSheets(); }
 
-// ── INIT ───────────────────────────────────────
-window.onload=()=>{
-  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
-  try{ const raw=localStorage.getItem('sales2026'); if(raw) state=JSON.parse(raw); }catch{}
-  setSave('saved','Auto-saving locally');
-  render();
+// ── INIT ────────────────────────────────────────
+window.onload = () => {
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  loadDays();
 };
 </script>
 </body>
