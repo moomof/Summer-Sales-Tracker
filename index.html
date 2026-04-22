@@ -1053,8 +1053,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="settings-group">
     <div class="settings-group-title">Season Goals</div>
     <div class="settings-field">
-      <div><div class="sf-label">Revenue Target</div></div>
-      <input class="sf-input" type="number" id="s-rev-target" inputmode="decimal">
+      <div><div class="sf-label">Revenue Target</div><div class="sf-sub" id="s-rev-target-fmt" style="color:var(--green);font-weight:600"></div></div>
+      <input class="sf-input" type="number" id="s-rev-target" inputmode="decimal" oninput="fmtSetting('s-rev-target','$')">
     </div>
     <div class="settings-field">
       <div><div class="sf-label">Account Target</div></div>
@@ -1070,16 +1070,16 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="settings-group">
     <div class="settings-group-title">Used for projections until real data overrides</div>
     <div class="settings-field">
-      <div><div class="sf-label">ACV Estimate</div><div class="sf-sub">Avg contract value</div></div>
-      <input class="sf-input" type="number" id="s-acv" inputmode="decimal">
+      <div><div class="sf-label">ACV Estimate</div><div class="sf-sub" id="s-acv-fmt" style="color:var(--green);font-weight:600">Avg contract value</div></div>
+      <input class="sf-input" type="number" id="s-acv" inputmode="decimal" oninput="fmtSetting('s-acv','$')">
     </div>
     <div class="settings-field">
       <div><div class="sf-label">Retention Estimate</div><div class="sf-sub">% of accounts that stick</div></div>
       <input class="sf-input" type="number" id="s-retention" inputmode="decimal">
     </div>
     <div class="settings-field">
-      <div><div class="sf-label">Advance per Sale</div><div class="sf-sub">Upfront per account</div></div>
-      <input class="sf-input" type="number" id="s-advance" inputmode="decimal">
+      <div><div class="sf-label">Advance per Sale</div><div class="sf-sub" id="s-advance-fmt" style="color:var(--green);font-weight:600">Upfront per account</div></div>
+      <input class="sf-input" type="number" id="s-advance" inputmode="decimal" oninput="fmtSetting('s-advance','$')">
     </div>
   </div>
 
@@ -1104,8 +1104,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
       <input class="sf-input" type="number" id="s-last-accts" inputmode="numeric">
     </div>
     <div class="settings-field">
-      <div><div class="sf-label">Last Year Revenue</div></div>
-      <input class="sf-input" type="number" id="s-last-rev" inputmode="decimal">
+      <div><div class="sf-label">Last Year Revenue</div><div class="sf-sub" id="s-last-rev-fmt" style="color:var(--green);font-weight:600"></div></div>
+      <input class="sf-input" type="number" id="s-last-rev" inputmode="decimal" oninput="fmtSetting('s-last-rev','$')">
     </div>
   </div>
 
@@ -1832,6 +1832,20 @@ async function clearAll(){
   }catch(e){toast('Clear failed.',true);console.error(e);}
 }
 
+function fmtSetting(id, prefix){
+  const val = parseFloat(document.getElementById(id).value);
+  const fmtEl = document.getElementById(id+'-fmt');
+  if(!fmtEl) return;
+  if(isNaN(val)||val===0){ fmtEl.textContent=''; return; }
+  if(prefix==='$'){
+    fmtEl.textContent = val>=1000 ? '$'+val.toLocaleString() : '$'+val.toFixed(0);
+  }
+}
+
+function initSettingsFmt(){
+  ['s-rev-target','s-acv','s-advance','s-last-rev'].forEach(id=>fmtSetting(id,'$'));
+}
+
 function saveSettings(){
   cfg.revTarget=parseFloat(document.getElementById('s-rev-target').value)||DEFAULTS.revTarget;
   cfg.acctTarget=parseInt(document.getElementById('s-acct-target').value)||DEFAULTS.acctTarget;
@@ -1844,6 +1858,7 @@ function saveSettings(){
   cfg.lastAccts=parseInt(document.getElementById('s-last-accts').value)||DEFAULTS.lastAccts;
   cfg.lastRev=parseFloat(document.getElementById('s-last-rev').value)||DEFAULTS.lastRev;
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
+  initSettingsFmt();
   render();toast('Settings saved ✓');
 }
 
@@ -1946,6 +1961,7 @@ function loadTheme(){
 window.onload=()=>{
   loadTheme();
   loadSettings();
+  initSettingsFmt();
   generateAppIcon();
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   loadAll();
@@ -1957,65 +1973,111 @@ function generateAppIcon(){
     canvas.width=180; canvas.height=180;
     const ctx=canvas.getContext('2d');
 
-    // Background gradient
-    const bg=ctx.createLinearGradient(0,0,180,180);
-    bg.addColorStop(0,'#1c1c2e');
-    bg.addColorStop(1,'#0d0d14');
-    ctx.fillStyle=bg;
-    // Rounded rect background
-    const r=32;
+    // Rounded rect clip
+    const r=36;
     ctx.beginPath();
     ctx.moveTo(r,0);ctx.lineTo(180-r,0);ctx.quadraticCurveTo(180,0,180,r);
     ctx.lineTo(180,180-r);ctx.quadraticCurveTo(180,180,180-r,180);
     ctx.lineTo(r,180);ctx.quadraticCurveTo(0,180,0,180-r);
     ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
     ctx.closePath();
-    ctx.fill();
+    ctx.save();
+    ctx.clip();
 
-    // Bar gradient
-    const barGrad=ctx.createLinearGradient(0,20,0,160);
-    barGrad.addColorStop(0,'#f5e050');
-    barGrad.addColorStop(1,'#c89010');
+    // Sky gradient background - dark blue to near black
+    const sky=ctx.createLinearGradient(0,0,0,180);
+    sky.addColorStop(0,'#0a0e1a');
+    sky.addColorStop(1,'#141c2e');
+    ctx.fillStyle=sky;
+    ctx.fillRect(0,0,180,180);
 
-    // Draw 4 bars - rising left to right
-    const bars=[
-      {x:18, y:112, w:26, h:44},
-      {x:52, y:86,  w:26, h:70},
-      {x:86, y:58,  w:26, h:98},
-      {x:120,y:28,  w:26, h:128},
-    ];
-
-    bars.forEach((b,i)=>{
-      ctx.globalAlpha=0.45 + i*0.18;
-      ctx.fillStyle=barGrad;
-      const br=5;
-      ctx.beginPath();
-      ctx.moveTo(b.x+br,b.y);
-      ctx.lineTo(b.x+b.w-br,b.y);
-      ctx.quadraticCurveTo(b.x+b.w,b.y,b.x+b.w,b.y+br);
-      ctx.lineTo(b.x+b.w,b.y+b.h);
-      ctx.lineTo(b.x,b.y+b.h);
-      ctx.lineTo(b.x,b.y+br);
-      ctx.quadraticCurveTo(b.x,b.y,b.x+br,b.y);
-      ctx.closePath();
-      ctx.fill();
-    });
-
-    ctx.globalAlpha=1;
-
-    // Small dot on top of last bar
-    ctx.fillStyle='#fff';
-    ctx.globalAlpha=0.9;
+    // Back mountains (darker, smaller)
+    ctx.fillStyle='#1e2a3a';
     ctx.beginPath();
-    ctx.arc(120+13, 24, 5, 0, Math.PI*2);
+    ctx.moveTo(0,120);
+    ctx.lineTo(30,72);
+    ctx.lineTo(60,95);
+    ctx.lineTo(90,55);
+    ctx.lineTo(120,85);
+    ctx.lineTo(150,65);
+    ctx.lineTo(180,90);
+    ctx.lineTo(180,180);
+    ctx.lineTo(0,180);
+    ctx.closePath();
     ctx.fill();
-    ctx.globalAlpha=1;
+
+    // Front mountains (white/light grey - main peaks)
+    ctx.fillStyle='#dde8f0';
+    ctx.beginPath();
+    ctx.moveTo(0,145);
+    ctx.lineTo(50,80);   // left peak
+    ctx.lineTo(70,105);
+    ctx.lineTo(100,52);  // center peak (tallest)
+    ctx.lineTo(130,90);
+    ctx.lineTo(155,68);  // right peak
+    ctx.lineTo(180,100);
+    ctx.lineTo(180,180);
+    ctx.lineTo(0,180);
+    ctx.closePath();
+    ctx.fill();
+
+    // Snow caps on peaks
+    ctx.fillStyle='#ffffff';
+    // Left peak snow
+    ctx.beginPath();
+    ctx.moveTo(50,80);
+    ctx.lineTo(38,100);
+    ctx.lineTo(62,100);
+    ctx.closePath();
+    ctx.fill();
+    // Center peak snow
+    ctx.beginPath();
+    ctx.moveTo(100,52);
+    ctx.lineTo(86,78);
+    ctx.lineTo(114,78);
+    ctx.closePath();
+    ctx.fill();
+    // Right peak snow
+    ctx.beginPath();
+    ctx.moveTo(155,68);
+    ctx.lineTo(145,84);
+    ctx.lineTo(165,84);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ground / valley fill (dark)
+    ctx.fillStyle='#0d1520';
+    ctx.beginPath();
+    ctx.moveTo(0,148);
+    ctx.lineTo(180,148);
+    ctx.lineTo(180,180);
+    ctx.lineTo(0,180);
+    ctx.closePath();
+    ctx.fill();
+
+    // Winding path - yellow/golden, starts bottom center, winds up
+    ctx.strokeStyle='#e8c840';
+    ctx.lineWidth=5;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.shadowColor='rgba(232,200,64,0.6)';
+    ctx.shadowBlur=8;
+    ctx.beginPath();
+    ctx.moveTo(90,178);
+    ctx.bezierCurveTo(75,165, 60,158, 68,148);
+    ctx.bezierCurveTo(78,136, 105,138, 112,125);
+    ctx.bezierCurveTo(120,110, 95,105, 100,92);
+    ctx.bezierCurveTo(104,80, 112,72, 108,62);
+    ctx.stroke();
+    ctx.shadowBlur=0;
+
+    ctx.restore();
 
     const png=canvas.toDataURL('image/png');
     const link=document.getElementById('app-icon');
     if(link) link.href=png;
   }catch(e){
-    console.log('Icon gen failed (normal in some browsers):', e);
+    console.log('Icon gen failed:', e);
   }
 }
 </script>
