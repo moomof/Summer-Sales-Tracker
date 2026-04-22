@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Season Tracker</title>
+
+<!-- PWA / Home Screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<meta name="theme-color" content="#141418">
+<link rel="apple-touch-icon" href="icon.png">
+
+<!-- App icon generated via canvas for reliable iOS home screen support -->
+<link rel="apple-touch-icon" id="app-icon" href="">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1251,12 +1261,8 @@ const WEEKS=[
 // ── STATE ───────────────────────────────────────
 let days=[], pulseHistory=[], daysOff=[], cfg={...DEFAULTS};
 
-// Built-in days off (wedding) - these always count
-const BUILTIN_OFF=[
-  {date:'2026-05-20',reason:'Wedding trip'},
-  {date:'2026-05-21',reason:'Wedding trip'},
-  {date:'2026-05-22',reason:'Wedding trip'},
-];
+// No built-in days off — all added manually via Days Off tab
+const BUILTIN_OFF=[];
 
 function G(k){return cfg[k]!==undefined?cfg[k]:DEFAULTS[k];}
 
@@ -1582,7 +1588,7 @@ function renderDaysOff(){
   const OFF=buildOff();
   const today=new Date().toISOString().slice(0,10);
   const kDays=getKnockingDays();
-  const allOff=[...BUILTIN_OFF,...daysOff].sort((a,b)=>a.date.localeCompare(b.date));
+  const allOff=[...daysOff].sort((a,b)=>a.date.localeCompare(b.date));
   const userOff=daysOff.length;
   const totalOff=allOff.length;
 
@@ -1590,9 +1596,8 @@ function renderDaysOff(){
   document.getElementById('daysoff-stats').innerHTML=`
     <div class="row-list">
       <div class="row-item"><span class="row-label">Total knocking days</span><span class="row-val">${kDays}</span></div>
-      <div class="row-item"><span class="row-label">Sundays off</span><span class="row-val c-s">Auto</span></div>
-      <div class="row-item"><span class="row-label">Built-in days off</span><span class="row-val">${BUILTIN_OFF.length} <span style="font-size:12px;color:var(--ink3)">(wedding)</span></span></div>
-      <div class="row-item"><span class="row-label">Your added days off</span><span class="row-val">${userOff}</span></div>
+      <div class="row-item"><span class="row-label">Sundays off</span><span class="row-val" style="color:var(--ink3)">Auto-excluded</span></div>
+      <div class="row-item"><span class="row-label">Days off logged</span><span class="row-val">${userOff}</span></div>
     </div>
   `;
 
@@ -1602,13 +1607,9 @@ function renderDaysOff(){
   }
 
   const items=allOff.map(d=>{
-    const isBuiltin=BUILTIN_OFF.some(b=>b.date===d.date);
     const isPast=d.date<today;
-    const rightBtn=isBuiltin
-      ? '<span style="font-size:11px;color:var(--ink3);padding:3px 9px;border:1px solid var(--line2);border-radius:100px;">Built-in</span>'
-      : '<button class="log-entry-del" onclick="deleteDayOff(\'' + d.date + '\')">×</button>';
     const pastBadge=isPast ? ' · <span style="font-size:11px;color:var(--ink3)">past</span>' : '';
-    return '<div class="doff-item"><div><div class="doff-date">'+d.date+pastBadge+'</div><div class="doff-reason">'+(d.reason||'Day off')+'</div></div>'+rightBtn+'</div>';
+    return '<div class="doff-item"><div><div class="doff-date">'+d.date+pastBadge+'</div><div class="doff-reason">'+(d.reason||'Day off')+'</div></div><button class="log-entry-del" onclick="deleteDayOff(\'' + d.date + '\')">×</button></div>';
   }).join('');
 
   document.getElementById('daysoff-list').innerHTML='<div class="row-list">'+items+'</div>';
@@ -1944,9 +1945,78 @@ function loadTheme(){
 window.onload=()=>{
   loadTheme();
   loadSettings();
+  generateAppIcon();
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   loadAll();
 };
+
+function generateAppIcon(){
+  try{
+    const canvas=document.createElement('canvas');
+    canvas.width=180; canvas.height=180;
+    const ctx=canvas.getContext('2d');
+
+    // Background gradient
+    const bg=ctx.createLinearGradient(0,0,180,180);
+    bg.addColorStop(0,'#1c1c2e');
+    bg.addColorStop(1,'#0d0d14');
+    ctx.fillStyle=bg;
+    // Rounded rect background
+    const r=32;
+    ctx.beginPath();
+    ctx.moveTo(r,0);ctx.lineTo(180-r,0);ctx.quadraticCurveTo(180,0,180,r);
+    ctx.lineTo(180,180-r);ctx.quadraticCurveTo(180,180,180-r,180);
+    ctx.lineTo(r,180);ctx.quadraticCurveTo(0,180,0,180-r);
+    ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Bar gradient
+    const barGrad=ctx.createLinearGradient(0,20,0,160);
+    barGrad.addColorStop(0,'#f5e050');
+    barGrad.addColorStop(1,'#c89010');
+
+    // Draw 4 bars - rising left to right
+    const bars=[
+      {x:18, y:112, w:26, h:44},
+      {x:52, y:86,  w:26, h:70},
+      {x:86, y:58,  w:26, h:98},
+      {x:120,y:28,  w:26, h:128},
+    ];
+
+    bars.forEach((b,i)=>{
+      ctx.globalAlpha=0.45 + i*0.18;
+      ctx.fillStyle=barGrad;
+      const br=5;
+      ctx.beginPath();
+      ctx.moveTo(b.x+br,b.y);
+      ctx.lineTo(b.x+b.w-br,b.y);
+      ctx.quadraticCurveTo(b.x+b.w,b.y,b.x+b.w,b.y+br);
+      ctx.lineTo(b.x+b.w,b.y+b.h);
+      ctx.lineTo(b.x,b.y+b.h);
+      ctx.lineTo(b.x,b.y+br);
+      ctx.quadraticCurveTo(b.x,b.y,b.x+br,b.y);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    ctx.globalAlpha=1;
+
+    // Small dot on top of last bar
+    ctx.fillStyle='#fff';
+    ctx.globalAlpha=0.9;
+    ctx.beginPath();
+    ctx.arc(120+13, 24, 5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+
+    const png=canvas.toDataURL('image/png');
+    const link=document.getElementById('app-icon');
+    if(link) link.href=png;
+  }catch(e){
+    console.log('Icon gen failed (normal in some browsers):', e);
+  }
+}
 </script>
 </body>
 </html>
