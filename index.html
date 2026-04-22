@@ -1002,6 +1002,13 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 .dp-day.other-month { color: var(--ink3); opacity: .4; }
 .dp-day.disabled { color: var(--ink3); opacity: .25; cursor: default; pointer-events: none; }
 .dp-day.empty { pointer-events: none; }
+.dp-day.in-range { background: var(--yellow-bg); border-radius: 0; }
+[data-theme="dark"] .dp-day.in-range { background: rgba(232,200,64,.12); }
+.dp-day.range-start { background: var(--ink); color: var(--bg); border-radius: 8px 0 0 8px; }
+.dp-day.range-end   { background: var(--ink); color: var(--bg); border-radius: 0 8px 8px 0; }
+[data-theme="dark"] .dp-day.range-start,
+[data-theme="dark"] .dp-day.range-end { background: var(--yellow); color: #000; }
+.dp-day.range-start.range-end { border-radius: 8px; }
 
 /* On iOS, use native date input instead */
 @supports (-webkit-touch-callout: none) {
@@ -1768,23 +1775,30 @@ function renderDaysOff(){
 }
 
 async function addDayOff(){
-  const date=dpGetValue('do-date');
   const reason=document.getElementById('do-reason').value.trim()||'Day off';
-  if(!date) return toast('Pick a date.',true);
-  if(date<G('start')||date>G('end')) return toast('Date outside season.',true);
-  // Check if it's a Sunday
-  if(new Date(date).getDay()===0) return toast('Sundays are already off.',true);
+  const dates = dpGetRangeDates('do-date');
+  if(!dates.length) return toast('Pick a date or date range.',true);
+
+  const valid = dates.filter(d=>{
+    if(d<G('start')||d>G('end')) return false;
+    if(new Date(d+'T00:00:00').getDay()===0) return false;
+    return true;
+  });
+
+  if(!valid.length) return toast('No valid knocking days in that range.',true);
+
   setSync('syncing','Saving…');
   try{
-    await sbUpsert('days_off',{date,reason},'date');
-    dpSetValue('do-date','');
+    await Promise.all(valid.map(d=>sbUpsert('days_off',{date:d,reason},'date')));
+    if(DP['do-date']){ DP['do-date'].rangeStart=null; DP['do-date'].rangeEnd=null; DP['do-date'].selected=null; }
+    const valEl=document.getElementById('dp-do-date-val');
+    if(valEl) valEl.innerHTML='<span class="dp-placeholder">Select date…</span>';
     document.getElementById('do-date').value='';
     document.getElementById('do-reason').value='';
     await loadAll();
-    toast('Day off added ✓');
-  }catch(e){toast('Save failed — make sure days_off table exists.',true);setSync('error','Error');console.error(e);}
+    toast(valid.length>1?valid.length+' days off added ✓':'Day off added ✓');
+  }catch(e){toast('Save failed — check days_off table.',true);setSync('error','Error');console.error(e);}
 }
-
 async function deleteDayOff(date){
   try{await sbDelete('days_off','date=eq.'+date);await loadAll();toast('Day off removed');}
   catch(e){toast('Delete failed.',true);}
@@ -2111,12 +2125,10 @@ function dpToggle(id){
   const drop = document.getElementById('dp-'+id+'-drop');
   const btn  = document.getElementById('dp-'+id+'-btn');
   const isOpen = drop.classList.contains('open');
-  // Close all pickers
   document.querySelectorAll('.dp-dropdown.open').forEach(d=>d.classList.remove('open'));
   document.querySelectorAll('.dp-input.open').forEach(b=>b.classList.remove('open'));
   if(!isOpen){
-    if(!DP[id]) DP[id] = { year: new Date().getFullYear(), month: new Date().getMonth(), selected: null };
-    // If already has a value, open to that month
+    if(!DP[id]) DP[id] = { year: new Date().getFullYear(), month: new Date().getMonth(), selected: null, rangeStart: null, rangeEnd: null };
     const native = document.getElementById(id);
     if(native && native.value){
       const d = new Date(native.value+'T00:00:00');
@@ -2127,7 +2139,6 @@ function dpToggle(id){
     dpRender(id);
     drop.classList.add('open');
     btn.classList.add('open');
-    // Close on outside click
     setTimeout(()=>{
       document.addEventListener('click', function handler(e){
         if(!document.getElementById('dp-'+id+'-wrap').contains(e.target)){
@@ -2161,18 +2172,76 @@ function dpSelectEl(el){
 }
 
 function dpSelect(id, dateStr){
-  if(!DP[id]) DP[id] = {};
-  DP[id].selected = dateStr;
-  // Update hidden native input
+  if(!DP[id]) DP[id] = { year: new Date().getFullYear(), month: new Date().getMonth() };
+  const state = DP[id];
+
+  // Range mode: if this picker supports ranges (do-date), handle range selection
+  const isRangePicker = (id === 'do-date');
+
+  if(isRangePicker){
+    if(!state.rangeStart || (state.rangeStart && state.rangeEnd)){
+      // Start fresh range
+      state.rangeStart = dateStr;
+      state.rangeEnd = null;
+      state.selected = dateStr;
+      dpUpdateRangeDisplay(id);
+      dpRender(id);
+      return; // Keep open for end date
+    } else {
+      // Set end of range
+      let start = state.rangeStart, end = dateStr;
+      if(end < start){ const tmp=start; start=end; end=tmp; }
+      state.rangeStart = start;
+      state.rangeEnd = end;
+      state.selected = start;
+      dpUpdateRangeDisplay(id);
+      dpRender(id);
+      dpClose(id);
+      return;
+    }
+  }
+
+  // Single date mode
+  state.selected = dateStr;
+  state.rangeStart = null;
+  state.rangeEnd = null;
   const native = document.getElementById(id);
   if(native) native.value = dateStr;
-  // Update display
   const valEl = document.getElementById('dp-'+id+'-val');
   if(valEl){
     const d = new Date(dateStr+'T00:00:00');
     valEl.innerHTML = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   }
   dpClose(id);
+}
+
+function dpUpdateRangeDisplay(id){
+  const state = DP[id];
+  const valEl = document.getElementById('dp-'+id+'-val');
+  if(!valEl) return;
+  if(state.rangeStart && state.rangeEnd){
+    const s = new Date(state.rangeStart+'T00:00:00');
+    const e = new Date(state.rangeEnd+'T00:00:00');
+    const fmtShort = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    valEl.innerHTML = fmtShort(s) + ' – ' + fmtShort(e);
+  } else if(state.rangeStart){
+    const s = new Date(state.rangeStart+'T00:00:00');
+    valEl.innerHTML = s.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – pick end…';
+  }
+}
+
+function dpGetRangeDates(id){
+  const state = DP[id];
+  if(!state || !state.rangeStart) return [];
+  if(!state.rangeEnd) return [state.rangeStart];
+  const dates = [];
+  let d = new Date(state.rangeStart+'T00:00:00');
+  const end = new Date(state.rangeEnd+'T00:00:00');
+  while(d <= end){
+    dates.push(d.toISOString().slice(0,10));
+    d = new Date(d.getTime() + 86400000);
+  }
+  return dates;
 }
 
 function dpNativeChange(id, val){
@@ -2205,8 +2274,17 @@ function dpRender(id){
   for(let d=1;d<=daysInMonth;d++){
     const dateStr = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const isToday = dateStr===today;
-    const isSel   = dateStr===state.selected;
-    daysHTML += '<div class="dp-day'+(isToday?' today':'')+' '+(isSel?'selected':'')+'" data-id="'+id+'" data-date="'+dateStr+'" onclick="dpSelectEl(this)">'+(d)+'</div>';
+    const isSel   = dateStr===state.selected && !state.rangeStart;
+    const isStart = dateStr===state.rangeStart;
+    const isEnd   = dateStr===state.rangeEnd;
+    const inRange = state.rangeStart && state.rangeEnd && dateStr>state.rangeStart && dateStr<state.rangeEnd;
+    let cls = 'dp-day';
+    if(isToday) cls += ' today';
+    if(isSel)   cls += ' selected';
+    if(isStart) cls += ' range-start';
+    if(isEnd)   cls += ' range-end';
+    if(inRange) cls += ' in-range';
+    daysHTML += '<div class="'+cls+'" data-id="'+id+'" data-date="'+dateStr+'" onclick="dpSelectEl(this)">'+(d)+'</div>';
   }
 
   drop.innerHTML = `
