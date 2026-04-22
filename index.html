@@ -1053,8 +1053,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="settings-group">
     <div class="settings-group-title">Season Goals</div>
     <div class="settings-field">
-      <div><div class="sf-label">Revenue Target</div><div class="sf-sub" id="s-rev-target-fmt" style="color:var(--green);font-weight:600"></div></div>
-      <input class="sf-input" type="number" id="s-rev-target" inputmode="decimal" oninput="fmtSetting('s-rev-target','$')">
+      <div><div class="sf-label">Revenue Target</div></div>
+      <input class="sf-input" type="text" id="s-rev-target" inputmode="decimal" placeholder="$250,000" oninput="fmtField(this)">
     </div>
     <div class="settings-field">
       <div><div class="sf-label">Account Target</div></div>
@@ -1070,16 +1070,16 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="settings-group">
     <div class="settings-group-title">Used for projections until real data overrides</div>
     <div class="settings-field">
-      <div><div class="sf-label">ACV Estimate</div><div class="sf-sub" id="s-acv-fmt" style="color:var(--green);font-weight:600">Avg contract value</div></div>
-      <input class="sf-input" type="number" id="s-acv" inputmode="decimal" oninput="fmtSetting('s-acv','$')">
+      <div><div class="sf-label">ACV Estimate</div><div class="sf-sub">Avg contract value</div></div>
+      <input class="sf-input" type="text" id="s-acv" inputmode="decimal" placeholder="$893" oninput="fmtField(this)">
     </div>
     <div class="settings-field">
       <div><div class="sf-label">Retention Estimate</div><div class="sf-sub">% of accounts that stick</div></div>
       <input class="sf-input" type="number" id="s-retention" inputmode="decimal">
     </div>
     <div class="settings-field">
-      <div><div class="sf-label">Advance per Sale</div><div class="sf-sub" id="s-advance-fmt" style="color:var(--green);font-weight:600">Upfront per account</div></div>
-      <input class="sf-input" type="number" id="s-advance" inputmode="decimal" oninput="fmtSetting('s-advance','$')">
+      <div><div class="sf-label">Advance per Sale</div><div class="sf-sub">Upfront per account</div></div>
+      <input class="sf-input" type="text" id="s-advance" inputmode="decimal" placeholder="$75" oninput="fmtField(this)">
     </div>
   </div>
 
@@ -1104,8 +1104,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
       <input class="sf-input" type="number" id="s-last-accts" inputmode="numeric">
     </div>
     <div class="settings-field">
-      <div><div class="sf-label">Last Year Revenue</div><div class="sf-sub" id="s-last-rev-fmt" style="color:var(--green);font-weight:600"></div></div>
-      <input class="sf-input" type="number" id="s-last-rev" inputmode="decimal" oninput="fmtSetting('s-last-rev','$')">
+      <div><div class="sf-label">Last Year Revenue</div></div>
+      <input class="sf-input" type="text" id="s-last-rev" inputmode="decimal" placeholder="$116,940" oninput="fmtField(this)">
     </div>
   </div>
 
@@ -1832,31 +1832,40 @@ async function clearAll(){
   }catch(e){toast('Clear failed.',true);console.error(e);}
 }
 
-function fmtSetting(id, prefix){
-  const val = parseFloat(document.getElementById(id).value);
-  const fmtEl = document.getElementById(id+'-fmt');
-  if(!fmtEl) return;
-  if(isNaN(val)||val===0){ fmtEl.textContent=''; return; }
-  if(prefix==='$'){
-    fmtEl.textContent = val>=1000 ? '$'+val.toLocaleString() : '$'+val.toFixed(0);
+function fmtField(el){
+  // Strip everything except digits and decimal
+  let raw = el.value.replace(/[^0-9.]/g,'');
+  const num = parseFloat(raw);
+  if(!isNaN(num) && raw !== ''){
+    // Format with commas and $ prefix
+    el.value = '$' + Math.round(num).toLocaleString();
   }
 }
 
 function initSettingsFmt(){
-  ['s-rev-target','s-acv','s-advance','s-last-rev'].forEach(id=>fmtSetting(id,'$'));
+  ['s-rev-target','s-acv','s-advance','s-last-rev'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.value) el.value='$'+parseFloat(el.value.replace(/[^0-9.]/g,'')).toLocaleString();
+  });
+}
+
+function getFieldNum(id){
+  const el=document.getElementById(id);
+  if(!el) return 0;
+  return parseFloat(el.value.replace(/[^0-9.]/g,''))||0;
 }
 
 function saveSettings(){
-  cfg.revTarget=parseFloat(document.getElementById('s-rev-target').value)||DEFAULTS.revTarget;
+  cfg.revTarget=getFieldNum('s-rev-target')||DEFAULTS.revTarget;
   cfg.acctTarget=parseInt(document.getElementById('s-acct-target').value)||DEFAULTS.acctTarget;
   cfg.kDays=parseInt(document.getElementById('s-kdays').value)||DEFAULTS.kDays;
-  cfg.acv=parseFloat(document.getElementById('s-acv').value)||DEFAULTS.acv;
+  cfg.acv=getFieldNum('s-acv')||DEFAULTS.acv;
   cfg.retention=parseFloat(document.getElementById('s-retention').value)||DEFAULTS.retention;
-  cfg.advance=parseFloat(document.getElementById('s-advance').value)||DEFAULTS.advance;
+  cfg.advance=getFieldNum('s-advance')||DEFAULTS.advance;
   cfg.start=document.getElementById('s-start').value||DEFAULTS.start;
   cfg.end=document.getElementById('s-end').value||DEFAULTS.end;
   cfg.lastAccts=parseInt(document.getElementById('s-last-accts').value)||DEFAULTS.lastAccts;
-  cfg.lastRev=parseFloat(document.getElementById('s-last-rev').value)||DEFAULTS.lastRev;
+  cfg.lastRev=getFieldNum('s-last-rev')||DEFAULTS.lastRev;
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
   initSettingsFmt();
   render();toast('Settings saved ✓');
