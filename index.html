@@ -889,6 +889,140 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 .c-p { color: var(--purple); } .c-ink { color: var(--ink); }
 .bold { font-weight: 700; }
 .mono { font-variant-numeric: tabular-nums; }
+
+/* ── CUSTOM DATE PICKER ── */
+.dp-wrap { position: relative; }
+
+.dp-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--line2);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  padding: 11px 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .15s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dp-input:focus, .dp-input.open { border-color: var(--ink); }
+.dp-input .dp-placeholder { color: var(--ink3); }
+.dp-input .dp-arrow { color: var(--ink3); font-size: 12px; transition: transform .2s; }
+.dp-input.open .dp-arrow { transform: rotate(180deg); }
+
+.dp-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+  z-index: 100;
+  width: 300px;
+  overflow: hidden;
+  display: none;
+}
+.dp-dropdown.open { display: block; }
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dp-month-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dp-nav-btn {
+  background: var(--card2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  width: 32px; height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .1s;
+}
+.dp-nav-btn:hover { background: var(--line); }
+
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 12px 4px;
+  gap: 2px;
+}
+
+.dp-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink3);
+  padding: 4px 0;
+}
+
+.dp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 12px 12px;
+  gap: 2px;
+}
+
+.dp-day {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background .1s, color .1s;
+  border: 1.5px solid transparent;
+}
+.dp-day:hover { background: var(--card2); }
+.dp-day.today { border-color: var(--yellow); color: var(--ink); }
+.dp-day.selected { background: var(--ink); color: var(--bg); font-weight: 700; }
+[data-theme="dark"] .dp-day.selected { background: var(--yellow); color: #000; }
+.dp-day.other-month { color: var(--ink3); opacity: .4; }
+.dp-day.disabled { color: var(--ink3); opacity: .25; cursor: default; pointer-events: none; }
+.dp-day.empty { pointer-events: none; }
+
+/* On iOS, use native date input instead */
+@supports (-webkit-touch-callout: none) {
+  .dp-wrap .dp-input { display: none !important; }
+  .dp-wrap .dp-dropdown { display: none !important; }
+  .dp-wrap .dp-native { display: block !important; }
+}
+.dp-native {
+  display: none;
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--line2);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  padding: 11px 14px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.dp-native:focus { border-color: var(--ink); }
 </style>
 </head>
 <body>
@@ -951,7 +1085,14 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
       <div class="field-row">
         <div class="field">
           <label>Date</label>
-          <input type="date" id="f-date">
+          <div class="dp-wrap" id="dp-f-date-wrap">
+            <button type="button" class="dp-input" id="dp-f-date-btn" onclick="dpToggle('f-date')">
+              <span class="dp-val" id="dp-f-date-val"><span class="dp-placeholder">Select date…</span></span>
+              <span class="dp-arrow">▾</span>
+            </button>
+            <div class="dp-dropdown" id="dp-f-date-drop"></div>
+            <input class="dp-native" type="date" id="f-date" onchange="dpNativeChange('f-date',this.value)">
+          </div>
         </div>
         <div class="field">
           <label>Accounts Sold</label>
@@ -1139,7 +1280,17 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
     <div class="form-title">Add Day Off</div>
     <div class="form-fields">
       <div class="field-row">
-        <div class="field"><label>Date</label><input type="date" id="do-date"></div>
+        <div class="field">
+        <label>Date</label>
+        <div class="dp-wrap" id="dp-do-date-wrap">
+          <button type="button" class="dp-input" id="dp-do-date-btn" onclick="dpToggle('do-date')">
+            <span class="dp-val" id="dp-do-date-val"><span class="dp-placeholder">Select date…</span></span>
+            <span class="dp-arrow">▾</span>
+          </button>
+          <div class="dp-dropdown" id="dp-do-date-drop"></div>
+          <input class="dp-native" type="date" id="do-date" onchange="dpNativeChange('do-date',this.value)">
+        </div>
+      </div>
         <div class="field"><label>Reason</label><input type="text" id="do-reason" placeholder="e.g. Sick day"></div>
       </div>
       <button class="add-btn" onclick="addDayOff()">+ Add Day Off</button>
@@ -1617,7 +1768,7 @@ function renderDaysOff(){
 }
 
 async function addDayOff(){
-  const date=document.getElementById('do-date').value;
+  const date=dpGetValue('do-date');
   const reason=document.getElementById('do-reason').value.trim()||'Day off';
   if(!date) return toast('Pick a date.',true);
   if(date<G('start')||date>G('end')) return toast('Date outside season.',true);
@@ -1626,6 +1777,8 @@ async function addDayOff(){
   setSync('syncing','Saving…');
   try{
     await sbUpsert('days_off',{date,reason},'date');
+    dpSetValue('do-date','');
+    document.getElementById('do-date').value='';
     document.getElementById('do-reason').value='';
     await loadAll();
     toast('Day off added ✓');
@@ -1778,7 +1931,7 @@ function renderWeekly(){
 
 // ── ACTIONS ─────────────────────────────────────
 async function addDay(){
-  const date=document.getElementById('f-date').value;
+  const date=dpGetValue('f-date');
   const accts=parseInt(document.getElementById('f-accts').value)||0;
   const rev=parseFloat(document.getElementById('f-rev').value)||0;
   const notes=document.getElementById('f-notes').value.trim();
@@ -1789,6 +1942,7 @@ async function addDay(){
   setSync('syncing','Saving…');
   try{
     await sbUpsert('days',{date,accounts:accts,revenue:rev,notes},'date');
+    dpSetValue('f-date', new Date().toISOString().slice(0,10));
     ['f-accts','f-rev','f-notes'].forEach(id=>document.getElementById(id).value='');
     await loadAll();
     toast(accts+' accts · '+$$(rev)+' logged ✓');
@@ -1950,6 +2104,142 @@ async function saveEdit(){
   }catch(e){toast('Save failed.',true);setSync('error','Error');console.error(e);}
 }
 
+// ── CUSTOM DATE PICKER ──────────────────────────
+const DP = {}; // state per picker id
+
+function dpToggle(id){
+  const drop = document.getElementById('dp-'+id+'-drop');
+  const btn  = document.getElementById('dp-'+id+'-btn');
+  const isOpen = drop.classList.contains('open');
+  // Close all pickers
+  document.querySelectorAll('.dp-dropdown.open').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.dp-input.open').forEach(b=>b.classList.remove('open'));
+  if(!isOpen){
+    if(!DP[id]) DP[id] = { year: new Date().getFullYear(), month: new Date().getMonth(), selected: null };
+    // If already has a value, open to that month
+    const native = document.getElementById(id);
+    if(native && native.value){
+      const d = new Date(native.value+'T00:00:00');
+      DP[id].year = d.getFullYear();
+      DP[id].month = d.getMonth();
+      DP[id].selected = native.value;
+    }
+    dpRender(id);
+    drop.classList.add('open');
+    btn.classList.add('open');
+    // Close on outside click
+    setTimeout(()=>{
+      document.addEventListener('click', function handler(e){
+        if(!document.getElementById('dp-'+id+'-wrap').contains(e.target)){
+          dpClose(id);
+          document.removeEventListener('click', handler);
+        }
+      });
+    }, 0);
+  }
+}
+
+function dpClose(id){
+  const drop = document.getElementById('dp-'+id+'-drop');
+  const btn  = document.getElementById('dp-'+id+'-btn');
+  if(drop) drop.classList.remove('open');
+  if(btn)  btn.classList.remove('open');
+}
+
+function dpNav(id, dir){
+  if(!DP[id]) return;
+  DP[id].month += dir;
+  if(DP[id].month > 11){ DP[id].month = 0; DP[id].year++; }
+  if(DP[id].month < 0) { DP[id].month = 11; DP[id].year--; }
+  dpRender(id);
+}
+
+function dpSelectEl(el){
+  const id = el.getAttribute('data-id');
+  const dateStr = el.getAttribute('data-date');
+  dpSelect(id, dateStr);
+}
+
+function dpSelect(id, dateStr){
+  if(!DP[id]) DP[id] = {};
+  DP[id].selected = dateStr;
+  // Update hidden native input
+  const native = document.getElementById(id);
+  if(native) native.value = dateStr;
+  // Update display
+  const valEl = document.getElementById('dp-'+id+'-val');
+  if(valEl){
+    const d = new Date(dateStr+'T00:00:00');
+    valEl.innerHTML = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  }
+  dpClose(id);
+}
+
+function dpNativeChange(id, val){
+  if(!DP[id]) DP[id] = {};
+  DP[id].selected = val;
+  const valEl = document.getElementById('dp-'+id+'-val');
+  if(valEl && val){
+    const d = new Date(val+'T00:00:00');
+    valEl.innerHTML = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  }
+}
+
+function dpRender(id){
+  const state = DP[id];
+  const drop  = document.getElementById('dp-'+id+'-drop');
+  if(!drop||!state) return;
+
+  const year = state.year, month = state.month;
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const today = new Date().toISOString().slice(0,10);
+
+  // First day of month and total days
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  let daysHTML = '';
+  // Empty cells before first day
+  for(let i=0;i<firstDay;i++) daysHTML += '<div class="dp-day empty"></div>';
+  // Day cells
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday = dateStr===today;
+    const isSel   = dateStr===state.selected;
+    daysHTML += '<div class="dp-day'+(isToday?' today':'')+' '+(isSel?'selected':'')+'" data-id="'+id+'" data-date="'+dateStr+'" onclick="dpSelectEl(this)">'+(d)+'</div>';
+  }
+
+  drop.innerHTML = `
+    <div class="dp-header">
+      <button class="dp-nav-btn" onclick="dpNav('${id}',-1)">‹</button>
+      <div class="dp-month-label">${monthNames[month]} ${year}</div>
+      <button class="dp-nav-btn" onclick="dpNav('${id}',1)">›</button>
+    </div>
+    <div class="dp-weekdays">
+      ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>'<div class="dp-weekday">'+d+'</div>').join('')}
+    </div>
+    <div class="dp-days">${daysHTML}</div>
+  `;
+}
+
+function dpSetValue(id, dateStr){
+  if(!dateStr) return;
+  if(!DP[id]) DP[id] = {};
+  DP[id].selected = dateStr;
+  const d = new Date(dateStr+'T00:00:00');
+  DP[id].year = d.getFullYear();
+  DP[id].month = d.getMonth();
+  const valEl = document.getElementById('dp-'+id+'-val');
+  if(valEl) valEl.innerHTML = d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  const native = document.getElementById(id);
+  if(native) native.value = dateStr;
+}
+
+function dpGetValue(id){
+  const native = document.getElementById(id);
+  return native ? native.value : '';
+}
+
 function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
@@ -1972,7 +2262,7 @@ window.onload=()=>{
   loadSettings();
   initSettingsFmt();
   generateAppIcon();
-  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  dpSetValue('f-date', new Date().toISOString().slice(0,10));
   loadAll();
 };
 
