@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Season Tracker</title>
+<title>Field Tracker Pro</title>
 
 <!-- PWA / Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tracker">
+<meta name="apple-mobile-web-app-title" content="Field Tracker">
 <meta name="theme-color" content="#141418">
 <link rel="apple-touch-icon" href="icon.png">
 
@@ -96,10 +96,9 @@ body {
 }
 
 .app-title {
-  
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -.3px;
   color: var(--ink);
 }
 
@@ -751,6 +750,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.err  { background: var(--red); }
+[data-theme="dark"] .toast { background: #1e1e2e; border-color: var(--line2); color: var(--text); }
+[data-theme="dark"] .toast.err { background: #3a1020; }
 
 /* ── MODAL ── */
 .modal-bg {
@@ -799,7 +800,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   margin-bottom: 10px;
 }
 .week-focus-card.current { border-color: var(--yellow); background: var(--yellow-bg); }
-[data-theme='dark'] .week-focus-card.current { background: rgba(232,200,64,.06); }
+[data-theme="dark"] .week-focus-card.current { background: rgba(232,200,64,.06); border-color: rgba(232,200,64,.4); }
 
 .wfc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .wfc-title { font-size: 13px; font-weight: 700; color: var(--ink2); }
@@ -937,6 +938,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 }
 .dp-input:focus, .dp-input.open { border-color: var(--ink); }
 .dp-input .dp-placeholder { color: var(--ink3); }
+[data-theme="dark"] .dp-input { background: var(--bg); border-color: var(--line2); color: var(--text); }
 .dp-input .dp-arrow { color: var(--ink3); font-size: 12px; transition: transform .2s; }
 .dp-input.open .dp-arrow { transform: rotate(180deg); }
 
@@ -947,7 +949,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   background: var(--card);
   border: 1px solid var(--line2);
   border-radius: var(--r);
-  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35);
   z-index: 100;
   width: 100%;
   min-width: 280px;
@@ -955,6 +957,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   display: none;
 }
 .dp-dropdown.open { display: block; }
+[data-theme="dark"] .dp-dropdown { border-color: var(--line2); }
 
 .dp-header {
   display: flex;
@@ -984,6 +987,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   transition: background .1s;
 }
 .dp-nav-btn:hover { background: var(--line); }
+[data-theme="dark"] .dp-nav-btn { background: var(--card2); border-color: var(--line2); color: var(--text); }
 
 .dp-weekdays {
   display: grid;
@@ -1021,6 +1025,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 }
 .dp-day:hover { background: var(--card2); }
 .dp-day.today { border-color: var(--yellow); color: var(--ink); }
+[data-theme="dark"] .dp-day.today { color: var(--text); }
 .dp-day.selected { background: var(--ink); color: var(--bg); font-weight: 700; }
 [data-theme="dark"] .dp-day.selected { background: var(--yellow); color: #000; }
 .dp-day.other-month { color: var(--ink3); opacity: .4; }
@@ -1051,7 +1056,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="app-title">Trent <span style="color:var(--yellow)">'26</span></div>
+    <div class="app-title">Field Tracker <span style="color:var(--yellow)">Pro</span></div>
     <div class="app-subtitle" id="app-subtitle">Loading…</div>
   </div>
   <div class="dot" id="sync-dot" style="width:8px;height:8px;flex-shrink:0;"></div>
