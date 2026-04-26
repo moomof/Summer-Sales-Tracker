@@ -103,15 +103,7 @@ body {
   color: var(--ink);
 }
 
-.sync-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--card2);
-  border: 1px solid var(--line);
-  border-radius: 100px;
-  padding: 5px 12px;
-}
+/* sync-pill removed */
 
 .dot {
   width: 6px; height: 6px;
@@ -124,7 +116,7 @@ body {
 .dot.syncing { background: var(--yellow); animation: blink .8s infinite; }
 .dot.error   { background: var(--red); }
 
-#sync-text { font-size: 12px; font-weight: 500; color: var(--ink2); }
+#sync-text { display:none; }
 
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
@@ -882,6 +874,36 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 .doff-date { font-size: 14px; font-weight: 600; color: var(--ink); }
 .doff-reason { font-size: 13px; color: var(--ink3); margin-top: 1px; }
 
+/* ── TIER COUNTDOWN ── */
+.tier-banner {
+  background: var(--yellow-bg);
+  border: 1px solid rgba(232,200,64,.3);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+[data-theme="dark"] .tier-banner { background: rgba(232,200,64,.07); }
+.tier-banner-left { flex: 1; }
+.tier-banner-title { font-size: 12px; font-weight: 700; color: var(--yellow); letter-spacing:.03em; margin-bottom:2px; }
+[data-theme="dark"] .tier-banner-title { color: var(--yellow); }
+.tier-banner-sub { font-size: 13px; color: var(--ink2); font-weight:500; }
+.tier-banner-val { font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing:-.5px; text-align:right; }
+.tier-banner-note { font-size: 11px; color: var(--ink3); text-align:right; }
+
+/* ── MOTIVATION LINE ── */
+.motivation-line {
+  font-size: 13px;
+  color: var(--ink2);
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 10px 0 4px;
+}
+.motivation-line .hl { color: var(--ink); font-weight: 700; }
+
 /* ── MISC ── */
 .c-y { color: var(--yellow); } .c-g { color: var(--green); }
 .c-o { color: var(--orange); } .c-r { color: var(--red); }
@@ -1019,14 +1041,11 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="app-title">Season '26</div>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <button id="theme-btn" onclick="toggleTheme()" style="background:var(--card2);border:1px solid var(--line);border-radius:100px;padding:6px 12px;font-size:14px;cursor:pointer;line-height:1;color:var(--ink2);">🌙</button>
-    <div class="sync-pill">
-      <div class="dot" id="sync-dot"></div>
-      <span id="sync-text">Loading</span>
-    </div>
+  <div class="topbar-left">
+    <div class="app-title">Trent <span style="color:var(--yellow)">'26</span></div>
+    <div class="app-subtitle" id="app-subtitle">Loading…</div>
   </div>
+  <div class="dot" id="sync-dot" style="width:8px;height:8px;flex-shrink:0;"></div>
 </div>
 
 <!-- PAGES -->
@@ -1034,11 +1053,24 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- ══ DASHBOARD ══ -->
 <div class="page active" id="page-dashboard">
 
+  <!-- Tier countdown banner -->
+  <div class="tier-banner" id="tier-banner" style="display:none">
+    <div class="tier-banner-left">
+      <div class="tier-banner-title">NEXT TIER UNLOCK</div>
+      <div class="tier-banner-sub" id="tier-banner-sub"></div>
+    </div>
+    <div>
+      <div class="tier-banner-val" id="tier-banner-val"></div>
+      <div class="tier-banner-note" id="tier-banner-note"></div>
+    </div>
+  </div>
+
   <!-- Weekly nudge -->
   <div class="hero-card" id="hero-card">
     <div class="hero-eyebrow" id="hero-eyebrow"></div>
     <div class="hero-main" id="hero-main"></div>
     <div class="hero-sub" id="hero-sub"></div>
+    <div class="motivation-line" id="motivation-line"></div>
   </div>
 
   <!-- KPIs -->
@@ -1063,6 +1095,15 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <!-- Pace -->
   <div class="section-label">Pace</div>
   <div id="pace-rows"></div>
+
+  <!-- Best day of week -->
+  <div id="best-dow-section" style="display:none">
+    <div class="section-label">Best Day of the Week</div>
+    <div class="row-list" id="best-dow-card" style="margin-bottom:12px;"></div>
+  </div>
+
+  <!-- End of season recap -->
+  <div id="recap-card" style="display:none;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-top:16px;"></div>
 
 </div>
 
@@ -1242,6 +1283,40 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 
   <button class="save-btn" onclick="saveSettings()">Save Settings</button>
 
+  <div class="section-label" style="margin-top:20px;">Appearance</div>
+  <div class="settings-group">
+    <div class="settings-group-title">Theme</div>
+    <div class="settings-field">
+      <div><div class="sf-label">Dark Mode</div></div>
+      <button onclick="toggleTheme()" id="theme-toggle-btn" style="background:var(--card2);border:1px solid var(--line2);border-radius:100px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);">🌙 Dark</button>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:20px;">Days Off</div>
+  <div class="pulse-form" style="margin-bottom:12px;">
+    <div class="form-title" style="font-size:17px;">Add Day Off</div>
+    <div class="form-fields">
+      <div class="field">
+        <label>Date or Range <span style="font-size:11px;color:var(--ink3);font-weight:400">tap start, then end</span></label>
+        <div class="dp-wrap" id="dp-do-date-wrap2">
+          <button type="button" class="dp-input" id="dp-do-date-btn2" onclick="dpToggle('do-date2')">
+            <span class="dp-val" id="dp-do-date-val2"><span class="dp-placeholder">Select date…</span></span>
+            <span class="dp-arrow">▾</span>
+          </button>
+          <div class="dp-dropdown" id="dp-do-date-drop2"></div>
+          <input class="dp-native" type="date" id="do-date2" onchange="dpNativeChange('do-date2',this.value)">
+        </div>
+      </div>
+      <div class="field">
+        <label>Reason</label>
+        <input type="text" id="do-reason2" placeholder="e.g. Wedding trip, sick day">
+      </div>
+      <button class="add-btn" onclick="addDayOff2()">+ Add Day Off</button>
+    </div>
+  </div>
+  <div id="daysoff-stats2" style="margin-bottom:12px;"></div>
+  <div id="daysoff-list2"><div class="empty"><div class="ei">🏖️</div>No days off logged yet.</div></div>
+
   <div class="section-label" style="margin-top:20px;">Export & Backup</div>
   <div class="export-group">
     <h2>Google Sheets</h2>
@@ -1312,9 +1387,6 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   </button>
   <button class="bnav-btn" onclick="showPage('weekly',this)">
     <span class="icon">📅</span><span>Weekly</span><div class="bnav-active-dot"></div>
-  </button>
-  <button class="bnav-btn" onclick="showPage('daysoff',this)">
-    <span class="icon">🏖️</span><span>Days Off</span><div class="bnav-active-dot"></div>
   </button>
   <button class="bnav-btn" onclick="showPage('more',this)">
     <span class="icon">⚙️</span><span>More</span><div class="bnav-active-dot"></div>
@@ -1624,6 +1696,32 @@ function renderDash(){
     </div>
   `;
 
+  // Tier banner + subtitle
+  renderTierBanner();
+  updateSubtitle();
+
+  // Motivation line
+  const motLine = getMotivationLine();
+  const motEl = document.getElementById('motivation-line');
+  if(motEl) motEl.textContent = motLine;
+
+  // Best day of week
+  const bdow = getBestDayOfWeek();
+  const bdowSection = document.getElementById('best-dow-section');
+  const bdowCard = document.getElementById('best-dow-card');
+  if(bdow && bdowSection && bdowCard){
+    bdowSection.style.display = 'block';
+    bdowCard.innerHTML = `
+      <div class="row-item"><span class="row-label">Strongest knocking day</span><span class="row-val">${bdow.day}</span></div>
+      <div class="row-item"><span class="row-label">Avg accounts on ${bdow.day}</span><span class="row-val">${bdow.avg}</span></div>
+    `;
+  } else if(bdowSection){
+    bdowSection.style.display = 'none';
+  }
+
+  // End of season recap
+  renderRecapCard();
+
   // Pace rows
   const ac=s.dA>=0?'var(--green)':s.dA>=-10?'var(--orange)':'var(--red)';
   const rc=s.dR>=0?'var(--green)':s.dR>=-5000?'var(--orange)':'var(--red)';
@@ -1755,6 +1853,12 @@ function renderDaysOff(){
   }).join('');
 
   document.getElementById('daysoff-list').innerHTML='<div class="row-list">'+items+'</div>';
+
+  // Also update More tab version if it exists
+  const daysoff2Stats = document.getElementById('daysoff-stats2');
+  const daysoff2List  = document.getElementById('daysoff-list2');
+  if(daysoff2Stats) daysoff2Stats.innerHTML = document.getElementById('daysoff-stats').innerHTML;
+  if(daysoff2List)  daysoff2List.innerHTML  = document.getElementById('daysoff-list').innerHTML.replace(/deleteDayOff\(/g,'deleteDayOff(');
 }
 
 async function addDayOff(){
@@ -2315,12 +2419,175 @@ function dpGetValue(id){
   return native ? native.value : '';
 }
 
+// ── SUBTITLE UPDATE ─────────────────────────────
+function updateSubtitle(){
+  const s=stats();
+  const today=new Date().toISOString().slice(0,10);
+  const inSeason=today>=G('start')&&today<=G('end');
+  if(!inSeason){
+    document.getElementById('app-subtitle').textContent='Season starts '+G('start');
+    return;
+  }
+  const sub=s.sold>0
+    ? s.sold+' sold · '+s.rem+' days left'
+    : s.rem+' knocking days left';
+  document.getElementById('app-subtitle').textContent=sub;
+}
+
+// ── TIER COUNTDOWN BANNER ────────────────────────
+function renderTierBanner(){
+  const s=stats();
+  const nextTier=TIERS.find(t=>s.sold<t.min);
+  const banner=document.getElementById('tier-banner');
+  if(!nextTier||s.sold===0){if(banner)banner.style.display='none';return;}
+  const acctsTil=nextTier.min-s.sold;
+  const currTier=getTier(s.sold);
+  const pd=getPulseData();
+  const commAtCurr=Math.round(pd.svcRev*currTier.rate);
+  const commAtNext=Math.round(pd.svcRev*nextTier.rate);
+  const extraComm=commAtNext-commAtCurr;
+  if(banner){
+    banner.style.display='flex';
+    document.getElementById('tier-banner-sub').textContent=
+      acctsTil+' account'+(acctsTil!==1?'s':'')+' to '+Math.round(nextTier.rate*100)+'% commission';
+    document.getElementById('tier-banner-val').textContent=
+      acctsTil+' away';
+    document.getElementById('tier-banner-note').textContent=
+      '+'+$$(extraComm)+' on current rev';
+  }
+}
+
+// ── DAILY MOTIVATION LINE ────────────────────────
+function getMotivationLine(){
+  const s=stats();
+  const today=new Date().toISOString().slice(0,10);
+  if(today<G('start')) return '';
+  if(today>G('end')) return 'Season complete. Great work.';
+  if(s.n===0) return 'Log your first day to see your pace.';
+
+  const OFF=buildOff();
+  // Days left today including today
+  let daysLeftToday=0;
+  let d=new Date(today), end=new Date(G('end'));
+  while(d<=end){if(!OFF.has(d.toISOString().slice(0,10)))daysLeftToday++;d=new Date(d.getTime()+86400000);}
+
+  const acctsTilTarget=Math.max(0,G('acctTarget')-s.sold);
+  const neededToday=daysLeftToday>0?(acctsTilTarget/daysLeftToday).toFixed(1):0;
+  const nextTier=TIERS.find(t=>s.sold<t.min);
+  const acctsTilTier=nextTier?nextTier.min-s.sold:0;
+
+  if(acctsTilTarget===0) return 'Target hit. Every account from here is extra commission.';
+
+  let line='';
+  if(s.apd>=s.apdTarget){
+    line="You're ahead of pace — keep it up.";
+  } else {
+    line='Need '+neededToday+'/day to hit '+G('acctTarget')+' accounts.';
+  }
+  if(nextTier&&acctsTilTier<=10){
+    line+=' '+acctsTilTier+' more unlocks '+Math.round(nextTier.rate*100)+'%.';
+  }
+  return line;
+}
+
+// ── BEST DAY OF WEEK ─────────────────────────────
+function getBestDayOfWeek(){
+  if(days.length<7) return null;
+  const totals={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+  const counts={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
+  days.forEach(d=>{
+    const dow=new Date(d.date+'T00:00:00').getDay();
+    totals[dow]+=d.accounts;
+    counts[dow]++;
+  });
+  const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let best=-1,bestAvg=0;
+  for(let i=1;i<=6;i++){
+    if(counts[i]>0){
+      const avg=totals[i]/counts[i];
+      if(avg>bestAvg){bestAvg=avg;best=i;}
+    }
+  }
+  if(best===-1) return null;
+  return {day:names[best],avg:bestAvg.toFixed(1)};
+}
+
+// ── END OF SEASON RECAP ──────────────────────────
+function renderRecapCard(){
+  const today=new Date().toISOString().slice(0,10);
+  const recapEl=document.getElementById('recap-card');
+  if(!recapEl) return;
+  if(today<=G('end')){ recapEl.style.display='none'; return; }
+  const s=stats(),pd=getPulseData(),comm=calcComm(s.sold,pd.svcRev),str=getStreaks();
+  recapEl.style.display='block';
+  const rows=[
+    ['Commission', $$(comm.grossComm)],
+    ['Best day', str.bestDay+' accounts'],
+    ['Best week', str.bestWeekA+' accounts ('+str.bestWeekL+')'],
+    ['Real ACV', s.sold>0?$$(s.realACV):'—'],
+  ];
+  const rowsHTML=rows.map(r=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;"><span style="color:var(--ink2);">'+r[0]+'</span><span style="font-weight:700;">'+r[1]+'</span></div>').join('');
+  recapEl.innerHTML=
+    '<div style="text-align:center;padding:4px 0 16px;">'+
+      '<div style="font-size:28px;margin-bottom:6px;">🏆</div>'+
+      '<div style="font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.5px;">Season Complete</div>'+
+      '<div style="font-size:12px;color:var(--ink3);margin-top:2px;">'+G('start')+' – '+G('end')+'</div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">'+
+      '<div style="background:var(--yellow-bg);border:1px solid rgba(232,200,64,.3);border-radius:10px;padding:14px;text-align:center;">'+
+        '<div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px;">ACCOUNTS</div>'+
+        '<div style="font-size:28px;font-weight:800;color:var(--ink);">'+s.sold+'</div>'+
+        '<div style="font-size:11px;color:var(--ink3);">target '+G('acctTarget')+'</div>'+
+      '</div>'+
+      '<div style="background:var(--green-bg);border:1px solid rgba(63,232,160,.3);border-radius:10px;padding:14px;text-align:center;">'+
+        '<div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px;">REVENUE</div>'+
+        '<div style="font-size:28px;font-weight:800;color:var(--ink);">'+$k(s.rev)+'</div>'+
+        '<div style="font-size:11px;color:var(--ink3);">target '+$k(G('revTarget'))+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--card2);border-radius:10px;padding:14px;margin-bottom:10px;">'+rowsHTML+'</div>'+
+    '<div style="text-align:center;font-size:12px;color:var(--ink3);">Screenshot to share your season 📸</div>';
+}
+
+// ── addDayOff2 (More tab version) ────────────────
+async function addDayOff2(){
+  const reason=document.getElementById('do-reason2').value.trim()||'Day off';
+  const dates=dpGetRangeDates('do-date2');
+  if(!dates.length) return toast('Pick a date or range.',true);
+  const valid=dates.filter(d=>{
+    if(d<G('start')||d>G('end')) return false;
+    if(new Date(d+'T00:00:00').getDay()===0) return false;
+    return true;
+  });
+  if(!valid.length) return toast('No valid knocking days in that range.',true);
+  setSync('syncing','Saving…');
+  try{
+    await Promise.all(valid.map(d=>sbUpsert('days_off',{date:d,reason},'date')));
+    if(DP['do-date2']){DP['do-date2'].rangeStart=null;DP['do-date2'].rangeEnd=null;DP['do-date2'].selected=null;}
+    const valEl=document.getElementById('dp-do-date-val2');
+    if(valEl) valEl.innerHTML='<span class="dp-placeholder">Select date…</span>';
+    document.getElementById('do-date2').value='';
+    document.getElementById('do-reason2').value='';
+    await loadAll();
+    toast(valid.length>1?valid.length+' days off added ✓':'Day off added ✓');
+  }catch(e){toast('Save failed.',true);setSync('error','Error');console.error(e);}
+}
+
 function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
-  html.setAttribute('data-theme',isDark?'light':'dark');
-  document.getElementById('theme-btn').textContent=isDark?'🌙':'☀️';
-  localStorage.setItem('theme2026',isDark?'light':'dark');
+  const newTheme=isDark?'light':'dark';
+  html.setAttribute('data-theme',newTheme);
+  localStorage.setItem('theme2026',newTheme);
+  updateThemeButtons(newTheme);
+}
+
+function updateThemeButtons(theme){
+  const isDark=theme==='dark';
+  const mainBtn=document.getElementById('theme-btn');
+  const toggleBtn=document.getElementById('theme-toggle-btn');
+  if(mainBtn) mainBtn.textContent=isDark?'☀️':'🌙';
+  if(toggleBtn) toggleBtn.textContent=isDark?'☀️ Light':'🌙 Dark';
 }
 
 function loadTheme(){
@@ -2328,8 +2595,7 @@ function loadTheme(){
   const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
   const theme=saved||(prefersDark?'dark':'light');
   document.documentElement.setAttribute('data-theme',theme);
-  const btn=document.getElementById('theme-btn');
-  if(btn) btn.textContent=theme==='dark'?'☀️':'🌙';
+  updateThemeButtons(theme);
 }
 
 window.onload=()=>{
