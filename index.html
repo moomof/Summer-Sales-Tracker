@@ -2122,14 +2122,19 @@ function dpToggle(id){
     dpRender(id);
     drop.classList.add('open');
     btn.classList.add('open');
+    // Close on outside tap — delay 200ms so nav button taps don't trigger it
     setTimeout(()=>{
-      document.addEventListener('click', function handler(e){
-        if(!document.getElementById('dp-'+id+'-wrap').contains(e.target)){
+      function outsideHandler(e){
+        const wrap = document.getElementById('dp-'+id+'-wrap');
+        if(wrap && !wrap.contains(e.target)){
           dpClose(id);
-          document.removeEventListener('click', handler);
+          document.removeEventListener('pointerdown', outsideHandler);
+          document.removeEventListener('touchstart', outsideHandler);
         }
-      });
-    }, 0);
+      }
+      document.addEventListener('pointerdown', outsideHandler);
+      document.addEventListener('touchstart', outsideHandler, {passive:true});
+    }, 200);
   }
 }
 
