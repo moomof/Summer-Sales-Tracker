@@ -298,7 +298,7 @@ body {
   margin-bottom: 6px;
 }
 
-.pulse-card.sold  .pulse-card-label { color: #9a7a00; }
+.pulse-card.sold  .pulse-card-label { color: #7a6000; }
 [data-theme='dark'] .pulse-card.sold .pulse-card-label { color: var(--yellow); }
 .pulse-card.svc   .pulse-card-label { color: var(--green); }
 .pulse-card.pend  .pulse-card-label { color: var(--blue); }
@@ -531,7 +531,7 @@ body {
   letter-spacing: .02em;
 }
 .tag-great { background: var(--green-bg);  color: var(--green); }
-.tag-good  { background: var(--yellow-bg); color: #9a7a00; }
+.tag-good  { background: var(--yellow-bg); color: #7a6000; }
 [data-theme='dark'] .tag-good { color: var(--yellow); }
 .tag-slow  { background: var(--orange-bg); color: var(--orange); }
 .tag-zero  { background: var(--red-bg);    color: var(--red); }
@@ -569,7 +569,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   font-weight: 700;
 }
 .pbadge-a { background: var(--green-bg);  color: var(--green); }
-.pbadge-o { background: var(--yellow-bg); color: #9a7a00; }
+.pbadge-o { background: var(--yellow-bg); color: #7a6000; }
 [data-theme='dark'] .pbadge-o { color: var(--yellow); }
 .pbadge-b { background: var(--orange-bg); color: var(--orange); }
 .pbadge-w { background: var(--red-bg);    color: var(--red); }
@@ -664,7 +664,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   border-radius: var(--r-sm);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   padding: 8px 12px;
   outline: none;
@@ -1038,6 +1038,15 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 </style>
 </head>
 <body>
+<!-- Hidden stubs for Days Off JS compatibility -->
+<div style="display:none">
+  <div id="daysoff-stats"></div>
+  <div id="daysoff-list"></div>
+  <input id="do-date" type="date">
+  <input id="do-reason" type="text">
+  <div id="dp-do-date-wrap"><button id="dp-do-date-btn"></button><div id="dp-do-date-drop"></div></div>
+  <span id="dp-do-date-val"></span>
+</div>
 
 <!-- TOP BAR -->
 <div class="topbar">
@@ -1260,11 +1269,11 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
     <div class="settings-group-title">Season Window</div>
     <div class="settings-field">
       <div><div class="sf-label">Start Date</div></div>
-      <input class="sf-input" type="date" id="s-start" style="width:150px;font-size:13px;">
+      <input class="sf-input" type="date" id="s-start" style="width:150px;font-size:16px;">
     </div>
     <div class="settings-field">
       <div><div class="sf-label">End Date</div></div>
-      <input class="sf-input" type="date" id="s-end" style="width:150px;font-size:13px;">
+      <input class="sf-input" type="date" id="s-end" style="width:150px;font-size:16px;">
     </div>
   </div>
 
@@ -1338,38 +1347,6 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 
 </div>
 
-<!-- ══ DAYS OFF ══ -->
-<div class="page" id="page-daysoff">
-
-  <div class="log-form">
-    <div class="form-title">Add Day Off</div>
-    <div class="form-fields">
-      <div class="field-row">
-        <div class="field">
-        <label>Date</label>
-        <div class="dp-wrap" id="dp-do-date-wrap">
-          <button type="button" class="dp-input" id="dp-do-date-btn" onclick="dpToggle('do-date')">
-            <span class="dp-val" id="dp-do-date-val"><span class="dp-placeholder">Select date…</span></span>
-            <span class="dp-arrow">▾</span>
-          </button>
-          <div class="dp-dropdown" id="dp-do-date-drop"></div>
-          <input class="dp-native" type="date" id="do-date" onchange="dpNativeChange('do-date',this.value)">
-        </div>
-      </div>
-        <div class="field"><label>Reason</label><input type="text" id="do-reason" placeholder="e.g. Sick day"></div>
-      </div>
-      <button class="add-btn" onclick="addDayOff()">+ Add Day Off</button>
-    </div>
-  </div>
-
-  <div id="daysoff-stats" style="margin-bottom:12px;"></div>
-
-  <div class="section-label">Days Off Logged</div>
-  <div id="daysoff-list">
-    <div class="empty"><div class="ei">🏖️</div>No days off logged yet.</div>
-  </div>
-
-</div>
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
@@ -1501,7 +1478,7 @@ function getKnockingDays(){
 }
 
 // ── SYNC ────────────────────────────────────────
-function setSync(cls,txt){document.getElementById('sync-dot').className='dot '+cls;document.getElementById('sync-text').textContent=txt;}
+function setSync(cls,txt){document.getElementById('sync-dot').className='dot '+cls;const _st=document.getElementById('sync-text');if(_st)_st.textContent=txt;}
 
 async function loadAll(){
   setSync('syncing','Syncing…');
@@ -1854,11 +1831,11 @@ function renderDaysOff(){
 
   document.getElementById('daysoff-list').innerHTML='<div class="row-list">'+items+'</div>';
 
-  // Also update More tab version if it exists
+  // Sync to More tab version
   const daysoff2Stats = document.getElementById('daysoff-stats2');
   const daysoff2List  = document.getElementById('daysoff-list2');
   if(daysoff2Stats) daysoff2Stats.innerHTML = document.getElementById('daysoff-stats').innerHTML;
-  if(daysoff2List)  daysoff2List.innerHTML  = document.getElementById('daysoff-list').innerHTML.replace(/deleteDayOff\(/g,'deleteDayOff(');
+  if(daysoff2List)  daysoff2List.innerHTML  = document.getElementById('daysoff-list').innerHTML;
 }
 
 async function addDayOff(){
@@ -2584,10 +2561,8 @@ function toggleTheme(){
 
 function updateThemeButtons(theme){
   const isDark=theme==='dark';
-  const mainBtn=document.getElementById('theme-btn');
   const toggleBtn=document.getElementById('theme-toggle-btn');
-  if(mainBtn) mainBtn.textContent=isDark?'☀️':'🌙';
-  if(toggleBtn) toggleBtn.textContent=isDark?'☀️ Light':'🌙 Dark';
+  if(toggleBtn) toggleBtn.textContent=isDark?'☀️  Light':'🌙  Dark';
 }
 
 function loadTheme(){
