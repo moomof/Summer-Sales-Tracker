@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Field Tracker Pro</title>
+<title>D2D Tracker Pro</title>
 
 <!-- PWA / Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Field Tracker">
+<meta name="apple-mobile-web-app-title" content="D2D Tracker">
 <meta name="theme-color" content="#141418">
 <link rel="apple-touch-icon" href="icon.png">
 
@@ -905,6 +905,15 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 }
 .motivation-line .hl { color: var(--ink); font-weight: 700; }
 
+/* ── SETUP WIZARD ── */
+.step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--line2);
+  transition: background .2s;
+}
+.step-dot.active { background: var(--yellow); }
+
 /* ── MISC ── */
 .c-y { color: var(--yellow); } .c-g { color: var(--green); }
 .c-o { color: var(--orange); } .c-r { color: var(--red); }
@@ -1043,6 +1052,76 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 </style>
 </head>
 <body>
+<!-- SETUP WIZARD -->
+<div id="setup-overlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding:0 0 40px;">
+  <div style="max-width:480px;margin:0 auto;padding:28px 20px;">
+    <div style="margin-bottom:28px;padding-top:env(safe-area-inset-top,0px);">
+      <div style="font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px;">D2D Tracker <span style="color:var(--yellow)">Pro</span></div>
+      <div style="font-size:13px;color:var(--ink3);">Let's set up your season.</div>
+    </div>
+
+    <!-- Step indicators -->
+    <div id="setup-steps-indicator" style="display:flex;gap:6px;margin-bottom:24px;">
+      <div class="step-dot active" id="sdot-1"></div>
+      <div class="step-dot" id="sdot-2"></div>
+      <div class="step-dot" id="sdot-3"></div>
+      <div class="step-dot" id="sdot-4"></div>
+    </div>
+
+    <!-- Step 1: Personal -->
+    <div id="setup-step-1">
+      <div style="font-size:17px;font-weight:700;margin-bottom:4px;">About You</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;">This personalizes your dashboard.</div>
+      <div class="field" style="margin-bottom:14px;"><label>Your Name</label><input type="text" id="setup-name" placeholder="e.g. Jake Smith" style="font-size:16px;"></div>
+      <div class="field" style="margin-bottom:14px;"><label>Company</label><input type="text" id="setup-company" placeholder="e.g. Vantage Pest" style="font-size:16px;"></div>
+      <button class="add-btn" style="margin-top:8px;" onclick="setupNext(1)">Continue →</button>
+    </div>
+
+    <!-- Step 2: Season Dates -->
+    <div id="setup-step-2" style="display:none;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Season Dates</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;">When are you in the field?</div>
+      <div class="field" style="margin-bottom:14px;"><label>Season Start</label><input type="date" id="setup-start" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;-webkit-appearance:none;"></div>
+      <div class="field" style="margin-bottom:14px;"><label>Season End</label><input type="date" id="setup-end" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;-webkit-appearance:none;"></div>
+      <div class="field" style="margin-bottom:14px;"><label>Advance per Sale ($)</label><input type="number" id="setup-advance" placeholder="75" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);flex:0.4;" onclick="setupBack(2)">← Back</button>
+        <button class="add-btn" style="flex:1;" onclick="setupNext(2)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Goals -->
+    <div id="setup-step-3" style="display:none;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Your Goals</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;">What are you shooting for this season?</div>
+      <div class="field" style="margin-bottom:14px;"><label>Account Target</label><input type="number" id="setup-acct-target" placeholder="e.g. 200" inputmode="numeric" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+      <div class="field" style="margin-bottom:14px;"><label>Revenue Target ($)</label><input type="number" id="setup-rev-target" placeholder="e.g. 150000" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+      <div class="field" style="margin-bottom:14px;"><label>ACV Estimate ($)</label><input type="number" id="setup-acv" placeholder="e.g. 893" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);flex:0.4;" onclick="setupBack(3)">← Back</button>
+        <button class="add-btn" style="flex:1;" onclick="setupNext(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Commission -->
+    <div id="setup-step-4" style="display:none;">
+      <div style="font-size:17px;font-weight:700;margin-bottom:4px;">Commission Scale</div>
+      <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;">Enter your tier rates. Leave unused tiers blank.</div>
+      <div id="setup-tiers-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:16px;">Last year's numbers (optional — for progress bar reference)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div class="field"><label>Last Yr Accounts</label><input type="number" id="setup-last-accts" placeholder="0" inputmode="numeric" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+        <div class="field"><label>Last Yr Revenue</label><input type="number" id="setup-last-rev" placeholder="0" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);flex:0.4;" onclick="setupBack(4)">← Back</button>
+        <button class="add-btn" style="flex:1;" onclick="setupFinish()">Let's Go 🚀</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Hidden stubs for Days Off JS compatibility -->
 <div style="display:none">
   <div id="daysoff-stats"></div>
@@ -1056,7 +1135,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="app-title">Field Tracker <span style="color:var(--yellow)">Pro</span></div>
+    <div class="app-title">D2D Tracker <span style="color:var(--yellow)">Pro</span></div>
     <div class="app-subtitle" id="app-subtitle">Loading…</div>
   </div>
   <div class="dot" id="sync-dot" style="width:8px;height:8px;flex-shrink:0;"></div>
@@ -1066,18 +1145,6 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 
 <!-- ══ DASHBOARD ══ -->
 <div class="page active" id="page-dashboard">
-
-  <!-- Tier countdown banner -->
-  <div class="tier-banner" id="tier-banner" style="display:none">
-    <div class="tier-banner-left">
-      <div class="tier-banner-title">NEXT TIER UNLOCK</div>
-      <div class="tier-banner-sub" id="tier-banner-sub"></div>
-    </div>
-    <div>
-      <div class="tier-banner-val" id="tier-banner-val"></div>
-      <div class="tier-banner-note" id="tier-banner-note"></div>
-    </div>
-  </div>
 
   <!-- Weekly nudge -->
   <div class="hero-card" id="hero-card">
@@ -1093,6 +1160,18 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <!-- Pulse summary -->
   <div class="section-label">Pulse Board</div>
   <div class="pulse-row" id="pulse-row"></div>
+
+  <!-- Tier countdown banner -->
+  <div class="tier-banner" id="tier-banner" style="display:none;margin-top:10px;">
+    <div class="tier-banner-left">
+      <div class="tier-banner-title">NEXT TIER UNLOCK</div>
+      <div class="tier-banner-sub" id="tier-banner-sub"></div>
+    </div>
+    <div>
+      <div class="tier-banner-val" id="tier-banner-val"></div>
+      <div class="tier-banner-note" id="tier-banner-note"></div>
+    </div>
+  </div>
 
   <!-- Retention rate -->
   <div class="section-label">Retention</div>
@@ -1235,6 +1314,9 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- ══ MORE (settings + export) ══ -->
 <div class="page" id="page-more">
 
+  <div style="margin-bottom:16px;">
+    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;" onclick="showSetup()">⚙ Re-run Setup Wizard</button>
+  </div>
   <div class="section-label">Targets</div>
   <div class="settings-group">
     <div class="settings-group-title">Season Goals</div>
@@ -1420,9 +1502,10 @@ async function sbUpsert(t,row,c){const r=await fetch(`${SB_URL}/rest/v1/${t}?on_
 async function sbDelete(t,f){const r=await fetch(`${SB_URL}/rest/v1/${t}?${f}`,{method:'DELETE',headers:HDR});if(!r.ok)throw new Error(await r.text());}
 
 // ── DEFAULTS ────────────────────────────────────
-const DEFAULTS={revTarget:250000,acctTarget:280,kDays:101,acv:893,retention:88,advance:75,start:'2026-05-01',end:'2026-08-29',lastAccts:131,lastRev:116940};
+const DEFAULTS={revTarget:0,acctTarget:0,kDays:0,acv:0,retention:88,advance:75,start:'',end:'',lastAccts:0,lastRev:0,name:'',company:'Vantage'};
 
-const TIERS=[
+// TIERS are built from user setup — default Vantage scale, overridable
+let TIERS=[
   {min:1,  max:149, rate:.30},
   {min:150,max:174, rate:.33},
   {min:175,max:199, rate:.35},
@@ -1433,26 +1516,49 @@ const TIERS=[
   {min:400,max:9999,rate:.50},
 ];
 
-const WEEKS=[
-  {n:1,s:'2026-05-01',e:'2026-05-03',kd:3},
-  {n:2,s:'2026-05-04',e:'2026-05-10',kd:6},
-  {n:3,s:'2026-05-11',e:'2026-05-17',kd:6},
-  {n:4,s:'2026-05-18',e:'2026-05-24',kd:3},
-  {n:5,s:'2026-05-25',e:'2026-05-31',kd:5},
-  {n:6,s:'2026-06-01',e:'2026-06-07',kd:6},
-  {n:7,s:'2026-06-08',e:'2026-06-14',kd:6},
-  {n:8,s:'2026-06-15',e:'2026-06-21',kd:6},
-  {n:9,s:'2026-06-22',e:'2026-06-28',kd:6},
-  {n:10,s:'2026-06-29',e:'2026-07-05',kd:6},
-  {n:11,s:'2026-07-06',e:'2026-07-12',kd:6},
-  {n:12,s:'2026-07-13',e:'2026-07-19',kd:6},
-  {n:13,s:'2026-07-20',e:'2026-07-26',kd:6},
-  {n:14,s:'2026-07-27',e:'2026-08-02',kd:5},
-  {n:15,s:'2026-08-03',e:'2026-08-09',kd:6},
-  {n:16,s:'2026-08-10',e:'2026-08-16',kd:6},
-  {n:17,s:'2026-08-17',e:'2026-08-23',kd:6},
-  {n:18,s:'2026-08-24',e:'2026-08-29',kd:5},
-];
+function buildTiersFromSetup(tierData){
+  const valid = tierData.filter(t=>t.rate>0).sort((a,b)=>a.min-b.min);
+  if(!valid.length) return;
+  // Fill in maxes
+  for(let i=0;i<valid.length;i++){
+    valid[i].max = i<valid.length-1 ? valid[i+1].min-1 : 9999;
+  }
+  TIERS = valid;
+}
+
+// WEEKS is generated dynamically from season start/end in buildWeeks()
+let WEEKS = [];
+
+function buildWeeks(){
+  const start = G('start'), end = G('end');
+  if(!start || !end) return;
+  WEEKS = [];
+  let d = new Date(start+'T00:00:00');
+  const endDate = new Date(end+'T00:00:00');
+  let weekNum = 1;
+  while(d <= endDate){
+    const weekStart = d.toISOString().slice(0,10);
+    // End of week = next Sunday or season end, whichever is first
+    let we = new Date(d);
+    // Go to end of this week (Saturday)
+    const daysUntilSat = (6 - we.getDay() + 7) % 7;
+    we.setDate(we.getDate() + (daysUntilSat === 0 ? 6 : daysUntilSat));
+    if(we > endDate) we = new Date(endDate);
+    const weekEnd = we.toISOString().slice(0,10);
+    // Count knocking days (non-Sunday, non-off)
+    const OFF = buildOff();
+    let kd = 0;
+    let dd = new Date(weekStart+'T00:00:00');
+    while(dd <= we){
+      if(!OFF.has(dd.toISOString().slice(0,10))) kd++;
+      dd = new Date(dd.getTime()+86400000);
+    }
+    WEEKS.push({n:weekNum, s:weekStart, e:weekEnd, kd});
+    weekNum++;
+    // Move to next Monday
+    d = new Date(we.getTime()+86400000);
+  }
+}
 
 // ── STATE ───────────────────────────────────────
 let days=[], pulseHistory=[], daysOff=[], cfg={...DEFAULTS};
@@ -2555,6 +2661,134 @@ async function addDayOff2(){
   }catch(e){toast('Save failed.',true);setSync('error','Error');console.error(e);}
 }
 
+// ── SETUP WIZARD ──────────────────────────────────
+const DEFAULT_TIERS_SETUP=[
+  {min:1,   rate:30},
+  {min:150, rate:33},
+  {min:175, rate:35},
+  {min:200, rate:38},
+  {min:250, rate:40},
+  {min:300, rate:45},
+  {min:350, rate:48},
+  {min:400, rate:50},
+];
+
+function isFirstRun(){
+  const raw=localStorage.getItem('cfg2026');
+  if(!raw) return true;
+  try{
+    const d=JSON.parse(raw);
+    return !d.name || !d.start || !d.acctTarget;
+  }catch{ return true; }
+}
+
+function showSetup(){
+  // Build tier inputs
+  const list=document.getElementById('setup-tiers-list');
+  if(list){
+    // Load existing tiers or use defaults
+    const existing = cfg.tiersSetup || DEFAULT_TIERS_SETUP;
+    list.innerHTML=existing.map((t,i)=>`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;">
+        <div class="field"><label>Min Accounts</label><input type="number" class="tier-min-input" data-idx="${i}" value="${t.min}" inputmode="numeric" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:10px 12px;outline:none;font-family:var(--mono);"></div>
+        <div class="field"><label>Rate (%)</label><input type="number" class="tier-rate-input" data-idx="${i}" value="${t.rate}" inputmode="numeric" min="1" max="100" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:10px 12px;outline:none;font-family:var(--mono);"></div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('setup-overlay').style.display='block';
+  // Pre-fill if editing
+  if(cfg.name) document.getElementById('setup-name').value=cfg.name;
+  if(cfg.company) document.getElementById('setup-company').value=cfg.company;
+  if(cfg.start) document.getElementById('setup-start').value=cfg.start;
+  if(cfg.end) document.getElementById('setup-end').value=cfg.end;
+  if(cfg.advance) document.getElementById('setup-advance').value=cfg.advance;
+  if(cfg.acctTarget) document.getElementById('setup-acct-target').value=cfg.acctTarget;
+  if(cfg.revTarget) document.getElementById('setup-rev-target').value=cfg.revTarget;
+  if(cfg.acv) document.getElementById('setup-acv').value=cfg.acv;
+  if(cfg.lastAccts) document.getElementById('setup-last-accts').value=cfg.lastAccts;
+  if(cfg.lastRev) document.getElementById('setup-last-rev').value=cfg.lastRev;
+  setupGoTo(1);
+}
+
+function hideSetup(){
+  document.getElementById('setup-overlay').style.display='none';
+}
+
+function setupGoTo(step){
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('setup-step-'+i).style.display=i===step?'block':'none';
+    const dot=document.getElementById('sdot-'+i);
+    if(dot) dot.className='step-dot'+(i<=step?' active':'');
+  });
+}
+
+function setupNext(step){
+  if(step===1){
+    const name=document.getElementById('setup-name').value.trim();
+    if(!name) return toast('Enter your name.',true);
+    cfg.name=name;
+    cfg.company=document.getElementById('setup-company').value.trim()||'';
+    setupGoTo(2);
+  } else if(step===2){
+    const start=document.getElementById('setup-start').value;
+    const end=document.getElementById('setup-end').value;
+    if(!start||!end) return toast('Enter both season dates.',true);
+    if(end<=start) return toast('End date must be after start.',true);
+    cfg.start=start; cfg.end=end;
+    cfg.advance=parseFloat(document.getElementById('setup-advance').value)||75;
+    buildWeeks();
+    setupGoTo(3);
+  } else if(step===3){
+    const acct=parseInt(document.getElementById('setup-acct-target').value)||0;
+    const rev=parseFloat(document.getElementById('setup-rev-target').value)||0;
+    const acv=parseFloat(document.getElementById('setup-acv').value)||0;
+    if(!acct||!rev) return toast('Enter your account and revenue targets.',true);
+    cfg.acctTarget=acct; cfg.revTarget=rev; cfg.acv=acv||Math.round(rev/acct);
+    setupGoTo(4);
+  }
+}
+
+function setupBack(step){
+  setupGoTo(step-1);
+}
+
+function setupFinish(){
+  // Read tiers
+  const mins=[...document.querySelectorAll('.tier-min-input')].map(i=>parseInt(i.value)||0);
+  const rates=[...document.querySelectorAll('.tier-rate-input')].map(i=>parseFloat(i.value)||0);
+  const tierData=mins.map((m,i)=>({min:m,rate:rates[i]/100})).filter(t=>t.min>0&&t.rate>0);
+  if(!tierData.length) return toast('Add at least one commission tier.',true);
+  buildTiersFromSetup(tierData);
+  cfg.tiersSetup=mins.map((m,i)=>({min:m,rate:rates[i]}));
+
+  // Last year
+  cfg.lastAccts=parseInt(document.getElementById('setup-last-accts').value)||0;
+  cfg.lastRev=parseFloat(document.getElementById('setup-last-rev').value)||0;
+
+  // Calculate knocking days
+  const OFF=buildOff();
+  let kd=0;
+  let d=new Date(cfg.start+'T00:00:00'),end=new Date(cfg.end+'T00:00:00');
+  while(d<=end){if(!OFF.has(d.toISOString().slice(0,10)))kd++;d=new Date(d.getTime()+86400000);}
+  cfg.kDays=kd;
+
+  localStorage.setItem('cfg2026',JSON.stringify(cfg));
+  hideSetup();
+
+  // Update header name
+  updateAppTitle();
+  render();
+  toast('Welcome, '+cfg.name+'! Season set up ✓');
+}
+
+function updateAppTitle(){
+  const titleEl=document.querySelector('.app-title');
+  if(titleEl && cfg.name){
+    titleEl.innerHTML=cfg.name.split(' ')[0]+' <span style="color:var(--yellow)">'+
+      (cfg.start?cfg.start.slice(0,4):'26')+'</span>';
+  }
+}
+
 function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
@@ -2581,10 +2815,17 @@ function loadTheme(){
 window.onload=()=>{
   loadTheme();
   loadSettings();
+  buildWeeks();
+  if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   initSettingsFmt();
   generateAppIcon();
+  updateAppTitle();
   dpSetValue('f-date', new Date().toISOString().slice(0,10));
-  loadAll();
+  if(isFirstRun()){
+    showSetup();
+  } else {
+    loadAll();
+  }
 };
 
 function generateAppIcon(){
