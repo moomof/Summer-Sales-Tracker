@@ -1501,6 +1501,26 @@ async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?select=
 async function sbUpsert(t,row,c){const r=await fetch(`${SB_URL}/rest/v1/${t}?on_conflict=${c}`,{method:'POST',headers:{...HDR,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbDelete(t,f){const r=await fetch(`${SB_URL}/rest/v1/${t}?${f}`,{method:'DELETE',headers:HDR});if(!r.ok)throw new Error(await r.text());}
 
+// ── SETTINGS SYNC ────────────────────────────────
+async function saveSettingsToCloud(){
+  try{
+    await sbUpsert('settings',{key:'cfg',value:JSON.stringify(cfg)},'key');
+  }catch(e){ console.log('Settings cloud save failed:',e); }
+}
+
+async function loadSettingsFromCloud(){
+  try{
+    const rows=await sbGet('settings',"&key=eq.cfg");
+    if(rows&&rows.length>0){
+      const saved=JSON.parse(rows[0].value);
+      cfg={...DEFAULTS,...saved};
+      localStorage.setItem('cfg2026',JSON.stringify(cfg));
+      return true;
+    }
+  }catch(e){ console.log('Settings cloud load failed:',e); }
+  return false;
+}
+
 // ── DEFAULTS ────────────────────────────────────
 const DEFAULTS={revTarget:0,acctTarget:0,kDays:0,acv:0,retention:88,advance:75,start:'',end:'',lastAccts:0,lastRev:0,name:'',company:'Vantage'};
 
@@ -2210,6 +2230,7 @@ function saveSettings(){
   cfg.lastAccts=parseInt(document.getElementById('s-last-accts').value)||DEFAULTS.lastAccts;
   cfg.lastRev=getFieldNum('s-last-rev')||DEFAULTS.lastRev;
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
+  saveSettingsToCloud();
   initSettingsFmt();
   render();toast('Settings saved ✓');
 }
@@ -2783,6 +2804,7 @@ function setupFinish(){
 
   // Save everything
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
+  saveSettingsToCloud();
 
   // Reload settings fields so More tab shows correct values
   loadSettings();
@@ -2826,15 +2848,27 @@ function loadTheme(){
   updateThemeButtons(theme);
 }
 
-window.onload=()=>{
+window.onload=async ()=>{
   loadTheme();
-  loadSettings();
+  loadSettings(); // load local first so app isn't blank while cloud loads
   buildWeeks();
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   initSettingsFmt();
   generateAppIcon();
   updateAppTitle();
   dpSetValue('f-date', new Date().toISOString().slice(0,10));
+
+  // Try to pull latest settings from cloud
+  const gotCloudSettings = await loadSettingsFromCloud();
+  if(gotCloudSettings){
+    // Re-apply cloud settings
+    buildWeeks();
+    if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
+    loadSettings();
+    initSettingsFmt();
+    updateAppTitle();
+  }
+
   if(isFirstRun()){
     showSetup();
   } else {
