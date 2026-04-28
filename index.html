@@ -2215,17 +2215,24 @@ function saveSettings(){
 }
 
 function loadSettings(){
-  try{const r=localStorage.getItem('cfg2026');if(r)cfg={...DEFAULTS,...JSON.parse(r)};}catch{}
-  document.getElementById('s-rev-target').value=cfg.revTarget;
-  document.getElementById('s-acct-target').value=cfg.acctTarget;
-  document.getElementById('s-kdays').value=cfg.kDays;
-  document.getElementById('s-acv').value=cfg.acv;
-  document.getElementById('s-retention').value=cfg.retention;
-  document.getElementById('s-advance').value=cfg.advance;
-  document.getElementById('s-start').value=cfg.start;
-  document.getElementById('s-end').value=cfg.end;
-  document.getElementById('s-last-accts').value=cfg.lastAccts;
-  document.getElementById('s-last-rev').value=cfg.lastRev;
+  try{
+    const r=localStorage.getItem('cfg2026');
+    if(r){
+      const saved=JSON.parse(r);
+      // Merge saved over defaults, but keep saved values even if 0
+      cfg={...DEFAULTS,...saved};
+    }
+  }catch{}
+  document.getElementById('s-rev-target').value=cfg.revTarget||'';
+  document.getElementById('s-acct-target').value=cfg.acctTarget||'';
+  document.getElementById('s-kdays').value=cfg.kDays||'';
+  document.getElementById('s-acv').value=cfg.acv||'';
+  document.getElementById('s-retention').value=cfg.retention||'';
+  document.getElementById('s-advance').value=cfg.advance||'';
+  document.getElementById('s-start').value=cfg.start||'';
+  document.getElementById('s-end').value=cfg.end||'';
+  document.getElementById('s-last-accts').value=cfg.lastAccts||'';
+  document.getElementById('s-last-rev').value=cfg.lastRev||'';
 }
 
 // ── EXPORT ──────────────────────────────────────
@@ -2774,11 +2781,16 @@ function setupFinish(){
   while(d<=end){if(!OFF.has(d.toISOString().slice(0,10)))kd++;d=new Date(d.getTime()+86400000);}
   cfg.kDays=kd;
 
+  // Save everything
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
-  hideSetup();
 
-  // Update header name
+  // Reload settings fields so More tab shows correct values
+  loadSettings();
+  initSettingsFmt();
+
+  hideSetup();
   updateAppTitle();
+  buildWeeks();
   render();
   toast('Welcome, '+cfg.name+'! Season set up ✓');
 }
