@@ -1189,6 +1189,12 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="section-label">Pace</div>
   <div id="pace-rows"></div>
 
+  <!-- Knocks & Talks Stats -->
+  <div id="kt-stats-section" style="display:none">
+    <div class="section-label">Door Stats</div>
+    <div class="row-list" id="kt-stats-card" style="margin-bottom:12px;"></div>
+  </div>
+
   <!-- Best day of week -->
   <div id="best-dow-section" style="display:none">
     <div class="section-label">Best Day of the Week</div>
@@ -1206,33 +1212,42 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="log-form">
     <div class="form-title">Log a Day</div>
     <div class="form-fields">
+
       <div class="field-row">
         <div class="field">
           <label>Date</label>
           <div class="dp-wrap" id="dp-f-date-wrap">
             <button type="button" class="dp-input" id="dp-f-date-btn" onclick="dpToggle('f-date')">
-              <span class="dp-val" id="dp-f-date-val"><span class="dp-placeholder">Select date…</span></span>
-              <span class="dp-arrow">▾</span>
+              <span class="dp-val" id="dp-f-date-val"><span class="dp-placeholder">Select date...</span></span>
+              <span class="dp-arrow">&#9662;</span>
             </button>
             <div class="dp-dropdown" id="dp-f-date-drop"></div>
             <input class="dp-native" type="date" id="f-date" onchange="dpNativeChange('f-date',this.value)">
           </div>
         </div>
-        <div class="field">
-          <label>Accounts Sold</label>
-          <input type="number" id="f-accts" min="0" max="20" placeholder="0" inputmode="numeric">
+        <div class="field"><label>Notes</label><input type="text" id="f-notes" placeholder="Optional"></div>
+      </div>
+
+      <div style="background:var(--card2);border-radius:var(--r-sm);border:1px solid var(--line);padding:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;">Door Activity</div>
+        <div class="field-row">
+          <div class="field"><label>Knocks</label><input type="number" id="f-knocks" min="0" placeholder="0" inputmode="numeric"></div>
+          <div class="field"><label>Talks</label><input type="number" id="f-talks" min="0" placeholder="0" inputmode="numeric"></div>
         </div>
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Revenue ($)</label>
-          <input type="number" id="f-rev" min="0" placeholder="0" inputmode="decimal">
+
+      <div style="background:var(--card2);border-radius:var(--r-sm);border:1px solid var(--line);padding:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;">Accounts Sold</div>
+        <div class="field-row">
+          <div class="field"><label>General Pest</label><input type="number" id="f-pest-accts" min="0" max="20" placeholder="0" inputmode="numeric"></div>
+          <div class="field"><label>Pest Revenue ($)</label><input type="number" id="f-pest-rev" min="0" placeholder="0" inputmode="decimal"></div>
         </div>
-        <div class="field">
-          <label>Notes</label>
-          <input type="text" id="f-notes" placeholder="Optional">
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field"><label>Mosquito (Solo $640)</label><input type="number" id="f-mosq-solo" min="0" max="10" placeholder="0" inputmode="numeric"></div>
+          <div class="field"><label>Mosquito (Bundled $560)</label><input type="number" id="f-mosq-bundle" min="0" max="10" placeholder="0" inputmode="numeric"></div>
         </div>
       </div>
+
       <button class="add-btn" id="add-btn" onclick="addDay()">+ Log Day</button>
     </div>
   </div>
@@ -1291,6 +1306,14 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="section-label">Earnings Breakdown</div>
   <div class="row-list" id="comm-rows"></div>
 
+  <!-- Housing Deduction Tracker -->
+  <div class="section-label">Housing</div>
+  <div id="housing-tracker" style="margin-bottom:12px;"></div>
+
+  <!-- August Best Month -->
+  <div class="section-label">Monthly Breakdown</div>
+  <div id="monthly-breakdown" style="margin-bottom:12px;"></div>
+
   <div class="section-label">Bonuses</div>
   <div class="row-list" id="bonus-rows"></div>
 
@@ -1302,6 +1325,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- ══ WEEKLY ══ -->
 <div class="page" id="page-weekly">
   <div id="week-focus"></div>
+  <div id="serviced-warning" style="display:none;"></div>
   <div class="section-label">Season Timeline</div>
   <div class="timeline-card">
     <div class="timeline-title">Each square = 1 week · darker = more accounts</div>
@@ -1314,8 +1338,9 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- ══ MORE (settings + export) ══ -->
 <div class="page" id="page-more">
 
-  <div style="margin-bottom:16px;">
-    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;" onclick="showSetup()">⚙ Re-run Setup Wizard</button>
+  <div style="margin-bottom:16px;display:flex;gap:10px;">
+    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;flex:1;" onclick="showSetup()">⚙ Re-run Setup Wizard</button>
+    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;flex:1;" onclick="syncSettingsNow()">☁ Sync Settings</button>
   </div>
   <div class="section-label">Targets</div>
   <div class="settings-group">
@@ -1464,14 +1489,22 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="modal">
     <h2>Edit Day</h2>
     <input type="hidden" id="edit-date-orig">
-    <div class="form-fields" style="gap:12px;">
+    <div class="form-fields" style="gap:10px;">
       <div class="field-row">
-        <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
-        <div class="field"><label>Accounts Sold</label><input type="number" id="edit-accts" min="0" max="20" inputmode="numeric"></div>
+        <div class="field"><label>Date</label><input type="date" id="edit-date" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:10px 12px;outline:none;-webkit-appearance:none;"></div>
+        <div class="field"><label>Notes</label><input type="text" id="edit-notes"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Revenue ($)</label><input type="number" id="edit-rev" min="0" inputmode="decimal"></div>
-        <div class="field"><label>Notes</label><input type="text" id="edit-notes"></div>
+        <div class="field"><label>Knocks</label><input type="number" id="edit-knocks" min="0" inputmode="numeric"></div>
+        <div class="field"><label>Talks</label><input type="number" id="edit-talks" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>General Pest</label><input type="number" id="edit-accts" min="0" max="20" inputmode="numeric"></div>
+        <div class="field"><label>Pest Revenue ($)</label><input type="number" id="edit-rev" min="0" inputmode="decimal"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Mosquito (Solo)</label><input type="number" id="edit-mosq-solo" min="0" inputmode="numeric"></div>
+        <div class="field"><label>Mosquito (Bundled)</label><input type="number" id="edit-mosq-bundle" min="0" inputmode="numeric"></div>
       </div>
     </div>
     <div class="modal-btns" style="margin-top:20px;">
@@ -1511,11 +1544,15 @@ async function saveSettingsToCloud(){
 async function loadSettingsFromCloud(){
   try{
     const rows=await sbGet('settings',"&key=eq.cfg");
-    if(rows&&rows.length>0){
+    console.log('Settings cloud rows:', rows);
+    if(rows&&rows.length>0&&rows[0].value){
       const saved=JSON.parse(rows[0].value);
       cfg={...DEFAULTS,...saved};
       localStorage.setItem('cfg2026',JSON.stringify(cfg));
+      console.log('Settings loaded from cloud:', cfg.name, cfg.acctTarget);
       return true;
+    } else {
+      console.log('No settings found in cloud yet');
     }
   }catch(e){ console.log('Settings cloud load failed:',e); }
   return false;
@@ -1813,6 +1850,9 @@ function renderDash(){
   const motEl = document.getElementById('motivation-line');
   if(motEl) motEl.textContent = motLine;
 
+  // Knocks & talks stats
+  renderKTStats();
+
   // Best day of week
   const bdow = getBestDayOfWeek();
   const bdowSection = document.getElementById('best-dow-section');
@@ -1860,6 +1900,9 @@ function calcComm(accts,svcRev){
 
 function renderCommission(){
   const s=stats(),pd=getPulseData();
+  const today2=new Date().toISOString().slice(0,10);
+  const housingDates=['2026-05-25','2026-06-10','2026-06-25','2026-07-10','2026-07-25','2026-08-10','2026-08-25','2026-09-10'];
+  const housingPaid=housingDates.filter(d=>d<=today2).length*250;
   const curr=calcComm(s.sold,pd.svcRev);
   const projSvcRev=Math.round(s.projR*pd.retRate);
   const proj=calcComm(s.projA,projSvcRev);
@@ -1883,9 +1926,17 @@ function renderCommission(){
     <div class="row-item"><span class="row-label">Serviced revenue<br><span class="row-sub">${retNote}</span></span><span class="row-val">${$$(pd.svcRev)}</span></div>
     <div class="row-item"><span class="row-label">Gross commission</span><span class="row-val" style="color:var(--green)">${$$(curr.grossComm)}</span></div>
     <div class="row-item"><span class="row-label">Advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
+    '<div class="row-item"><span class="row-label">Housing deducted</span><span class="row-val c-r">-'+$$(housingPaid)+'</span></div>'+
+    '<div class="row-item"><span class="row-label">Net cash received</span><span class="row-val" style="font-weight:700;">'+$$(Math.max(0,curr.advance-housingPaid))+'</span></div>'+
     <div class="row-item"><span class="row-label">Net backend remaining</span><span class="row-val" style="color:var(--orange)">${$$(curr.netBackend)}</span></div>
     <div class="row-item"><span class="row-label">Projected final commission</span><span class="row-val" style="color:var(--purple)">${s.n>0?$$(proj.grossComm):'—'}</span></div>
   `;
+
+  // Housing
+  renderHousingTracker();
+
+  // Monthly breakdown
+  renderMonthlyBreakdown();
 
   // Bonuses
   const has175=s.sold>=175,has100=s.sold>=100;
@@ -2034,6 +2085,7 @@ function getPaceBadge(actual, target, isFut){
 }
 
 function renderWeekly(){
+  renderServicedWarning();
   const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
   const today=new Date().toISOString().slice(0,10);
   const s=stats();
@@ -2141,24 +2193,36 @@ function renderWeekly(){
 // ── ACTIONS ─────────────────────────────────────
 async function addDay(){
   const date=dpGetValue('f-date');
-  const accts=parseInt(document.getElementById('f-accts').value)||0;
-  const rev=parseFloat(document.getElementById('f-rev').value)||0;
+  const pestAccts=parseInt(document.getElementById('f-pest-accts').value)||0;
+  const pestRev=parseFloat(document.getElementById('f-pest-rev').value)||0;
+  const mosqSolo=parseInt(document.getElementById('f-mosq-solo').value)||0;
+  const mosqBundle=parseInt(document.getElementById('f-mosq-bundle').value)||0;
+  const knocks=parseInt(document.getElementById('f-knocks').value)||0;
+  const talks=parseInt(document.getElementById('f-talks').value)||0;
   const notes=document.getElementById('f-notes').value.trim();
-  if(!date)return toast('Pick a date.',true);
-  if(date<G('start')||date>G('end'))return toast('Date outside season.',true);
+  const totalAccts=pestAccts+mosqSolo+mosqBundle;
+  const mosqRev=(mosqSolo*640)+(mosqBundle*560);
+  const totalRev=pestRev+mosqRev;
+  if(!date) return toast('Pick a date.',true);
+  if(date<G('start')||date>G('end')) return toast('Date outside season.',true);
   const btn=document.getElementById('add-btn');
-  btn.disabled=true;btn.textContent='Saving…';
-  setSync('syncing','Saving…');
+  btn.disabled=true; btn.textContent='Saving...';
+  setSync('syncing','Saving...');
   try{
-    await sbUpsert('days',{date,accounts:accts,revenue:rev,notes},'date');
+    await sbUpsert('days',{
+      date, accounts:totalAccts, revenue:totalRev,
+      pest_accounts:pestAccts, pest_revenue:pestRev,
+      mosq_solo:mosqSolo, mosq_bundle:mosqBundle,
+      knocks, talks, notes
+    },'date');
+    ['f-pest-accts','f-pest-rev','f-mosq-solo','f-mosq-bundle','f-knocks','f-talks','f-notes']
+      .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     dpSetValue('f-date', new Date().toISOString().slice(0,10));
-    ['f-accts','f-rev','f-notes'].forEach(id=>document.getElementById(id).value='');
     await loadAll();
-    toast(accts+' accts · '+$$(rev)+' logged ✓');
+    toast('Logged: '+totalAccts+' accts / '+$$(totalRev)+' ✓');
   }catch(e){toast('Save failed.',true);setSync('error','Error');console.error(e);}
-  finally{btn.disabled=false;btn.textContent='+ Log Day';}
+  finally{btn.disabled=false; btn.textContent='+ Log Day';}
 }
-
 async function deleteDay(date){
   setSync('syncing','…');
   try{await sbDelete('days','date=eq.'+date);await loadAll();toast('Removed '+date);}
@@ -2293,9 +2357,14 @@ function openEdit(date){
   if(!day)return;
   document.getElementById('edit-date-orig').value=date;
   document.getElementById('edit-date').value=day.date;
-  document.getElementById('edit-accts').value=day.accounts;
-  document.getElementById('edit-rev').value=day.revenue;
+  document.getElementById('edit-accts').value=day.pest_accounts!=null?day.pest_accounts:day.accounts||0;
+  document.getElementById('edit-rev').value=day.pest_revenue!=null?day.pest_revenue:day.revenue||0;
   document.getElementById('edit-notes').value=day.notes||'';
+  const f=id=>{const el=document.getElementById(id);if(el)return el;return{value:0};};
+  f('edit-mosq-solo').value=day.mosq_solo||0;
+  f('edit-mosq-bundle').value=day.mosq_bundle||0;
+  f('edit-knocks').value=day.knocks||0;
+  f('edit-talks').value=day.talks||0;
   document.getElementById('edit-modal').classList.add('open');
 }
 
@@ -2306,15 +2375,28 @@ function closeEdit(){
 async function saveEdit(){
   const origDate=document.getElementById('edit-date-orig').value;
   const newDate=document.getElementById('edit-date').value;
-  const accts=parseInt(document.getElementById('edit-accts').value)||0;
-  const rev=parseFloat(document.getElementById('edit-rev').value)||0;
+  const pestAccts=parseInt(document.getElementById('edit-accts').value)||0;
+  const pestRev=parseFloat(document.getElementById('edit-rev').value)||0;
+  const g=id=>{const el=document.getElementById(id);return el?parseInt(el.value)||0:0;};
+  const gf=id=>{const el=document.getElementById(id);return el?parseFloat(el.value)||0:0;};
+  const mosqSolo=g('edit-mosq-solo');
+  const mosqBundle=g('edit-mosq-bundle');
+  const knocks=g('edit-knocks');
+  const talks=g('edit-talks');
   const notes=document.getElementById('edit-notes').value.trim();
+  const totalAccts=pestAccts+mosqSolo+mosqBundle;
+  const mosqRev=(mosqSolo*640)+(mosqBundle*560);
+  const totalRev=pestRev+mosqRev;
   if(!newDate)return toast('Pick a date.',true);
-  setSync('syncing','Saving…');
+  setSync('syncing','Saving...');
   try{
-    // If date changed, delete old and insert new
     if(origDate!==newDate) await sbDelete('days','date=eq.'+origDate);
-    await sbUpsert('days',{date:newDate,accounts:accts,revenue:rev,notes},'date');
+    await sbUpsert('days',{
+      date:newDate, accounts:totalAccts, revenue:totalRev,
+      pest_accounts:pestAccts, pest_revenue:pestRev,
+      mosq_solo:mosqSolo, mosq_bundle:mosqBundle,
+      knocks, talks, notes
+    },'date');
     closeEdit();
     await loadAll();
     toast('Day updated ✓');
@@ -2823,6 +2905,163 @@ function updateAppTitle(){
     titleEl.innerHTML=cfg.name.split(' ')[0]+' <span style="color:var(--yellow)">'+
       (cfg.start?cfg.start.slice(0,4):'26')+'</span>';
   }
+}
+
+async function syncSettingsNow(){
+  toast('Syncing settings…');
+  setSync('syncing','Syncing…');
+  const got = await loadSettingsFromCloud();
+  if(got){
+    buildWeeks();
+    if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
+    loadSettings();
+    initSettingsFmt();
+    updateAppTitle();
+    render();
+    setSync('synced','Synced');
+    toast('Settings synced ✓');
+  } else {
+    // Nothing in cloud yet — push current local settings up
+    await saveSettingsToCloud();
+    setSync('synced','Synced');
+    toast('Settings saved to cloud ✓');
+  }
+}
+
+// ── KNOCKS & TALKS STATS ────────────────────────
+function renderKTStats(){
+  const hasData = days.some(d=>d.knocks||d.talks);
+  const section = document.getElementById('kt-stats-section');
+  const card = document.getElementById('kt-stats-card');
+  if(!section||!card) return;
+  if(!hasData){ section.style.display='none'; return; }
+  section.style.display='block';
+
+  const totalKnocks = days.reduce((a,d)=>a+(d.knocks||0),0);
+  const totalTalks  = days.reduce((a,d)=>a+(d.talks||0),0);
+  const totalSold   = days.reduce((a,d)=>a+d.accounts,0);
+  const ktt = totalKnocks>0 ? (totalTalks/totalKnocks*100).toFixed(1) : 0;
+  const tts = totalTalks>0  ? (totalSold/totalTalks*100).toFixed(1)   : 0;
+  const kts = totalKnocks>0 ? (totalSold/totalKnocks*100).toFixed(1)  : 0;
+  const avgKnocks = days.length>0 ? Math.round(totalKnocks/days.filter(d=>d.knocks).length) : 0;
+
+  card.innerHTML =
+    '<div class="row-item"><span class="row-label">Knock-to-talk rate</span><span class="row-val">'+ktt+'%</span></div>'+
+    '<div class="row-item"><span class="row-label">Talk-to-account rate</span><span class="row-val">'+tts+'%</span></div>'+
+    '<div class="row-item"><span class="row-label">Door-to-account rate</span><span class="row-val">'+kts+'%</span></div>'+
+    '<div class="row-item"><span class="row-label">Avg knocks per day</span><span class="row-val">'+avgKnocks+'</span></div>'+
+    '<div class="row-item"><span class="row-label">Total knocks</span><span class="row-val">'+totalKnocks+'</span></div>'+
+    '<div class="row-item"><span class="row-label">Total talks</span><span class="row-val">'+totalTalks+'</span></div>';
+}
+
+// ── HOUSING TRACKER ──────────────────────────────
+function renderHousingTracker(){
+  const el = document.getElementById('housing-tracker');
+  if(!el) return;
+  const today = new Date().toISOString().slice(0,10);
+  const seasonStart = G('start');
+  if(!seasonStart){ el.innerHTML=''; return; }
+
+  // Payment dates: May 25 through Sep 10, semi-monthly (10th and 25th)
+  const paymentDates = [
+    '2026-05-25','2026-06-10','2026-06-25','2026-07-10',
+    '2026-07-25','2026-08-10','2026-08-25','2026-09-10'
+  ];
+  const paid   = paymentDates.filter(d=>d<=today).length;
+  const total  = paymentDates.length; // 8
+  const paidAmt  = paid * 250;
+  const totalAmt = total * 250; // $2,000
+  const remaining = total - paid;
+  const nextPmt  = paymentDates.find(d=>d>today);
+
+  const s = document.createElement('div');
+  s.className = 'row-list';
+  s.innerHTML =
+    '<div class="row-item"><span class="row-label">Housing paid so far</span><span class="row-val c-r">-'+$$(paidAmt)+'</span></div>'+
+    '<div class="row-item"><span class="row-label">Remaining payments</span><span class="row-val">'+remaining+' x $250</span></div>'+
+    '<div class="row-item"><span class="row-label">Total housing cost</span><span class="row-val">'+$$(totalAmt)+'</span></div>'+
+    '<div class="row-item"><span class="row-label">Housing bonus (175 active)</span><span class="row-val c-g">+$2,000</span></div>'+
+    '<div class="row-item" style="border-top:2px solid var(--line);margin-top:4px;padding-top:10px;"><span class="row-label" style="font-weight:700;">Net housing position</span><span class="row-val" style="font-weight:800;color:var(--green)">'+$$(2000-paidAmt)+'</span></div>'+
+    (nextPmt?'<div class="row-item"><span class="row-label">Next deduction</span><span class="row-val">'+nextPmt+'</span></div>':'');
+  el.innerHTML = '';
+  el.appendChild(s);
+}
+
+// ── AUGUST BEST MONTH ────────────────────────────
+function renderMonthlyBreakdown(){
+  const el = document.getElementById('monthly-breakdown');
+  if(!el) return;
+
+  const months = ['2026-05','2026-06','2026-07','2026-08'];
+  const names  = ['May','June','July','August'];
+  const totals = months.map(m => days.filter(d=>d.date.startsWith(m)).reduce((a,d)=>a+d.accounts,0));
+  const maxAccts = Math.max(...totals, 1);
+  const augIdx = 3;
+  const augAccts = totals[augIdx];
+  const today = new Date().toISOString().slice(0,10);
+  const inAug = today>='2026-08-01' && today<='2026-08-31';
+  const augDone = today>'2026-08-31';
+
+  // Is August best month?
+  const othersMax = Math.max(totals[0],totals[1],totals[2]);
+  const augIsBest = augAccts > othersMax;
+  const needForBest = Math.max(0, othersMax - augAccts + 1);
+
+  let augStatus = '';
+  if(augDone||inAug){
+    if(augIsBest) augStatus = '<span style="color:var(--green);font-weight:700;">Best month ✓</span>';
+    else if(inAug) augStatus = '<span style="color:var(--orange);font-weight:700;">Need '+needForBest+' more to be best</span>';
+    else augStatus = '<span style="color:var(--red);font-weight:700;">Not best month</span>';
+  } else {
+    augStatus = '<span style="color:var(--ink3);">Aug not started</span>';
+  }
+
+  const rows = months.map((m,i)=>{
+    const pct = Math.round(totals[i]/maxAccts*100);
+    const isAug = i===augIdx;
+    return '<div style="padding:10px 16px;border-bottom:1px solid var(--line);">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+        '<span style="font-size:13px;font-weight:'+(isAug?'700':'500')+';color:var(--ink'+(isAug?'':2)+');">'+names[i]+'</span>'+
+        '<span style="font-size:14px;font-weight:700;">'+totals[i]+' accts</span>'+
+      '</div>'+
+      '<div style="height:5px;background:var(--line);border-radius:99px;overflow:hidden;">'+
+        '<div style="height:100%;width:'+pct+'%;background:'+(isAug?'var(--yellow)':'var(--blue)')+';border-radius:99px;"></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML = '<div class="row-list" style="padding:0;">'+rows+'</div>'+
+    '<div style="padding:12px 16px;background:var(--yellow-bg);border-radius:0 0 var(--r) var(--r);border:1px solid rgba(232,200,64,.2);font-size:13px;">'+
+    'Tuition bonus: '+augStatus+'</div>';
+}
+
+// ── 6-SERVICED WARNING ───────────────────────────
+function renderServicedWarning(){
+  const el = document.getElementById('serviced-warning');
+  if(!el) return;
+  const today = new Date().toISOString().slice(0,10);
+  // Only check from June 1
+  if(today<'2026-06-01'){ el.style.display='none'; return; }
+
+  // Find current week in pulse data
+  const curWeekIdx = WEEKS.findIndex(w=>today>=w.s&&today<=w.e);
+  if(curWeekIdx<0){ el.style.display='none'; return; }
+  const curWeek = WEEKS[curWeekIdx];
+
+  // Look for pulse entry for this week
+  const pulse = pulseHistory.find(p=>p.week_num===curWeek.n);
+  if(!pulse){ el.style.display='none'; return; }
+
+  const serviced = pulse.serviced_accounts||0;
+  if(serviced>=6){ el.style.display='none'; return; }
+
+  // Under 6 — show warning
+  el.style.display='block';
+  el.innerHTML = '<div style="background:#3a0a10;border:1.5px solid var(--red);border-radius:var(--r-sm);padding:14px 16px;margin-bottom:10px;">'+
+    '<div style="font-size:12px;font-weight:700;color:var(--red);letter-spacing:.05em;margin-bottom:4px;">WARNING — WEEK '+curWeek.n+'</div>'+
+    '<div style="font-size:14px;font-weight:600;color:#fff;">Only '+serviced+' of 6 required accounts serviced this week.</div>'+
+    '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">Falling below 6 serviced/week after June 1 drops you to flat $75/account with no bonuses.</div>'+
+  '</div>';
 }
 
 function toggleTheme(){
