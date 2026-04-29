@@ -82,25 +82,7 @@ body {
 }
 
 /* ── TOP BAR ── */
-.topbar {
-  background: var(--card);
-  border-bottom: 1px solid var(--line);
-  padding: 14px 20px 12px;
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-.app-title {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -.3px;
-  color: var(--ink);
-}
+/* topbar removed */
 
 /* sync-pill removed */
 
@@ -162,7 +144,7 @@ body {
 .bnav-btn.active .bnav-active-dot { opacity: 1; }
 
 /* ── PAGES ── */
-.page { display: none; padding: 16px; max-width: 800px; margin: 0 auto; }
+.page { display: none; padding: 16px; padding-top: calc(16px + env(safe-area-inset-top,0px)); max-width: 800px; margin: 0 auto; }
 .page.active { display: block; }
 
 /* ── SECTION LABELS ── */
@@ -1132,14 +1114,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <span id="dp-do-date-val"></span>
 </div>
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="topbar-left">
-    <div class="app-title">D2D Tracker <span style="color:var(--yellow)">Pro</span></div>
-    <div class="app-subtitle" id="app-subtitle">Loading…</div>
-  </div>
-  <div class="dot" id="sync-dot" style="width:8px;height:8px;flex-shrink:0;"></div>
-</div>
+<!-- Sync dot — floating top right -->
+<div id="sync-dot" class="dot" style="position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:16px;width:7px;height:7px;z-index:60;"></div>
 
 <!-- PAGES -->
 
@@ -1832,7 +1808,6 @@ function renderDash(){
 
   // Tier banner + subtitle
   renderTierBanner();
-  updateSubtitle();
 
   // Motivation line
   const motLine = getMotivationLine();
@@ -2876,7 +2851,6 @@ function setupFinish(){
   initSettingsFmt();
 
   hideSetup();
-  updateAppTitle();
   buildWeeks();
   render();
   toast('Welcome, '+cfg.name+'! Season set up ✓');
@@ -2899,8 +2873,7 @@ async function syncSettingsNow(){
     if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
     loadSettings();
     initSettingsFmt();
-    updateAppTitle();
-    render();
+      render();
     setSync('synced','Synced');
     toast('Settings synced ✓');
   } else {
@@ -3077,7 +3050,6 @@ window.onload=async ()=>{
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   initSettingsFmt();
   generateAppIcon();
-  updateAppTitle();
   dpSetValue('f-date', new Date().toISOString().slice(0,10));
 
   // Try to pull latest settings from cloud
@@ -3088,8 +3060,7 @@ window.onload=async ()=>{
     if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
     loadSettings();
     initSettingsFmt();
-    updateAppTitle();
-  }
+    }
 
   if(isFirstRun()){
     showSetup();
