@@ -1962,7 +1962,7 @@ function renderLog(){
         </div>
       </div>
       <div class="log-entry-stats">
-        <div><div class="log-stat-label">Accounts</div><div class="log-stat-val">${d.accounts}</div></div>
+        <div><div class="log-stat-label">Accounts</div><div class="log-stat-val">${d.accounts}${(d.mosq_accounts||0)>0?' <span style="font-size:11px;color:var(--ink3)">('+((d.pest_accounts||d.accounts-(d.mosq_accounts||0)))+'p+'+(d.mosq_accounts||0)+'m)</span>':''}</div></div>
         <div><div class="log-stat-label">Revenue</div><div class="log-stat-val">${$k(d.revenue)}</div></div>
         <div><div class="log-stat-label">ACV</div><div class="log-stat-val">${d.accounts>0?$$(d.revenue/d.accounts):'—'}</div></div>
       </div>
