@@ -1652,6 +1652,8 @@ function getTier(a){return TIERS.find(t=>a>=t.min&&a<=t.max)||TIERS[0];}
 function stats(){
   const OFF=buildOff();
   const sold=days.reduce((a,d)=>a+d.accounts,0);
+  const pestSold=days.reduce((a,d)=>a+(d.pest_accounts!=null?d.pest_accounts:d.accounts),0);
+  const mosqSold=days.reduce((a,d)=>a+(d.mosq_accounts||0),0);
   const rev=days.reduce((a,d)=>a+d.revenue,0);
   const n=days.length;
   const realACV=sold>0?rev/sold:G('acv');
@@ -1668,7 +1670,7 @@ function stats(){
   const needR=rem>0?(G('revTarget')-rev)/rem:0;
   const projA=rem>0?Math.round(sold+apd*rem):sold;
   const projR=Math.round(projA*realACV);
-  return {sold,rev,n,realACV,apd,elapsed,rem,kDays,expA,expR,dA,dR,needA,needR,projA,projR,apdTarget};
+  return {sold,rev,n,realACV,apd,elapsed,rem,kDays,expA,expR,dA,dR,needA,needR,projA,projR,apdTarget,pestSold,mosqSold};
 }
 
 function getStreaks(){
@@ -1854,12 +1856,15 @@ function renderDash(){
   `;
 }
 
-function calcComm(accts,svcRev){
+function calcComm(accts,svcRev,pestAccts,mosqAccts){
   const tier=getTier(accts);
   const grossComm=Math.round(svcRev*tier.rate);
-  const advance=accts*G('advance');
+  // Advance: $75 per pest account, $50 per mosquito account
+  const pa=pestAccts!=null?pestAccts:accts;
+  const ma=mosqAccts||0;
+  const advance=(pa*G('advance'))+(ma*50);
   const netBackend=Math.max(0,grossComm-advance);
-  return {tier,grossComm,advance,netBackend};
+  return {tier,grossComm,advance,netBackend,pestAccts:pa,mosqAccts:ma};
 }
 
 function renderCommission(){
@@ -1867,7 +1872,7 @@ function renderCommission(){
   const today2=new Date().toISOString().slice(0,10);
   const housingDates=['2026-05-25','2026-06-10','2026-06-25','2026-07-10','2026-07-25','2026-08-10','2026-08-25','2026-09-10'];
   const housingPaid=housingDates.filter(d=>d<=today2).length*250;
-  const curr=calcComm(s.sold,pd.svcRev);
+  const curr=calcComm(s.sold,pd.svcRev,s.pestSold,s.mosqSold);
   const projSvcRev=Math.round(s.projR*pd.retRate);
   const proj=calcComm(s.projA,projSvcRev);
 
@@ -1889,7 +1894,9 @@ function renderCommission(){
     <div class="row-item"><span class="row-label">Current tier</span><span class="row-val">${Math.round(curr.tier.rate*100)}% (${curr.tier.min}–${curr.tier.max===9999?curr.tier.min+'+':curr.tier.max})</span></div>
     <div class="row-item"><span class="row-label">Serviced revenue<br><span class="row-sub">${retNote}</span></span><span class="row-val">${$$(pd.svcRev)}</span></div>
     <div class="row-item"><span class="row-label">Gross commission</span><span class="row-val" style="color:var(--green)">${$$(curr.grossComm)}</span></div>
-    <div class="row-item"><span class="row-label">Advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
+    <div class="row-item"><span class="row-label">Pest advance (${s.pestSold} x $${G('advance')})</span><span class="row-val">${$$(s.pestSold*G('advance'))}</span></div>
+    <div class="row-item"><span class="row-label">Mosquito advance (${s.mosqSold} x $50)</span><span class="row-val">${$$(s.mosqSold*50)}</span></div>
+    <div class="row-item"><span class="row-label">Total advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
     <div class="row-item"><span class="row-label">Housing deducted</span><span class="row-val c-r">-${$$(housingPaid)}</span></div>
     <div class="row-item"><span class="row-label">Net cash in hand</span><span class="row-val" style="font-weight:700;">${$$(Math.max(0,curr.advance-housingPaid))}</span></div>
     <div class="row-item"><span class="row-label">Net backend remaining</span><span class="row-val" style="color:var(--orange)">${$$(curr.netBackend)}</span></div>
