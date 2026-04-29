@@ -2282,9 +2282,18 @@ function loadSettings(){
 function copyTSV(){
   const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
   let ca=0,cr=0;
-  const rows=[['Date','Accounts','Revenue','ACV','Running Accts','Running Rev','Notes']];
-  sorted.forEach(d=>{ca+=d.accounts;cr+=d.revenue;rows.push([d.date,d.accounts,d.revenue,d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',ca,cr,d.notes||'']);});
-  navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>toast('Copied — paste into Sheets ✓'));
+  const rows=[['Date','Total Accts','Pest Accts','Mosq Accts','Revenue','ACV','Knocks','Talks','Knock-Talk%','Talk-Acct%','Running Accts','Running Rev','Notes']];
+  sorted.forEach(d=>{
+    ca+=d.accounts; cr+=d.revenue;
+    const pest=d.pest_accounts!=null?d.pest_accounts:d.accounts;
+    const mosq=d.mosq_accounts||0;
+    const ktt=d.knocks>0?((d.talks||0)/d.knocks*100).toFixed(1):'';
+    const tts=(d.talks||0)>0?(d.accounts/(d.talks||0)*100).toFixed(1):'';
+    rows.push([d.date,d.accounts,pest,mosq,d.revenue,
+      d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',
+      d.knocks||0,d.talks||0,ktt,tts,ca,cr,d.notes||'']);
+  });
+  navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>toast('Copied \u2014 paste into Sheets \u2713'));
 }
 function exportCSV(){
   const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
