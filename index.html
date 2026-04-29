@@ -1600,6 +1600,19 @@ function getKnockingDays(){
 function setSync(state,txt){ /* sync dot removed */ }
 
 
+async function loadAll(){
+  try{
+    [days,pulseHistory,daysOff]=await Promise.all([
+      sbGet('days','&order=date.asc'),
+      sbGet('pulse_snapshots','&order=week_num.asc').catch(()=>[]),
+      sbGet('days_off','&order=date.asc').catch(()=>[])
+    ]);
+    render();
+  }catch(e){toast('Could not connect.',true);console.error(e);}
+}
+
+
+
 // ── DERIVED ─────────────────────────────────────
 function getPulseData(){
   const sold=days.reduce((a,d)=>a+d.accounts,0);
