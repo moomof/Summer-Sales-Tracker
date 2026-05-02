@@ -2243,7 +2243,6 @@ function getFieldNum(id){
 function saveSettings(){
   cfg.revTarget=getFieldNum('s-rev-target')||DEFAULTS.revTarget;
   cfg.acctTarget=parseInt(document.getElementById('s-acct-target').value)||DEFAULTS.acctTarget;
-  cfg.kDays=parseInt(document.getElementById('s-kdays').value)||DEFAULTS.kDays;
   cfg.acv=getFieldNum('s-acv')||DEFAULTS.acv;
   cfg.retention=parseFloat(document.getElementById('s-retention').value)||DEFAULTS.retention;
   cfg.advance=getFieldNum('s-advance')||DEFAULTS.advance;
@@ -2251,6 +2250,15 @@ function saveSettings(){
   cfg.end=document.getElementById('s-end').value||DEFAULTS.end;
   cfg.lastAccts=parseInt(document.getElementById('s-last-accts').value)||DEFAULTS.lastAccts;
   cfg.lastRev=getFieldNum('s-last-rev')||DEFAULTS.lastRev;
+
+  // Always recalculate knocking days from dates + days off — never trust the manual field
+  buildWeeks();
+  cfg.kDays=getKnockingDays();
+
+  // Update the kDays field so it reflects reality
+  const kdEl=document.getElementById('s-kdays');
+  if(kdEl) kdEl.value=cfg.kDays;
+
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
   saveSettingsToCloud();
   initSettingsFmt();
