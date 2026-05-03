@@ -82,9 +82,40 @@ body {
 }
 
 /* ── TOP BAR ── */
-/* topbar removed */
+.topbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 20px 12px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.app-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+  color: var(--ink);
+}
 
 /* sync-pill removed */
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ink3);
+  flex-shrink: 0;
+  transition: background .3s;
+}
+.dot.synced  { background: var(--green); box-shadow: 0 0 0 3px rgba(45,158,107,.15); }
+.dot.syncing { background: var(--yellow); animation: blink .8s infinite; }
+.dot.error   { background: var(--red); }
+
+#sync-text { display:none; }
 
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
@@ -1097,16 +1128,28 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div id="daysoff-list"></div>
   <input id="do-date" type="date">
   <input id="do-reason" type="text">
-  <div id="dp-do-date-wrap"><button id="dp-do-date-btn"></button><div id="dp-do-date-drop"></div></div>
+  
   <span id="dp-do-date-val"></span>
 </div>
 
-<!-- sync dot moved to hero card -->
+<!-- sync dot removed -->
 
 <!-- PAGES -->
 
 <!-- ══ DASHBOARD ══ -->
 <div class="page active" id="page-dashboard">
+
+  <!-- Tier countdown banner -->
+  <div class="tier-banner" id="tier-banner" style="display:none">
+    <div class="tier-banner-left">
+      <div class="tier-banner-title">NEXT TIER UNLOCK</div>
+      <div class="tier-banner-sub" id="tier-banner-sub"></div>
+    </div>
+    <div>
+      <div class="tier-banner-val" id="tier-banner-val"></div>
+      <div class="tier-banner-note" id="tier-banner-note"></div>
+    </div>
+  </div>
 
   <!-- Weekly nudge -->
   <div class="hero-card" id="hero-card">
@@ -1122,18 +1165,6 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <!-- Pulse summary -->
   <div class="section-label">Pulse Board</div>
   <div class="pulse-row" id="pulse-row"></div>
-
-  <!-- Tier countdown banner -->
-  <div class="tier-banner" id="tier-banner" style="display:none;margin-top:10px;">
-    <div class="tier-banner-left">
-      <div class="tier-banner-title">NEXT TIER UNLOCK</div>
-      <div class="tier-banner-sub" id="tier-banner-sub"></div>
-    </div>
-    <div>
-      <div class="tier-banner-val" id="tier-banner-val"></div>
-      <div class="tier-banner-note" id="tier-banner-note"></div>
-    </div>
-  </div>
 
   <!-- Retention rate -->
   <div class="section-label">Retention</div>
@@ -1174,7 +1205,6 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="log-form">
     <div class="form-title">Log a Day</div>
     <div class="form-fields">
-
       <div class="field-row">
         <div class="field">
           <label>Date</label>
@@ -1189,19 +1219,15 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
         </div>
         <div class="field"><label>Revenue ($)</label><input type="number" id="f-rev" min="0" placeholder="0" inputmode="decimal"></div>
       </div>
-
       <div class="field-row">
         <div class="field"><label>Knocks</label><input type="number" id="f-knocks" min="0" placeholder="0" inputmode="numeric"></div>
         <div class="field"><label>Talks</label><input type="number" id="f-talks" min="0" placeholder="0" inputmode="numeric"></div>
       </div>
-
       <div class="field-row">
         <div class="field"><label>General Pest</label><input type="number" id="f-pest-accts" min="0" max="20" placeholder="0" inputmode="numeric"></div>
         <div class="field"><label>Mosquito</label><input type="number" id="f-mosq-accts" min="0" max="10" placeholder="0" inputmode="numeric"></div>
       </div>
-
       <div class="field"><label>Notes</label><input type="text" id="f-notes" placeholder="Optional"></div>
-
       <button class="add-btn" id="add-btn" onclick="addDay()">+ Log Day</button>
     </div>
   </div>
@@ -1260,11 +1286,9 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="section-label">Earnings Breakdown</div>
   <div class="row-list" id="comm-rows"></div>
 
-  <!-- Housing Deduction Tracker -->
   <div class="section-label">Housing</div>
   <div id="housing-tracker" style="margin-bottom:12px;"></div>
 
-  <!-- August Best Month -->
   <div class="section-label">Monthly Breakdown</div>
   <div id="monthly-breakdown" style="margin-bottom:12px;"></div>
 
@@ -1292,9 +1316,8 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 <!-- ══ MORE (settings + export) ══ -->
 <div class="page" id="page-more">
 
-  <div style="margin-bottom:16px;display:flex;gap:10px;">
-    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;flex:1;" onclick="showSetup()">⚙ Re-run Setup Wizard</button>
-    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;flex:1;" onclick="syncSettingsNow()">☁ Sync Settings</button>
+  <div style="margin-bottom:16px;">
+    <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);font-size:14px;padding:12px;" onclick="showSetup()">⚙ Re-run Setup Wizard</button>
   </div>
   <div class="section-label">Targets</div>
   <div class="settings-group">
@@ -1373,12 +1396,12 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
     <div class="form-fields">
       <div class="field">
         <label>Date or Range <span style="font-size:11px;color:var(--ink3);font-weight:400">tap start, then end</span></label>
-        <div class="dp-wrap" id="dp-do-date-wrap2">
-          <button type="button" class="dp-input" id="dp-do-date-btn2" onclick="dpToggle('do-date2')">
-            <span class="dp-val" id="dp-do-date-val2"><span class="dp-placeholder">Select date…</span></span>
+        <div class="dp-wrap" id="dp-do-date2-wrap">
+          <button type="button" class="dp-input" id="dp-do-date2-btn" onclick="dpToggle('do-date2')">
+            <span class="dp-val" id="dp-do-date2-val"><span class="dp-placeholder">Select date…</span></span>
             <span class="dp-arrow">▾</span>
           </button>
-          <div class="dp-dropdown" id="dp-do-date-drop2"></div>
+          <div class="dp-dropdown" id="dp-do-date2-drop"></div>
           <input class="dp-native" type="date" id="do-date2" onchange="dpNativeChange('do-date2',this.value)">
         </div>
       </div>
@@ -1443,20 +1466,15 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
   <div class="modal">
     <h2>Edit Day</h2>
     <input type="hidden" id="edit-date-orig">
-    <div class="form-fields" style="gap:10px;">
+    <div class="form-fields" style="gap:12px;">
       <div class="field-row">
-        <div class="field"><label>Date</label><input type="date" id="edit-date" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:10px 12px;outline:none;-webkit-appearance:none;"></div>
+        <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
+        <div class="field"><label>Accounts Sold</label><input type="number" id="edit-accts" min="0" max="20" inputmode="numeric"></div>
+      </div>
+      <div class="field-row">
         <div class="field"><label>Revenue ($)</label><input type="number" id="edit-rev" min="0" inputmode="decimal"></div>
+        <div class="field"><label>Notes</label><input type="text" id="edit-notes"></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label>Knocks</label><input type="number" id="edit-knocks" min="0" inputmode="numeric"></div>
-        <div class="field"><label>Talks</label><input type="number" id="edit-talks" min="0" inputmode="numeric"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>General Pest</label><input type="number" id="edit-accts" min="0" max="20" inputmode="numeric"></div>
-        <div class="field"><label>Mosquito</label><input type="number" id="edit-mosq-accts" min="0" inputmode="numeric"></div>
-      </div>
-      <div class="field"><label>Notes</label><input type="text" id="edit-notes"></div>
     </div>
     <div class="modal-btns" style="margin-top:20px;">
       <button class="btn btn-light" onclick="closeEdit()">Cancel</button>
@@ -1484,30 +1502,6 @@ const HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Be
 async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?select=*${q}`,{headers:HDR});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbUpsert(t,row,c){const r=await fetch(`${SB_URL}/rest/v1/${t}?on_conflict=${c}`,{method:'POST',headers:{...HDR,'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbDelete(t,f){const r=await fetch(`${SB_URL}/rest/v1/${t}?${f}`,{method:'DELETE',headers:HDR});if(!r.ok)throw new Error(await r.text());}
-
-// ── SETTINGS SYNC ────────────────────────────────
-async function saveSettingsToCloud(){
-  try{
-    await sbUpsert('settings',{key:'cfg',value:JSON.stringify(cfg)},'key');
-  }catch(e){ console.log('Settings cloud save failed:',e); }
-}
-
-async function loadSettingsFromCloud(){
-  try{
-    const rows=await sbGet('settings',"&key=eq.cfg");
-    console.log('Settings cloud rows:', rows);
-    if(rows&&rows.length>0&&rows[0].value){
-      const saved=JSON.parse(rows[0].value);
-      cfg={...DEFAULTS,...saved};
-      localStorage.setItem('cfg2026',JSON.stringify(cfg));
-      console.log('Settings loaded from cloud:', cfg.name, cfg.acctTarget);
-      return true;
-    } else {
-      console.log('No settings found in cloud yet');
-    }
-  }catch(e){ console.log('Settings cloud load failed:',e); }
-  return false;
-}
 
 // ── DEFAULTS ────────────────────────────────────
 const DEFAULTS={revTarget:0,acctTarget:0,kDays:0,acv:0,retention:88,advance:75,start:'',end:'',lastAccts:0,lastRev:0,name:'',company:'Vantage'};
@@ -1597,21 +1591,20 @@ function getKnockingDays(){
 }
 
 // ── SYNC ────────────────────────────────────────
-function setSync(state,txt){ /* sync dot removed */ }
-
+function setSync(cls,txt){document.getElementById('sync-dot').className='dot '+cls;const _st=document.getElementById('sync-text');if(_st)_st.textContent=txt;}
 
 async function loadAll(){
+  setSync('syncing','Syncing…');
   try{
     [days,pulseHistory,daysOff]=await Promise.all([
       sbGet('days','&order=date.asc'),
       sbGet('pulse_snapshots','&order=week_num.asc').catch(()=>[]),
       sbGet('days_off','&order=date.asc').catch(()=>[])
     ]);
+    setSync('synced','Synced');
     render();
-  }catch(e){toast('Could not connect.',true);console.error(e);}
+  }catch(e){setSync('error','Offline');toast('Could not connect.',true);console.error(e);}
 }
-
-
 
 // ── DERIVED ─────────────────────────────────────
 function getPulseData(){
@@ -1797,16 +1790,15 @@ function renderDash(){
 
   // Tier banner + subtitle
   renderTierBanner();
+  updateSubtitle();
 
   // Motivation line
   const motLine = getMotivationLine();
   const motEl = document.getElementById('motivation-line');
   if(motEl) motEl.textContent = motLine;
 
-  // Knocks & talks stats
-  renderKTStats();
-
   // Best day of week
+  renderKTStats();
   const bdow = getBestDayOfWeek();
   const bdowSection = document.getElementById('best-dow-section');
   const bdowCard = document.getElementById('best-dow-card');
@@ -1846,7 +1838,6 @@ function renderDash(){
 function calcComm(accts,svcRev,pestAccts,mosqAccts){
   const tier=getTier(accts);
   const grossComm=Math.round(svcRev*tier.rate);
-  // Advance: $75 per pest account, $50 per mosquito account
   const pa=pestAccts!=null?pestAccts:accts;
   const ma=mosqAccts||0;
   const advance=(pa*G('advance'))+(ma*50);
@@ -1856,9 +1847,6 @@ function calcComm(accts,svcRev,pestAccts,mosqAccts){
 
 function renderCommission(){
   const s=stats(),pd=getPulseData();
-  const today2=new Date().toISOString().slice(0,10);
-  const housingDates=['2026-05-25','2026-06-10','2026-06-25','2026-07-10','2026-07-25','2026-08-10','2026-08-25','2026-09-10'];
-  const housingPaid=housingDates.filter(d=>d<=today2).length*250;
   const curr=calcComm(s.sold,pd.svcRev,s.pestSold,s.mosqSold);
   const projSvcRev=Math.round(s.projR*pd.retRate);
   const proj=calcComm(s.projA,projSvcRev);
@@ -1881,20 +1869,10 @@ function renderCommission(){
     <div class="row-item"><span class="row-label">Current tier</span><span class="row-val">${Math.round(curr.tier.rate*100)}% (${curr.tier.min}–${curr.tier.max===9999?curr.tier.min+'+':curr.tier.max})</span></div>
     <div class="row-item"><span class="row-label">Serviced revenue<br><span class="row-sub">${retNote}</span></span><span class="row-val">${$$(pd.svcRev)}</span></div>
     <div class="row-item"><span class="row-label">Gross commission</span><span class="row-val" style="color:var(--green)">${$$(curr.grossComm)}</span></div>
-    <div class="row-item"><span class="row-label">Pest advance (${s.pestSold} x $${G('advance')})</span><span class="row-val">${$$(s.pestSold*G('advance'))}</span></div>
-    <div class="row-item"><span class="row-label">Mosquito advance (${s.mosqSold} x $50)</span><span class="row-val">${$$(s.mosqSold*50)}</span></div>
-    <div class="row-item"><span class="row-label">Total advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
-    <div class="row-item"><span class="row-label">Housing deducted</span><span class="row-val c-r">-${$$(housingPaid)}</span></div>
-    <div class="row-item"><span class="row-label">Net cash in hand</span><span class="row-val" style="font-weight:700;">${$$(Math.max(0,curr.advance-housingPaid))}</span></div>
+    <div class="row-item"><span class="row-label">Advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
     <div class="row-item"><span class="row-label">Net backend remaining</span><span class="row-val" style="color:var(--orange)">${$$(curr.netBackend)}</span></div>
     <div class="row-item"><span class="row-label">Projected final commission</span><span class="row-val" style="color:var(--purple)">${s.n>0?$$(proj.grossComm):'—'}</span></div>
   `;
-
-  // Housing
-  renderHousingTracker();
-
-  // Monthly breakdown
-  renderMonthlyBreakdown();
 
   // Bonuses
   const has175=s.sold>=175,has100=s.sold>=100;
@@ -1931,7 +1909,7 @@ function renderLog(){
         </div>
       </div>
       <div class="log-entry-stats">
-        <div><div class="log-stat-label">Accounts</div><div class="log-stat-val">${d.accounts}${(d.mosq_accounts||0)>0?' <span style="font-size:11px;color:var(--ink3)">('+((d.pest_accounts||d.accounts-(d.mosq_accounts||0)))+'p+'+(d.mosq_accounts||0)+'m)</span>':''}</div></div>
+        <div><div class="log-stat-label">Accounts</div><div class="log-stat-val">${d.accounts}</div></div>
         <div><div class="log-stat-label">Revenue</div><div class="log-stat-val">${$k(d.revenue)}</div></div>
         <div><div class="log-stat-label">ACV</div><div class="log-stat-val">${d.accounts>0?$$(d.revenue/d.accounts):'—'}</div></div>
       </div>
@@ -2003,6 +1981,28 @@ async function addDayOff(){
     toast(valid.length>1?valid.length+' days off added ✓':'Day off added ✓');
   }catch(e){toast('Save failed — check days_off table.',true);setSync('error','Error');console.error(e);}
 }
+async function addDayOff2(){
+  const reason=document.getElementById('do-reason2').value.trim()||'Day off';
+  const dates=dpGetRangeDates('do-date2');
+  if(!dates.length) return toast('Pick a date or range.',true);
+  const valid=dates.filter(d=>{
+    if(d<G('start')||d>G('end')) return false;
+    if(new Date(d+'T00:00:00').getDay()===0) return false;
+    return true;
+  });
+  if(!valid.length) return toast('No valid knocking days in that range.',true);
+  try{
+    await Promise.all(valid.map(d=>sbUpsert('days_off',{date:d,reason},'date')));
+    if(DP['do-date2']){DP['do-date2'].rangeStart=null;DP['do-date2'].rangeEnd=null;DP['do-date2'].selected=null;}
+    const valEl=document.getElementById('dp-do-date2-val');
+    if(valEl) valEl.innerHTML='<span class="dp-placeholder">Select date…</span>';
+    document.getElementById('do-date2').value='';
+    document.getElementById('do-reason2').value='';
+    await loadAll();
+    toast(valid.length>1?valid.length+' days off added ✓':'Day off added ✓');
+  }catch(e){toast('Save failed.',true);console.error(e);}
+}
+
 async function deleteDayOff(date){
   try{await sbDelete('days_off','date=eq.'+date);await loadAll();toast('Day off removed');}
   catch(e){toast('Delete failed.',true);}
@@ -2162,23 +2162,19 @@ async function addDay(){
   if(date<G('start')||date>G('end')) return toast('Date outside season.',true);
   const btn=document.getElementById('add-btn');
   btn.disabled=true; btn.textContent='Saving...';
-  setSync('syncing','Saving...');
   try{
     await sbUpsert('days',{
       date, accounts:totalAccts, revenue:rev,
       pest_accounts:pestAccts, pest_revenue:rev,
-      mosq_solo:0, mosq_bundle:0, mosq_accounts:mosqAccts,
+      mosq_accounts:mosqAccts, mosq_solo:0, mosq_bundle:0,
       knocks, talks, notes
     },'date');
     ['f-pest-accts','f-mosq-accts','f-rev','f-knocks','f-talks','f-notes']
       .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
     dpSetValue('f-date', new Date().toISOString().slice(0,10));
     await loadAll();
-    const parts=[];
-    if(pestAccts) parts.push(pestAccts+' pest');
-    if(mosqAccts) parts.push(mosqAccts+' mosq');
     toast('Logged: '+totalAccts+' acct'+(totalAccts!==1?'s':'')+' / '+$$(rev)+' ✓');
-  }catch(e){toast('Save failed.',true);setSync('error','Error');console.error(e);}
+  }catch(e){toast('Save failed.',true);console.error(e);}
   finally{btn.disabled=false; btn.textContent='+ Log Day';}
 }
 async function deleteDay(date){
@@ -2250,15 +2246,10 @@ function saveSettings(){
   cfg.end=document.getElementById('s-end').value||DEFAULTS.end;
   cfg.lastAccts=parseInt(document.getElementById('s-last-accts').value)||DEFAULTS.lastAccts;
   cfg.lastRev=getFieldNum('s-last-rev')||DEFAULTS.lastRev;
-
-  // Always recalculate knocking days from dates + days off — never trust the manual field
   buildWeeks();
   cfg.kDays=getKnockingDays();
-
-  // Update the kDays field so it reflects reality
   const kdEl=document.getElementById('s-kdays');
   if(kdEl) kdEl.value=cfg.kDays;
-
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
   saveSettingsToCloud();
   initSettingsFmt();
@@ -2266,24 +2257,17 @@ function saveSettings(){
 }
 
 function loadSettings(){
-  try{
-    const r=localStorage.getItem('cfg2026');
-    if(r){
-      const saved=JSON.parse(r);
-      // Merge saved over defaults, but keep saved values even if 0
-      cfg={...DEFAULTS,...saved};
-    }
-  }catch{}
-  document.getElementById('s-rev-target').value=cfg.revTarget||'';
-  document.getElementById('s-acct-target').value=cfg.acctTarget||'';
-  document.getElementById('s-kdays').value=cfg.kDays||'';
-  document.getElementById('s-acv').value=cfg.acv||'';
-  document.getElementById('s-retention').value=cfg.retention||'';
-  document.getElementById('s-advance').value=cfg.advance||'';
-  document.getElementById('s-start').value=cfg.start||'';
-  document.getElementById('s-end').value=cfg.end||'';
-  document.getElementById('s-last-accts').value=cfg.lastAccts||'';
-  document.getElementById('s-last-rev').value=cfg.lastRev||'';
+  try{const r=localStorage.getItem('cfg2026');if(r)cfg={...DEFAULTS,...JSON.parse(r)};}catch{}
+  document.getElementById('s-rev-target').value=cfg.revTarget;
+  document.getElementById('s-acct-target').value=cfg.acctTarget;
+  document.getElementById('s-kdays').value=cfg.kDays;
+  document.getElementById('s-acv').value=cfg.acv;
+  document.getElementById('s-retention').value=cfg.retention;
+  document.getElementById('s-advance').value=cfg.advance;
+  document.getElementById('s-start').value=cfg.start;
+  document.getElementById('s-end').value=cfg.end;
+  document.getElementById('s-last-accts').value=cfg.lastAccts;
+  document.getElementById('s-last-rev').value=cfg.lastRev;
 }
 
 // ── EXPORT ──────────────────────────────────────
@@ -2301,7 +2285,7 @@ function copyTSV(){
       d.accounts>0?(d.revenue/d.accounts).toFixed(0):'',
       d.knocks||0,d.talks||0,ktt,tts,ca,cr,d.notes||'']);
   });
-  navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>toast('Copied \u2014 paste into Sheets \u2713'));
+  navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>toast('Copied — paste into Sheets ✓'));
 }
 function exportCSV(){
   const sorted=[...days].sort((a,b)=>a.date.localeCompare(b.date));
@@ -2332,13 +2316,9 @@ function openEdit(date){
   if(!day)return;
   document.getElementById('edit-date-orig').value=date;
   document.getElementById('edit-date').value=day.date;
-  document.getElementById('edit-accts').value=day.pest_accounts!=null?day.pest_accounts:day.accounts||0;
-  document.getElementById('edit-rev').value=day.revenue||0;
+  document.getElementById('edit-accts').value=day.accounts;
+  document.getElementById('edit-rev').value=day.revenue;
   document.getElementById('edit-notes').value=day.notes||'';
-  const ek=document.getElementById('edit-knocks'); if(ek) ek.value=day.knocks||0;
-  const et=document.getElementById('edit-talks');  if(et) et.value=day.talks||0;
-  const em=document.getElementById('edit-mosq-accts');
-  if(em) em.value=(day.mosq_accounts||0)+(day.mosq_solo||0)+(day.mosq_bundle||0);
   document.getElementById('edit-modal').classList.add('open');
 }
 
@@ -2349,23 +2329,15 @@ function closeEdit(){
 async function saveEdit(){
   const origDate=document.getElementById('edit-date-orig').value;
   const newDate=document.getElementById('edit-date').value;
-  const pestAccts=parseInt(document.getElementById('edit-accts').value)||0;
+  const accts=parseInt(document.getElementById('edit-accts').value)||0;
   const rev=parseFloat(document.getElementById('edit-rev').value)||0;
-  const mosqAccts=parseInt((document.getElementById('edit-mosq-accts')||{}).value)||0;
-  const knocks=parseInt((document.getElementById('edit-knocks')||{}).value)||0;
-  const talks=parseInt((document.getElementById('edit-talks')||{}).value)||0;
   const notes=document.getElementById('edit-notes').value.trim();
-  const totalAccts=pestAccts+mosqAccts;
   if(!newDate)return toast('Pick a date.',true);
-  setSync('syncing','Saving...');
+  setSync('syncing','Saving…');
   try{
+    // If date changed, delete old and insert new
     if(origDate!==newDate) await sbDelete('days','date=eq.'+origDate);
-    await sbUpsert('days',{
-      date:newDate, accounts:totalAccts, revenue:rev,
-      pest_accounts:pestAccts, pest_revenue:rev,
-      mosq_accounts:mosqAccts, mosq_solo:0, mosq_bundle:0,
-      knocks, talks, notes
-    },'date');
+    await sbUpsert('days',{date:newDate,accounts:accts,revenue:rev,notes},'date');
     closeEdit();
     await loadAll();
     toast('Day updated ✓');
@@ -2731,7 +2703,7 @@ async function addDayOff2(){
   try{
     await Promise.all(valid.map(d=>sbUpsert('days_off',{date:d,reason},'date')));
     if(DP['do-date2']){DP['do-date2'].rangeStart=null;DP['do-date2'].rangeEnd=null;DP['do-date2'].selected=null;}
-    const valEl=document.getElementById('dp-do-date-val2');
+    const valEl=document.getElementById('dp-do-date2-val');
     if(valEl) valEl.innerHTML='<span class="dp-placeholder">Select date…</span>';
     document.getElementById('do-date2').value='';
     document.getElementById('do-reason2').value='';
@@ -2757,9 +2729,7 @@ function isFirstRun(){
   if(!raw) return true;
   try{
     const d=JSON.parse(raw);
-    // Any saved config with targets = not first run
-    if(d.acctTarget && d.acctTarget > 0 && d.start && d.end) return false;
-    return true;
+    return !d.name || !d.start || !d.acctTarget;
   }catch{ return true; }
 }
 
@@ -2853,16 +2823,11 @@ function setupFinish(){
   while(d<=end){if(!OFF.has(d.toISOString().slice(0,10)))kd++;d=new Date(d.getTime()+86400000);}
   cfg.kDays=kd;
 
-  // Save everything
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
-  saveSettingsToCloud();
-
-  // Reload settings fields so More tab shows correct values
-  loadSettings();
-  initSettingsFmt();
-
   hideSetup();
-  buildWeeks();
+
+  // Update header name
+  updateAppTitle();
   render();
   toast('Welcome, '+cfg.name+'! Season set up ✓');
 }
@@ -2875,27 +2840,7 @@ function updateAppTitle(){
   }
 }
 
-async function syncSettingsNow(){
-  toast('Syncing settings…');
-  setSync('syncing','Syncing…');
-  const got = await loadSettingsFromCloud();
-  if(got){
-    buildWeeks();
-    if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
-    loadSettings();
-    initSettingsFmt();
-      render();
-    setSync('synced','Synced');
-    toast('Settings synced ✓');
-  } else {
-    // Nothing in cloud yet — push current local settings up
-    await saveSettingsToCloud();
-    setSync('synced','Synced');
-    toast('Settings saved to cloud ✓');
-  }
-}
 
-// ── KNOCKS & TALKS STATS ────────────────────────
 function renderKTStats(){
   const hasData = days.some(d=>d.knocks||d.talks);
   const section = document.getElementById('kt-stats-section');
@@ -2921,7 +2866,7 @@ function renderKTStats(){
     '<div class="row-item"><span class="row-label">Total talks</span><span class="row-val">'+totalTalks+'</span></div>';
 }
 
-// ── HOUSING TRACKER ──────────────────────────────
+
 function renderHousingTracker(){
   const el = document.getElementById('housing-tracker');
   if(!el) return;
@@ -2954,7 +2899,7 @@ function renderHousingTracker(){
   el.appendChild(s);
 }
 
-// ── AUGUST BEST MONTH ────────────────────────────
+
 function renderMonthlyBreakdown(){
   const el = document.getElementById('monthly-breakdown');
   if(!el) return;
@@ -3002,7 +2947,7 @@ function renderMonthlyBreakdown(){
     'Tuition bonus: '+augStatus+'</div>';
 }
 
-// ── 6-SERVICED WARNING ───────────────────────────
+
 function renderServicedWarning(){
   const el = document.getElementById('serviced-warning');
   if(!el) return;
@@ -3031,6 +2976,53 @@ function renderServicedWarning(){
   '</div>';
 }
 
+
+async function saveSettingsToCloud(){
+  try{
+    await sbUpsert('settings',{key:'cfg',value:JSON.stringify(cfg)},'key');
+  }catch(e){ console.log('Settings cloud save failed:',e); }
+}
+
+
+async function loadSettingsFromCloud(){
+  try{
+    const rows=await sbGet('settings',"&key=eq.cfg");
+    console.log('Settings cloud rows:', rows);
+    if(rows&&rows.length>0&&rows[0].value){
+      const saved=JSON.parse(rows[0].value);
+      cfg={...DEFAULTS,...saved};
+      localStorage.setItem('cfg2026',JSON.stringify(cfg));
+      console.log('Settings loaded from cloud:', cfg.name, cfg.acctTarget);
+      return true;
+    } else {
+      console.log('No settings found in cloud yet');
+    }
+  }catch(e){ console.log('Settings cloud load failed:',e); }
+  return false;
+}
+
+
+async function syncSettingsNow(){
+  toast('Syncing settings…');
+  setSync('syncing','Syncing…');
+  const got = await loadSettingsFromCloud();
+  if(got){
+    buildWeeks();
+    if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
+    loadSettings();
+    initSettingsFmt();
+      render();
+    setSync('synced','Synced');
+    toast('Settings synced ✓');
+  } else {
+    // Nothing in cloud yet — push current local settings up
+    await saveSettingsToCloud();
+    setSync('synced','Synced');
+    toast('Settings saved to cloud ✓');
+  }
+}
+
+
 function toggleTheme(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
@@ -3056,23 +3048,13 @@ function loadTheme(){
 
 window.onload=async ()=>{
   loadTheme();
-  loadSettings(); // load local first so app isn't blank while cloud loads
+  loadSettings();
   buildWeeks();
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   initSettingsFmt();
   generateAppIcon();
+  updateAppTitle();
   dpSetValue('f-date', new Date().toISOString().slice(0,10));
-
-  // Try to pull latest settings from cloud
-  const gotCloudSettings = await loadSettingsFromCloud();
-  if(gotCloudSettings){
-    // Re-apply cloud settings
-    buildWeeks();
-    if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
-    loadSettings();
-    initSettingsFmt();
-    }
-
   if(isFirstRun()){
     showSetup();
   } else {
@@ -3082,9 +3064,9 @@ window.onload=async ()=>{
 
 function generateAppIcon(){
   try{
-    const cv=document.createElement('canvas');
-    cv.width=180; cv.height=180;
-    const ctx=cv.getContext('2d');
+    const canvas=document.createElement('canvas');
+    canvas.width=180; canvas.height=180;
+    const ctx=canvas.getContext('2d');
 
     // Rounded rect clip
     const r=36;
@@ -3097,31 +3079,102 @@ function generateAppIcon(){
     ctx.save();
     ctx.clip();
 
-    // Dark navy background
-    ctx.fillStyle='#0d0d18';
+    // Sky gradient background - dark blue to near black
+    const sky=ctx.createLinearGradient(0,0,0,180);
+    sky.addColorStop(0,'#0a0e1a');
+    sky.addColorStop(1,'#141c2e');
+    ctx.fillStyle=sky;
     ctx.fillRect(0,0,180,180);
 
-    // Bold symmetric lightning bolt, well centered
-    // Top half: wide at top, narrows to waist
-    // Bottom half: wide at waist, narrows to point
-    ctx.fillStyle='#e8c840';
+    // Back mountains (darker, smaller)
+    ctx.fillStyle='#1e2a3a';
     ctx.beginPath();
-    ctx.moveTo(107, 14);  // top-right
-    ctx.lineTo(58,  92);  // waist-left
-    ctx.lineTo(84,  92);  // waist-right-inner
-    ctx.lineTo(73,  166); // bottom point
-    ctx.lineTo(122, 88);  // waist-right
-    ctx.lineTo(96,  88);  // waist-left-inner
+    ctx.moveTo(0,120);
+    ctx.lineTo(30,72);
+    ctx.lineTo(60,95);
+    ctx.lineTo(90,55);
+    ctx.lineTo(120,85);
+    ctx.lineTo(150,65);
+    ctx.lineTo(180,90);
+    ctx.lineTo(180,180);
+    ctx.lineTo(0,180);
     ctx.closePath();
     ctx.fill();
 
+    // Front mountains (white/light grey - main peaks)
+    ctx.fillStyle='#dde8f0';
+    ctx.beginPath();
+    ctx.moveTo(0,145);
+    ctx.lineTo(50,80);   // left peak
+    ctx.lineTo(70,105);
+    ctx.lineTo(100,52);  // center peak (tallest)
+    ctx.lineTo(130,90);
+    ctx.lineTo(155,68);  // right peak
+    ctx.lineTo(180,100);
+    ctx.lineTo(180,180);
+    ctx.lineTo(0,180);
+    ctx.closePath();
+    ctx.fill();
+
+    // Snow caps on peaks
+    ctx.fillStyle='#ffffff';
+    // Left peak snow
+    ctx.beginPath();
+    ctx.moveTo(50,80);
+    ctx.lineTo(38,100);
+    ctx.lineTo(62,100);
+    ctx.closePath();
+    ctx.fill();
+    // Center peak snow
+    ctx.beginPath();
+    ctx.moveTo(100,52);
+    ctx.lineTo(86,78);
+    ctx.lineTo(114,78);
+    ctx.closePath();
+    ctx.fill();
+    // Right peak snow
+    ctx.beginPath();
+    ctx.moveTo(155,68);
+    ctx.lineTo(145,84);
+    ctx.lineTo(165,84);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ground / valley fill (dark)
+    ctx.fillStyle='#0d1520';
+    ctx.beginPath();
+    ctx.moveTo(0,148);
+    ctx.lineTo(180,148);
+    ctx.lineTo(180,180);
+    ctx.lineTo(0,180);
+    ctx.closePath();
+    ctx.fill();
+
+    // Winding path - yellow/golden, starts bottom center, winds up
+    ctx.strokeStyle='#e8c840';
+    ctx.lineWidth=5;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.shadowColor='rgba(232,200,64,0.6)';
+    ctx.shadowBlur=8;
+    ctx.beginPath();
+    ctx.moveTo(90,178);
+    ctx.bezierCurveTo(75,165, 60,158, 68,148);
+    ctx.bezierCurveTo(78,136, 105,138, 112,125);
+    ctx.bezierCurveTo(120,110, 95,105, 100,92);
+    ctx.bezierCurveTo(104,80, 112,72, 108,62);
+    ctx.stroke();
+    ctx.shadowBlur=0;
+
     ctx.restore();
-    const png=cv.toDataURL('image/png');
+
+    const png=canvas.toDataURL('image/png');
     const link=document.getElementById('app-icon');
     if(link) link.href=png;
-  }catch(e){ console.log('Icon gen failed:',e); }
+  }catch(e){
+    console.log('Icon gen failed:', e);
+  }
 }
-
 </script>
 </body>
 </html>
