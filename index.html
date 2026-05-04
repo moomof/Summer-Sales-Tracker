@@ -2285,16 +2285,17 @@ function saveSettings(){
 
 function loadSettings(){
   try{const r=localStorage.getItem('cfg2026');if(r)cfg={...DEFAULTS,...JSON.parse(r)};}catch{}
-  document.getElementById('s-rev-target').value=cfg.revTarget;
-  document.getElementById('s-acct-target').value=cfg.acctTarget;
-  document.getElementById('s-kdays').value=cfg.kDays;
-  document.getElementById('s-acv').value=cfg.acv;
-  document.getElementById('s-retention').value=cfg.retention;
-  document.getElementById('s-advance').value=cfg.advance;
-  document.getElementById('s-start').value=cfg.start;
-  document.getElementById('s-end').value=cfg.end;
-  document.getElementById('s-last-accts').value=cfg.lastAccts;
-  document.getElementById('s-last-rev').value=cfg.lastRev;
+  const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
+  sv('s-rev-target',cfg.revTarget);
+  sv('s-acct-target',cfg.acctTarget);
+  sv('s-kdays',cfg.kDays);
+  sv('s-acv',cfg.acv);
+  sv('s-retention',cfg.retention);
+  sv('s-advance',cfg.advance);
+  sv('s-start',cfg.start);
+  sv('s-end',cfg.end);
+  sv('s-last-accts',cfg.lastAccts);
+  sv('s-last-rev',cfg.lastRev);
 }
 
 // ── EXPORT ──────────────────────────────────────
@@ -3078,20 +3079,16 @@ function loadTheme(){
 
 window.onload=async ()=>{
   loadTheme();
-  loadSettings();
+  loadSettings();     // load from localStorage first (fast)
+  generateAppIcon();
+  dpSetValue('f-date', new Date().toISOString().slice(0,10));
+  // Try cloud settings - always wait for this before building weeks
+  const gotCloud = await loadSettingsFromCloud();
+  if(gotCloud){ loadSettings(); }
+  // Now build weeks with correct dates
   buildWeeks();
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   initSettingsFmt();
-  generateAppIcon();
-  dpSetValue('f-date', new Date().toISOString().slice(0,10));
-  // Pull settings from cloud first
-  const gotCloud = await loadSettingsFromCloud();
-  if(gotCloud){
-    buildWeeks();
-    if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
-    loadSettings();
-    initSettingsFmt();
-  }
   if(isFirstRun()){
     showSetup();
   } else {
