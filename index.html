@@ -1622,12 +1622,14 @@ function getKnockingDays(){
 function setSync(cls,txt){ const d=document.getElementById('sync-dot'); if(d) d.className='dot '+cls; const _st=document.getElementById('sync-text');if(_st)_st.textContent=txt; }
 
 async function loadAll(){
+  let errs=[];
   try{ days=await sbGet('days','&order=date.asc'); }
-  catch(e){ console.error('days:',e); days=days||[]; }
+  catch(e){ days=days||[]; errs.push('days'); console.error('days:',e); }
   try{ pulseHistory=await sbGet('pulse_snapshots','&order=week_num.asc'); }
-  catch(e){ console.error('pulse:',e); pulseHistory=pulseHistory||[]; }
+  catch(e){ pulseHistory=pulseHistory||[]; errs.push('pulse'); console.error('pulse:',e); }
   try{ daysOff=await sbGet('days_off','&order=date.asc'); }
-  catch(e){ console.error('daysOff:',e); daysOff=daysOff||[]; }
+  catch(e){ daysOff=daysOff||[]; errs.push('days_off'); console.error('daysOff:',e); }
+  if(errs.length) toast('Sync issue: '+errs.join(', ')+' failed to load. Check connection.',true);
   render();
 }
 
