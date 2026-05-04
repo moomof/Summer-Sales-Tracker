@@ -1495,6 +1495,20 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 </div>
 
 <script>
+// Global error catcher - shows errors on screen for debugging
+window.onerror = function(msg, src, line, col, err){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#d03050;color:#fff;padding:12px 16px;font-size:13px;font-family:monospace;z-index:9999;word-break:break-all;';
+  d.textContent = 'ERROR: ' + msg + ' (line ' + line + ')';
+  document.body.appendChild(d);
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:40px;left:0;right:0;background:#e06030;color:#fff;padding:12px 16px;font-size:13px;font-family:monospace;z-index:9999;word-break:break-all;';
+  d.textContent = 'PROMISE ERROR: ' + (e.reason||e);
+  document.body.appendChild(d);
+});
 // ── SUPABASE ────────────────────────────────────
 const SB_URL='https://kludlwcobfwmrrvnhknz.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdWRsd2NvYmZ3bXJydm5oa256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTczNjIsImV4cCI6MjA5MjM5MzM2Mn0.tK7M2yh0seeWzhb6aSkGjLooaViukVZ-DOMbxLc-KIM';
