@@ -1522,19 +1522,7 @@ border: 1.5px solid transparent;
 
 <script>
 // Global error catcher - shows errors on screen for debugging
-window.onerror = function(msg, src, line, col, err){
-  const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#d03050;color:#fff;padding:12px 16px;font-size:13px;font-family:monospace;z-index:9999;word-break:break-all;';
-  d.textContent = 'ERROR: ' + msg + ' (line ' + line + ')';
-  document.body.appendChild(d);
-  return false;
-};
-window.addEventListener('unhandledrejection', function(e){
-  const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;top:40px;left:0;right:0;background:#e06030;color:#fff;padding:12px 16px;font-size:13px;font-family:monospace;z-index:9999;word-break:break-all;';
-  d.textContent = 'PROMISE ERROR: ' + (e.reason||e);
-  document.body.appendChild(d);
-});
+// error handlers removed
 // ── SUPABASE ────────────────────────────────────
 const SB_URL='https://kludlwcobfwmrrvnhknz.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsdWRsd2NvYmZ3bXJydm5oa256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTczNjIsImV4cCI6MjA5MjM5MzM2Mn0.tK7M2yh0seeWzhb6aSkGjLooaViukVZ-DOMbxLc-KIM';
@@ -1634,16 +1622,13 @@ function getKnockingDays(){
 function setSync(cls,txt){ const d=document.getElementById('sync-dot'); if(d) d.className='dot '+cls; const _st=document.getElementById('sync-text');if(_st)_st.textContent=txt; }
 
 async function loadAll(){
-  setSync('syncing','Syncing…');
-  try{
-    [days,pulseHistory,daysOff]=await Promise.all([
-      sbGet('days','&order=date.asc'),
-      sbGet('pulse_snapshots','&order=week_num.asc').catch(()=>[]),
-      sbGet('days_off','&order=date.asc').catch(()=>[])
-    ]);
-    setSync('synced','Synced');
-    render();
-  }catch(e){setSync('error','Offline');toast('Could not connect.',true);console.error(e);}
+  try{ days=await sbGet('days','&order=date.asc'); }
+  catch(e){ console.error('days:',e); days=days||[]; }
+  try{ pulseHistory=await sbGet('pulse_snapshots','&order=week_num.asc'); }
+  catch(e){ console.error('pulse:',e); pulseHistory=pulseHistory||[]; }
+  try{ daysOff=await sbGet('days_off','&order=date.asc'); }
+  catch(e){ console.error('daysOff:',e); daysOff=daysOff||[]; }
+  render();
 }
 
 // ── DERIVED ─────────────────────────────────────
