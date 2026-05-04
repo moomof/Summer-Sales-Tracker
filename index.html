@@ -2853,10 +2853,12 @@ function setupFinish(){
   cfg.kDays=kd;
 
   localStorage.setItem('cfg2026',JSON.stringify(cfg));
+  saveSettingsToCloud();
+  buildWeeks();
+  loadSettings();
+  initSettingsFmt();
   hideSetup();
-
-  // Update header name
-  render();
+  loadAll();
   toast('Welcome, '+cfg.name+'! Season set up ✓');
 }
 
