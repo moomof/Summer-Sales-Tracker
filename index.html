@@ -2337,8 +2337,12 @@ function showPage(id,btn){
   document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
-  if(id==='daysoff') renderDaysOff();
+  if(id==='dashboard') renderDash();
+  if(id==='log') renderLog();
+  if(id==='pulse') renderPulse();
+  if(id==='commission') renderCommission();
   if(id==='weekly') renderWeekly();
+  if(id==='more') renderDaysOff();
 }
 
 // ── INIT ────────────────────────────────────────
