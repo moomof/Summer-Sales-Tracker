@@ -1870,6 +1870,8 @@ function calcComm(accts,svcRev,pestAccts,mosqAccts){
 function renderCommission(){
   const s=stats(),pd=getPulseData();
   const curr=calcComm(s.sold,pd.svcRev,s.pestSold,s.mosqSold);
+  renderHousingTracker();
+  renderMonthlyBreakdown();
   const projSvcRev=Math.round(s.projR*pd.retRate);
   const proj=calcComm(s.projA,projSvcRev);
 
@@ -1891,7 +1893,9 @@ function renderCommission(){
     <div class="row-item"><span class="row-label">Current tier</span><span class="row-val">${Math.round(curr.tier.rate*100)}% (${curr.tier.min}–${curr.tier.max===9999?curr.tier.min+'+':curr.tier.max})</span></div>
     <div class="row-item"><span class="row-label">Serviced revenue<br><span class="row-sub">${retNote}</span></span><span class="row-val">${$$(pd.svcRev)}</span></div>
     <div class="row-item"><span class="row-label">Gross commission</span><span class="row-val" style="color:var(--green)">${$$(curr.grossComm)}</span></div>
-    <div class="row-item"><span class="row-label">Advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
+    <div class="row-item"><span class="row-label">Pest advances (${s.pestSold} × $${G('advance')})</span><span class="row-val">${$$(s.pestSold*G('advance'))}</span></div>
+    <div class="row-item"><span class="row-label">Mosquito advances (${s.mosqSold} × $${G('mosqAdvance')})</span><span class="row-val">${$$(s.mosqSold*G('mosqAdvance'))}</span></div>
+    <div class="row-item"><span class="row-label">Total advances paid</span><span class="row-val">${$$(curr.advance)}</span></div>
     <div class="row-item"><span class="row-label">Net backend remaining</span><span class="row-val" style="color:var(--orange)">${$$(curr.netBackend)}</span></div>
     <div class="row-item"><span class="row-label">Projected final commission</span><span class="row-val" style="color:var(--purple)">${s.n>0?$$(proj.grossComm):'—'}</span></div>
   `;
