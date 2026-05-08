@@ -1083,7 +1083,7 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
       <div style="font-size:13px;color:var(--ink3);margin-bottom:20px;">When are you in the field?</div>
       <div class="field" style="margin-bottom:14px;"><label>Season Start</label><input type="date" id="setup-start" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;-webkit-appearance:none;"></div>
       <div class="field" style="margin-bottom:14px;"><label>Season End</label><input type="date" id="setup-end" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;-webkit-appearance:none;"></div>
-      <div class="field" style="margin-bottom:14px;"><label>Advance per Sale ($)</label><input type="number" id="setup-advance" placeholder="75" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
+      <div class="field" style="margin-bottom:14px;"><label>Pest Advance / Sale ($)</label><input type="number" id="setup-advance" placeholder="75" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div><div class="field"><label>Mosquito Advance / Sale ($)</label><input type="number" id="setup-mosq-advance" placeholder="50" inputmode="decimal" style="font-size:16px;width:100%;background:var(--bg);border:1.5px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);padding:11px 14px;outline:none;font-family:var(--mono);"></div>
       <div style="display:flex;gap:10px;margin-top:8px;">
         <button class="add-btn" style="background:var(--card2);color:var(--ink);border:1.5px solid var(--line2);flex:0.4;" onclick="setupBack(2)">← Back</button>
         <button class="add-btn" style="flex:1;" onclick="setupNext(2)">Continue →</button>
@@ -1523,7 +1523,7 @@ async function sbDelete(t,q){
   return await r.json();
 }
 // ── DEFAULTS ────────────────────────────────────
-const DEFAULTS={revTarget:0,acctTarget:0,kDays:0,acv:0,retention:88,advance:75,start:'',end:'',lastAccts:0,lastRev:0,name:'',company:'Vantage'};
+const DEFAULTS={revTarget:0,acctTarget:0,kDays:0,acv:0,retention:88,advance:75,mosqAdvance:50,start:'',end:'',lastAccts:0,lastRev:0,name:'',company:'Vantage'};
 
 // TIERS are built from user setup — default Vantage scale, overridable
 let TIERS=[
@@ -1858,7 +1858,7 @@ function calcComm(accts,svcRev,pestAccts,mosqAccts){
   const grossComm=Math.round(svcRev*tier.rate);
   const pa=pestAccts!=null?pestAccts:accts;
   const ma=mosqAccts||0;
-  const advance=(pa*G('advance'))+(ma*50);
+  const advance=(pa*G('advance'))+(ma*G('mosqAdvance'));
   const netBackend=Math.max(0,grossComm-advance);
   return {tier,grossComm,advance,netBackend,pestAccts:pa,mosqAccts:ma};
 }
@@ -2260,6 +2260,7 @@ function saveSettings(){
   cfg.acv=getFieldNum('s-acv')||DEFAULTS.acv;
   cfg.retention=parseFloat(document.getElementById('s-retention').value)||DEFAULTS.retention;
   cfg.advance=getFieldNum('s-advance')||DEFAULTS.advance;
+  cfg.mosqAdvance=getFieldNum('s-mosq-advance')||DEFAULTS.mosqAdvance;
   cfg.start=document.getElementById('s-start').value||DEFAULTS.start;
   cfg.end=document.getElementById('s-end').value||DEFAULTS.end;
   cfg.lastAccts=parseInt(document.getElementById('s-last-accts').value)||DEFAULTS.lastAccts;
@@ -2283,6 +2284,7 @@ function loadSettings(){
   sv('s-acv',cfg.acv);
   sv('s-retention',cfg.retention);
   sv('s-advance',cfg.advance);
+  sv('s-mosq-advance',cfg.mosqAdvance);
   sv('s-start',cfg.start);
   sv('s-end',cfg.end);
   sv('s-last-accts',cfg.lastAccts);
@@ -2774,6 +2776,7 @@ function showSetup(){
   if(cfg.start) document.getElementById('setup-start').value=cfg.start;
   if(cfg.end) document.getElementById('setup-end').value=cfg.end;
   if(cfg.advance) document.getElementById('setup-advance').value=cfg.advance;
+  if(cfg.mosqAdvance) document.getElementById('setup-mosq-advance').value=cfg.mosqAdvance;
   if(cfg.acctTarget) document.getElementById('setup-acct-target').value=cfg.acctTarget;
   if(cfg.revTarget) document.getElementById('setup-rev-target').value=cfg.revTarget;
   if(cfg.acv) document.getElementById('setup-acv').value=cfg.acv;
@@ -2808,6 +2811,7 @@ function setupNext(step){
     if(end<=start) return toast('End date must be after start.',true);
     cfg.start=start; cfg.end=end;
     cfg.advance=parseFloat(document.getElementById('setup-advance').value)||75;
+    cfg.mosqAdvance=parseFloat(document.getElementById('setup-mosq-advance').value)||50;
     buildWeeks();
     setupGoTo(3);
   } else if(step===3){
