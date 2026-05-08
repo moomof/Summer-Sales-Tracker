@@ -1498,19 +1498,22 @@ tr.wk-cur td:first-child { border-left: 3px solid var(--yellow); }
 // Global error catcher - shows errors on screen for debugging
 // error handlers removed
 // ── SUPABASE ────────────────────────────────────
-const GAS_URL='https://script.google.com/macros/s/AKfycbznst2Km10rgGWxB7eDveuWmbnappQZbwohMJpABRqomGhzSFckQqJsKuXHwmf3tMgbqw/exec';
+const GAS_URL='https://script.google.com/macros/s/AKfycbwiyPNcPrhJOzboM-ZVAuAasFabFtmggNiarquv5bAYg6cMdcRDF7y2L2C5r48J4l70NA/exec';
 async function sbGet(t,q=''){
   const order=(q.match(/order=([^&]+)/)||[])[1]||'';
   let url=GAS_URL+'?table='+t;
   if(order) url+='&order='+order;
-  const r=await fetch(url);
+  const r=await fetch(url,{redirect:'follow'});
   if(!r.ok) throw new Error(await r.text());
   const data=await r.json();
   if(data&&data.error) throw new Error(data.error);
   return data;
 }
 async function sbUpsert(t,row,conflict){
-  const r=await fetch(GAS_URL+'?table='+t+'&action=upsert&conflict='+conflict,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)});
+  // GAS doesn't support POST with redirect, use GET with encoded body
+  const params=encodeURIComponent(JSON.stringify(row));
+  const url=GAS_URL+'?table='+t+'&action=upsert&conflict='+conflict+'&data='+params;
+  const r=await fetch(url,{redirect:'follow'});
   if(!r.ok) throw new Error(await r.text());
   const data=await r.json();
   if(data&&data.error) throw new Error(data.error);
@@ -1518,7 +1521,8 @@ async function sbUpsert(t,row,conflict){
 }
 async function sbDelete(t,q){
   const parts=q.split('=eq.');
-  const r=await fetch(GAS_URL+'?table='+t+'&action=delete&col='+parts[0]+'&val='+encodeURIComponent(parts[1]),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+  const url=GAS_URL+'?table='+t+'&action=delete&col='+parts[0]+'&val='+encodeURIComponent(parts[1]);
+  const r=await fetch(url,{redirect:'follow'});
   if(!r.ok) throw new Error(await r.text());
   return await r.json();
 }
