@@ -1868,6 +1868,7 @@ function calcComm(accts,svcRev,pestAccts,mosqAccts){
 }
 
 function renderCommission(){
+  try{
   const s=stats(),pd=getPulseData();
   const curr=calcComm(s.sold,pd.svcRev,s.pestSold,s.mosqSold);
   renderHousingTracker();
@@ -1918,6 +1919,7 @@ function renderCommission(){
     <div class="row-item"><span class="row-label">Mar 25, 2027<br><span class="row-sub">Same accounts</span></span><span class="row-val">Final 25%</span></div>
     <div class="row-item"><span class="row-label">May 25, 2027<br><span class="row-sub">Serviced after Oct 1</span></span><span class="row-val">Full commission</span></div>
   `;
+  }catch(err){const el=document.getElementById("tier-grid");if(el)el.innerHTML='<div style="color:red;padding:12px;font-size:13px;font-family:monospace;">ERROR: '+err.message+'</div>';console.error(err);}
 }
 
 function renderLog(){
