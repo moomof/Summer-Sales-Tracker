@@ -192,9 +192,8 @@ background: #1a1915;
 border-radius: var(–r);
 padding: 20px;
 margin-bottom: 12px;
-color: #ffffff !important;
-min-height: 120px;
-border: 3px solid red;
+color: #fff;
+min-height: 80px;
 }
 [data-theme=“dark”] .hero-card {
 background: #1e1e28;
@@ -1656,7 +1655,6 @@ async function loadAll(){
   // Always rebuild weeks before rendering so hero card works
   buildWeeks();
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
-  if(!WEEKS.length) toast('⚠️ WEEKS empty — start:'+G('start')+' end:'+G('end'),true);
   render();
 }
 
@@ -1743,17 +1741,9 @@ const dayTag=a=>a>=3?{c:'tag-great',t:'🔥 Great'}:a===2?{c:'tag-good',t:'On Pa
 function render(){renderDash();renderLog();renderPulse();renderCommission();renderWeekly();renderDaysOff();}
 
 function renderDash(){
-  let s,str,wg,pd;
-  try{
-    s=stats(); str=getStreaks(); wg=getWeekGoal(); pd=getPulseData();
-  }catch(err){
-    document.getElementById('hero-eyebrow').textContent='CRASH in stats/wg: '+err.message;
-    document.getElementById('hero-main').textContent=err.stack||'no stack';
-    return;
-  }
+  const s=stats(),str=getStreaks(),wg=getWeekGoal(),pd=getPulseData();
 
   // Hero card
-  document.getElementById('hero-eyebrow').textContent='DEBUG: wg='+(wg?'YES':'NO')+' WEEKS='+WEEKS.length+' start='+G('start');
   if(wg){
     let eyebrow='Week '+wg.w.n+' · '+(wg.w.s||'').slice(5)+' – '+(wg.w.e||'').slice(5);
     let main,sub;
@@ -1778,7 +1768,7 @@ function renderDash(){
   } else {
     document.getElementById('hero-eyebrow').textContent='Season Status';
     document.getElementById('hero-main').textContent='Season starts '+G('start');
-    document.getElementById('hero-sub').textContent='Weeks built: '+WEEKS.length+' | start='+G('start')+' | today='+new Date().toISOString().slice(0,10);
+    document.getElementById('hero-sub').textContent=G('kDays')+' knocking days · Target: '+G('acctTarget')+' accounts / '+$$(G('revTarget'));
   }
 
   // KPIs
