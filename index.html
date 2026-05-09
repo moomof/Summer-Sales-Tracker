@@ -1742,7 +1742,14 @@ const dayTag=a=>a>=3?{c:'tag-great',t:'🔥 Great'}:a===2?{c:'tag-good',t:'On Pa
 function render(){renderDash();renderLog();renderPulse();renderCommission();renderWeekly();renderDaysOff();}
 
 function renderDash(){
-  const s=stats(),str=getStreaks(),wg=getWeekGoal(),pd=getPulseData();
+  let s,str,wg,pd;
+  try{
+    s=stats(); str=getStreaks(); wg=getWeekGoal(); pd=getPulseData();
+  }catch(err){
+    document.getElementById('hero-eyebrow').textContent='CRASH in stats/wg: '+err.message;
+    document.getElementById('hero-main').textContent=err.stack||'no stack';
+    return;
+  }
 
   // Hero card
   document.getElementById('hero-eyebrow').textContent='DEBUG: wg='+(wg?'YES':'NO')+' WEEKS='+WEEKS.length+' start='+G('start');
