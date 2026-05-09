@@ -1745,7 +1745,7 @@ function renderDash(){
 
   // Hero card
   if(wg){
-    let eyebrow='Week '+wg.w.n+' · '+wg.w.s.slice(5)+' – '+wg.w.e.slice(5);
+    let eyebrow='Week '+wg.w.n+' · '+(wg.w.s||'').slice(5)+' – '+(wg.w.e||'').slice(5);
     let main,sub;
     if(wg.needed===0){
       main='Week target hit 🎯';
@@ -1755,7 +1755,7 @@ function renderDash(){
       sub=wg.wA>=wg.wTgt?'On pace. Keep building.':'Make up ground next week.';
     } else {
       const nextTier=TIERS.find(t=>s.sold<t.min);
-      main='Need <span class="hl">'+wg.needed+' more</span> in '+wg.dLeft+' day'+(wg.dLeft!==1?'s':'')+' — '+wg.paceNeeded.toFixed(1)+'/day.';
+      main='Need <span class="hl">'+wg.needed+' more</span> in '+wg.dLeft+' day'+(wg.dLeft!==1?'s':'')+' — '+(wg.paceNeeded||0).toFixed(1)+'/day.';
       sub='W'+wg.w.n+' target: '+wg.wTgt+' accounts. You have '+wg.wA+'. ';
       if(wg.paceNeeded<=s.apdTarget)sub+='You\'re in range.';
       else if(wg.paceNeeded<=4)sub+='Tough but doable.';
