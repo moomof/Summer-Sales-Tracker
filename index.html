@@ -1651,6 +1651,9 @@ async function loadAll(){
   try{ daysOff=await sbGet('days_off','&order=date.asc'); }
   catch(e){ daysOff=daysOff||[]; errs.push('days_off'); console.error('daysOff:',e); }
   if(errs.length) toast('Sync issue: '+errs.join(', ')+' failed to load. Check connection.',true);
+  // Always rebuild weeks before rendering so hero card works
+  buildWeeks();
+  if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   render();
 }
 
