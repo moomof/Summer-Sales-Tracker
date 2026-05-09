@@ -2625,13 +2625,13 @@ function updateSubtitle(){
   const today=new Date().toISOString().slice(0,10);
   const inSeason=today>=G('start')&&today<=G('end');
   if(!inSeason){
-    document.getElementById('app-subtitle').textContent='Season starts '+G('start');
+    const el0=document.getElementById('app-subtitle'); if(el0) el0.textContent='Season starts '+G('start');
     return;
   }
   const sub=s.sold>0
     ? s.sold+' sold · '+s.rem+' days left'
     : s.rem+' knocking days left';
-  document.getElementById('app-subtitle').textContent=sub;
+  const el1=document.getElementById('app-subtitle'); if(el1) el1.textContent=sub;
 }
 
 // ── TIER COUNTDOWN BANNER ────────────────────────
