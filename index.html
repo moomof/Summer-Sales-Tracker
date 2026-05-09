@@ -3056,16 +3056,16 @@ async function saveSettingsToCloud(){
 
 async function loadSettingsFromCloud(){
   try{
-    const rows=await sbGet('settings',"&key=eq.cfg");
-    console.log('Settings cloud rows:', rows);
-    if(rows&&rows.length>0&&rows[0].value){
-      const saved=JSON.parse(rows[0].value);
-      cfg={...DEFAULTS,...saved};
-      localStorage.setItem('cfg2026',JSON.stringify(cfg));
-      console.log('Settings loaded from cloud:', cfg.name, cfg.acctTarget);
-      return true;
-    } else {
-      console.log('No settings found in cloud yet');
+    const rows=await sbGet('settings');
+    if(rows&&rows.length>0){
+      // Find the cfg row by key
+      const cfgRow=rows.find(r=>r.key==='cfg')||rows[0];
+      if(cfgRow&&cfgRow.value){
+        const saved=JSON.parse(cfgRow.value);
+        cfg={...DEFAULTS,...saved};
+        localStorage.setItem('cfg2026',JSON.stringify(cfg));
+        return true;
+      }
     }
   }catch(e){ console.log('Settings cloud load failed:',e); }
   return false;
