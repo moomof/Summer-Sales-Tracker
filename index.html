@@ -1654,6 +1654,7 @@ async function loadAll(){
   // Always rebuild weeks before rendering so hero card works
   buildWeeks();
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
+  if(!WEEKS.length) toast('⚠️ WEEKS empty — start:'+G('start')+' end:'+G('end'),true);
   render();
 }
 
