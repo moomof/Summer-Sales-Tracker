@@ -1768,7 +1768,7 @@ function renderDash(){
   } else {
     document.getElementById('hero-eyebrow').textContent='Season Status';
     document.getElementById('hero-main').textContent='Season starts '+G('start');
-    document.getElementById('hero-sub').textContent=G('kDays')+' knocking days · Target: '+G('acctTarget')+' accounts / '+$$(G('revTarget'));
+    document.getElementById('hero-sub').textContent='Weeks built: '+WEEKS.length+' | start='+G('start')+' | today='+new Date().toISOString().slice(0,10);
   }
 
   // KPIs
