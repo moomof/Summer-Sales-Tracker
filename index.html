@@ -1535,28 +1535,44 @@ async function sbGet(t,q=''){
   const order=(q.match(/order=([^&]+)/)||[])[1]||'';
   let url=GAS_URL+'?table='+t;
   if(order) url+='&order='+order;
-  const r=await fetch(url,{redirect:'follow'});
-  if(!r.ok) throw new Error(await r.text());
-  const data=await r.json();
-  if(data&&data.error) throw new Error(data.error);
-  return data;
+  return new Promise((resolve,reject)=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true);
+    xhr.timeout=15000;
+    xhr.onload=function(){
+      try{
+        const data=JSON.parse(xhr.responseText);
+        if(data&&data.error) reject(new Error(data.error));
+        else resolve(data);
+      }catch(e){ reject(new Error('Parse error: '+xhr.responseText.slice(0,100))); }
+    };
+    xhr.onerror=function(){ reject(new Error('Network error')); };
+    xhr.ontimeout=function(){ reject(new Error('Timeout')); };
+    xhr.send();
+  });
 }
 async function sbUpsert(t,row,conflict){
-  // GAS doesn't support POST with redirect, use GET with encoded body
-  const params=encodeURIComponent(JSON.stringify(row));
-  const url=GAS_URL+'?table='+t+'&action=upsert&conflict='+conflict+'&data='+params;
-  const r=await fetch(url,{redirect:'follow'});
-  if(!r.ok) throw new Error(await r.text());
-  const data=await r.json();
-  if(data&&data.error) throw new Error(data.error);
-  return data;
+  const url=GAS_URL+'?table='+t+'&action=upsert&conflict='+conflict+'&data='+encodeURIComponent(JSON.stringify(row));
+  return new Promise((resolve,reject)=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true); xhr.timeout=15000;
+    xhr.onload=function(){try{const d=JSON.parse(xhr.responseText);if(d&&d.error)reject(new Error(d.error));else resolve(d);}catch(e){reject(new Error('Parse error'));}};
+    xhr.onerror=()=>reject(new Error('Network error'));
+    xhr.ontimeout=()=>reject(new Error('Timeout'));
+    xhr.send();
+  });
 }
 async function sbDelete(t,q){
   const parts=q.split('=eq.');
   const url=GAS_URL+'?table='+t+'&action=delete&col='+parts[0]+'&val='+encodeURIComponent(parts[1]);
-  const r=await fetch(url,{redirect:'follow'});
-  if(!r.ok) throw new Error(await r.text());
-  return await r.json();
+  return new Promise((resolve,reject)=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true); xhr.timeout=15000;
+    xhr.onload=function(){try{resolve(JSON.parse(xhr.responseText));}catch(e){resolve({ok:true});}};
+    xhr.onerror=()=>reject(new Error('Network error'));
+    xhr.ontimeout=()=>reject(new Error('Timeout'));
+    xhr.send();
+  });
 }
 // ── DEFAULTS ────────────────────────────────────
 const DEFAULTS={revTarget:0,acctTarget:0,kDays:0,acv:0,retention:88,advance:75,mosqAdvance:50,start:'',end:'',lastAccts:0,lastRev:0,name:'',company:'Vantage'};
