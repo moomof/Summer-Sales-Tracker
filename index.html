@@ -26,13 +26,13 @@
   --safe-bot:env(safe-area-inset-bottom,0px);
 }
 [data-theme="dark"] {
-  --bg:#0c0c10; --card:#141418; --card2:#1a1a20; --line:#232328; --line2:#2e2e36;
-  --ink:#f0f0f4; --ink2:#a0a0b0; --ink3:#606070;
-  --yellow:#e8c840; --yellow-bg:rgba(232,200,64,.1);
-  --green:#3fd898; --green-bg:rgba(63,216,152,.1);
-  --orange:#ff7040; --orange-bg:rgba(255,112,64,.1);
-  --red:#ff4060; --red-bg:rgba(255,64,96,.1);
-  --blue:#60aaff; --blue-bg:rgba(96,170,255,.1);
+  --bg:#0c0c10; --card:#18181e; --card2:#1e1e26; --line:#2a2a32; --line2:#343440;
+  --ink:#f2f2f6; --ink2:#a8a8b8; --ink3:#58586a;
+  --yellow:#e8c840; --yellow-bg:rgba(232,200,64,.12);
+  --green:#3fd898; --green-bg:rgba(63,216,152,.12);
+  --orange:#ff7040; --orange-bg:rgba(255,112,64,.12);
+  --red:#ff4060; --red-bg:rgba(255,64,96,.12);
+  --blue:#60aaff; --blue-bg:rgba(96,170,255,.12);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html{background:var(--bg);}
@@ -55,7 +55,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-s
 
 /* ── HERO CARD ── */
 .hero{background:#1a1915;border-radius:var(–r);padding:20px;margin-bottom:12px;color:#fff;min-height:90px;}
-[data-theme=“dark”] .hero{background:#1e1e2a;border:1px solid var(–line);}
+[data-theme=“dark”] .hero{background:#1e1e2e;border:1px solid rgba(232,200,64,.15);}
 .hero-ey{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:5px;}
 .hero-main{font-size:16px;font-weight:700;line-height:1.35;margin-bottom:8px;color:#fff;}
 .hero-main .hl{color:var(–yellow-dk);}
@@ -896,7 +896,7 @@ function renderDash() {
   }
 
   // KPIs
-  const comm = calcComm(s.sold, pd.svcR, s.pestSold, s.mosqSold);
+  const comm = calcComm(s.sold, pd.src==="pulse"?pd.svcR:pd.soldRev, s.pestSold, s.mosqSold);
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi"><div class="kpi-lbl">Accounts</div><div class="kpi-val">${s.sold}</div><div class="kpi-sub">of ${G('acctTarget')}</div></div>
     <div class="kpi"><div class="kpi-lbl">Revenue</div><div class="kpi-val">${$k(s.rev)}</div><div class="kpi-sub">of ${$k(G('revTarget'))}</div></div>
@@ -1039,7 +1039,7 @@ function renderPulse() {
 
 function renderComm() {
   const s = stats(), pd = getPulseData();
-  const comm = calcComm(s.sold, pd.svcR, s.pestSold, s.mosqSold);
+  const comm = calcComm(s.sold, pd.src==="pulse"?pd.svcR:pd.soldRev, s.pestSold, s.mosqSold);
 
   // Tier grid
   const tiers = [...(cfg.tiers||[])].sort((a,b)=>a.min-b.min);
