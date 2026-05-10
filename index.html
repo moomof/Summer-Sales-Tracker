@@ -165,7 +165,7 @@ opacity: 0;
 .bnav-btn.active .bnav-active-dot { opacity: 1; }
 
 /* ── PAGES ── */
-.page { display: none; padding: 16px; padding-top: calc(16px + env(safe-area-inset-top,0px)); max-width: 800px; margin: 0 auto; }
+.page { display: none; padding: 16px; padding-top: calc(env(safe-area-inset-top,0px) + 16px); max-width: 800px; margin: 0 auto; }
 .page.active { display: block; }
 
 /* ── SECTION LABELS ── */
@@ -189,11 +189,16 @@ overflow: hidden;
 /* ── HERO CARD (dashboard top) ── */
 .hero-card {
 background: #1a1915;
-border-radius: var(–r);
+border-radius: 16px;
 padding: 20px;
-margin-bottom: 12px;
+margin: 0 0 12px 0;
 color: #fff;
 min-height: 80px;
+}
+
+[data-theme=“dark”] .hero-card {
+background: #1e1e28;
+border: 1px solid #242428;
 }
 [data-theme=“dark”] .hero-card {
 background: #1e1e28;
