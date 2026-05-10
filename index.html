@@ -1060,6 +1060,13 @@ border: 1.5px solid transparent;
 .dp-native { display: none !important; }
 </style>
 
+<script>
+(function(){
+  const t = localStorage.getItem('theme2026') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+
 </head>
 <body>
 <!-- SETUP WIZARD -->
@@ -3160,8 +3167,7 @@ function updateThemeButtons(theme){
 
 function loadTheme(){
   const saved=localStorage.getItem('theme2026');
-  const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme=saved||(prefersDark?'dark':'light');
+  const theme=saved||'dark';
   document.documentElement.setAttribute('data-theme',theme);
   updateThemeButtons(theme);
 }
