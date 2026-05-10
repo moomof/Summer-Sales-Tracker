@@ -3139,20 +3139,21 @@ function loadTheme(){
 
 window.onload=async ()=>{
   loadTheme();
-  loadSettings();     // load from localStorage first (fast)
+  loadSettings();     // load from localStorage immediately
   generateAppIcon();
   dpSetValue('f-date', new Date().toISOString().slice(0,10));
-  // Try cloud settings - always wait for this before building weeks
-  const gotCloud = await loadSettingsFromCloud();
-  if(gotCloud){ loadSettings(); }
-  // Now build weeks with correct dates
   buildWeeks();
   if(cfg.tiersSetup) buildTiersFromSetup(cfg.tiersSetup.map(t=>({min:t.min,rate:t.rate/100})));
   initSettingsFmt();
   if(isFirstRun()){
     showSetup();
   } else {
+    // Start loading data immediately from localStorage settings
     loadAll();
+    // Then try to update settings from cloud in background (non-blocking)
+    loadSettingsFromCloud().then(gotCloud=>{
+      if(gotCloud){ loadSettings(); buildWeeks(); initSettingsFmt(); render(); }
+    }).catch(()=>{});
   }
 };
 
