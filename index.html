@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Field Tracker">
@@ -61,7 +61,7 @@
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 14px; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { font-size: 16px; -webkit-text-size-adjust: none; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
   background: var(--bg);
@@ -122,7 +122,7 @@ nav {
   border-radius: var(--radius-xs);
 }
 
-.main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100dvh; }
+.main-content { margin-left: var(--sidebar-w); flex: 1; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* ============================================================ PAGES ============================================================ */
 .page { display: none; padding: 36px 40px 56px; width: 100%; }
@@ -149,8 +149,8 @@ nav {
   }
   .nav-logo, .nav-footer, .nav-items { display: none; }
   .nav-mobile { display: flex !important; flex: 1; }
-  .main-content { margin-left: 0; padding-bottom: 0; }
-  .page { padding: calc(14px + var(--safe-top)) 16px calc(var(--nav-h) + var(--safe-bottom) + 24px); }
+  .main-content { margin-left: 0; padding-bottom: 0; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .page { padding: calc(20px + var(--safe-top)) 16px calc(var(--nav-h) + var(--safe-bottom) + 32px); }
   .page-title { font-size: 17px; }
 }
 .nav-mobile { display: none; width: 100%; }
@@ -364,10 +364,11 @@ nav {
 .form-input {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 9px 12px;
-  color: var(--text); font-size: 13px; font-family: var(--font-body);
+  color: var(--text); font-size: 16px; font-family: var(--font-body);
   transition: border-color 0.15s, box-shadow 0.15s;
   -webkit-appearance: none;
 }
+@media (min-width: 701px) { .form-input { font-size: 13px; } }
 .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,140,255,0.15); }
 .form-input::placeholder { color: var(--text3); }
 textarea.form-input { resize: vertical; min-height: 70px; }
@@ -634,6 +635,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
 .sync-dot.error { background: var(--red); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* PWA standalone mode — extra top clearance for status bar */
+@media (display-mode: standalone) {
+  .page { padding-top: calc(24px + var(--safe-top)); }
+}
+
 
 /* ============================================================
    MISC UTILITIES
