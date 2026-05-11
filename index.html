@@ -1040,7 +1040,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="card mb-12">
     <table class="month-table">
       <thead>
-        <tr><th>Month</th><th>Accts</th><th>Revenue</th><th>Comm</th></tr>
+        <tr><th>Month</th><th>Accts</th><th>Revenue</th><th>Comm*</th></tr>
       </thead>
       <tbody id="monthTableBody"></tbody>
     </table>
@@ -1479,8 +1479,11 @@ function isDayOff(dateStr) {
 
 function getWorkingDaysRemaining(fromDate) {
   const { end } = getSeasonDates();
+  const todayLogged = db.logs.some(l => l.date === todayStr());
   let count = 0;
   const cur = new Date(fromDate);
+  // If today is already logged, start counting from tomorrow
+  if (todayLogged) cur.setDate(cur.getDate() + 1);
   while (cur <= end) {
     const ds = cur.toISOString().slice(0,10);
     if (!isDayOff(ds)) count++;
@@ -1496,7 +1499,9 @@ function aggregateStats() {
   const totalTalks = db.logs.reduce((s, l) => s + (parseInt(l.talks)||0), 0);
   const totalPest = db.logs.reduce((s, l) => s + (parseInt(l.pest)||0), 0);
   const totalMosquito = db.logs.reduce((s, l) => s + (parseInt(l.mosquito)||0), 0);
-  const workingDays = db.logs.filter(l => !isDayOff(l.date)).length;
+  // Count distinct knocking days logged (not days off, not duplicates)
+  const loggedDates = [...new Set(db.logs.map(l => l.date))];
+  const workingDays = loggedDates.filter(d => !isDayOff(d)).length;
   const apd = workingDays > 0 ? totalAccounts / workingDays : 0;
   const acv = totalPest > 0 ? totalRevenue / totalPest : 0;
   return { totalAccounts, totalRevenue, totalKnocks, totalTalks, totalPest, totalMosquito, workingDays, apd, acv };
@@ -1555,10 +1560,23 @@ function renderDashboard() {
   document.getElementById('kpiAcv').textContent = '$' + Math.round(acv);
   const gross = calcCommission(totalRevenue, totalAccounts);
   const advances = calcAdvances(stats.totalPest, stats.totalMosquito);
-  const housingPayments = Math.floor((getDaysDiff(start, today) / 14)) * parseInt(S('housingPerPeriod'));
+  // Count semi-monthly pay periods (10th and 25th) that have passed since season start
+  function countHousingDeductions(seasonStart, asOfDate) {
+    let count = 0;
+    const cur = new Date(seasonStart);
+    cur.setDate(cur.getDate() + 1); // start checking day after season start
+    while (cur <= asOfDate) {
+      const d = cur.getDate();
+      if (d === 10 || d === 25) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }
+  const housingDeductionCount = countHousingDeductions(start, today);
+  const housingPayments = housingDeductionCount * parseFloat(S('housingPerPeriod'));
   const net = gross - advances - Math.max(0, housingPayments);
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
-  document.getElementById('kpiCommSub').textContent = `net ~$${Math.round(net).toLocaleString()}`;
+  document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
 
   const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(totalAccounts + apd * daysLeft) : totalAccounts;
   document.getElementById('kpiProjected').textContent = projectedAccounts;
@@ -1645,13 +1663,17 @@ function renderDashboard() {
   const neededPerDay = daysLeft > 0 ? (accountTarget - totalAccounts) / daysLeft : 0;
   const onPaceFor = workingDays > 0 ? Math.round(totalAccounts + apd * daysLeft) : totalAccounts;
   const surplus = totalAccounts - Math.round(apd > 0 ? workingDays * (accountTarget / S('knockingDays')) : 0);
-  const revPace = workingDays > 0 ? '$' + fmtK(totalRevenue / workingDays * (workingDays + daysLeft)) : '—';
+  // Projected revenue: what we have + (daily avg × days left)
+  const dailyRevAvg = workingDays > 0 ? totalRevenue / workingDays : 0;
+  const revPace = workingDays > 0 ? '$' + fmtK(totalRevenue + dailyRevAvg * daysLeft) : '—';
 
   const todayTarget = Math.ceil(neededPerDay);
   const weekTarget = Math.ceil(neededPerDay * 5);
   setPaceVal('paceTodayTarget', todayTarget + ' accts', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
   setPaceVal('paceWeekTarget', weekTarget + ' accts', '');
-  setPaceVal('paceOnTrack', onPaceFor + ' accounts', onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
+  const paceGap = onPaceFor - accountTarget;
+  const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
+  setPaceVal('paceOnTrack', onPaceFor + ' accounts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
   const surplusN = totalAccounts - Math.round(workingDays * accountTarget / S('knockingDays'));
   setPaceVal('paceSurplus', (surplusN >= 0 ? '+' : '') + surplusN + ' accounts', surplusN >= 0 ? 'good' : 'bad');
   setPaceVal('paceRevenue', revPace, '');
@@ -1735,7 +1757,20 @@ function renderCommission() {
   // Earnings Breakdown
   const gross = calcCommission(totalRevenue, totalAccounts);
   const advances = calcAdvances(totalPest, totalMosquito);
-  const housingPayments = Math.max(0, Math.floor(getDaysDiff(start, today) / 14)) * parseFloat(S('housingPerPeriod'));
+  // Count semi-monthly pay periods (10th and 25th) that have passed since season start
+  function countHousingDeductionsComm(seasonStart, asOfDate) {
+    let count = 0;
+    const cur = new Date(seasonStart);
+    cur.setDate(cur.getDate() + 1);
+    while (cur <= asOfDate) {
+      const d = cur.getDate();
+      if (d === 10 || d === 25) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }
+  const housingDeductionCount = countHousingDeductionsComm(start, today);
+  const housingPayments = housingDeductionCount * parseFloat(S('housingPerPeriod'));
   const net = gross - advances - housingPayments;
   document.getElementById('ebRevenue').textContent = '$' + totalRevenue.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('ebRate').textContent = (currentTier.pct * 100) + '%';
@@ -1832,9 +1867,11 @@ function renderCommission() {
 
   // Payout Timeline
   const timeline = document.getElementById('payoutTimeline');
+  // Payout is on NET (gross - advances already taken - housing)
+  const payoutBase = Math.max(0, net);
   const payouts = [
-    { date: 'Oct 25, 2026', desc: '75% backend payout', pct: 0.75, status: 'future' },
-    { date: 'Mar–May 2027', desc: 'Remaining 25%', pct: 0.25, status: 'future' },
+    { date: 'Oct 25, 2026', desc: '75% of net backend', pct: 0.75, status: 'future' },
+    { date: 'Mar–May 2027', desc: 'Remaining 25% of net', pct: 0.25, status: 'future' },
   ];
   timeline.innerHTML = payouts.map(p => `
     <div class="payout-item">
@@ -1843,7 +1880,7 @@ function renderCommission() {
         <div class="payout-date">${p.date}</div>
         <div class="payout-desc">${p.desc}</div>
       </div>
-      <div class="payout-amount">~$${Math.round(gross * p.pct).toLocaleString()}</div>
+      <div class="payout-amount">~$${Math.round(payoutBase * p.pct).toLocaleString()}</div>
     </div>
   `).join('');
 }
@@ -1892,7 +1929,9 @@ function renderWeekly() {
   const neededWeekly = Math.ceil(((accountTarget - stats.totalAccounts) / Math.max(1, Math.ceil(daysLeft / 5))) * 1);
   document.getElementById('wfThisWeek').textContent = thisWeekAccounts;
   document.getElementById('wfThisWeekSub').textContent = 'accounts sold this week';
-  document.getElementById('wfThisWeekTarget').textContent = `Target: ${Math.ceil(accountTarget / S('knockingDays') * 5)} / week`;
+  const weeksRemaining = Math.max(1, Math.ceil(getWorkingDaysRemaining(today) / 5));
+  const weeklyPaceTarget = Math.ceil((accountTarget - stats.totalAccounts) / weeksRemaining);
+  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk to hit ${accountTarget}`;
   document.getElementById('wfNextWeek').textContent = neededWeekly;
   document.getElementById('wfNextWeekSub').textContent = 'needed to stay on pace';
 
@@ -1907,7 +1946,7 @@ function renderWeekly() {
     const accts = wkData ? wkData.accounts : 0;
     const isCurrent = wk === currentWeek;
     const isDone = wkEnd < today;
-    const weekTarget = Math.ceil(accountTarget / totalWeeks);
+    const weekTarget = Math.ceil(accountTarget / Math.max(1, totalWeeks - 1));  // accounts per knocking week
     const div = document.createElement('div');
     div.className = 'timeline-week' + (isCurrent ? ' current-week' : '') + (isDone && !isCurrent ? ' done-week' : '');
     const startStr = fmtDateShort(wkStart);
@@ -2236,17 +2275,25 @@ function wizardBack() {
    ============================================================ */
 function calcStreak() {
   if (db.logs.length === 0) return 0;
-  const dates = [...new Set(db.logs.map(l => l.date).filter(d => {
-    const e = db.logs.find(l => l.date === d);
-    return e && ((parseInt(e.pest)||0) + (parseInt(e.mosquito)||0)) > 0;
-  }))].sort().reverse();
+  // Only dates with at least 1 account sold
+  const activeDates = new Set(db.logs
+    .filter(l => (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0) > 0)
+    .map(l => l.date)
+  );
   let streak = 0;
-  const today = todayStr();
-  let cur = today;
+  let cur = todayStr();
+  const { start } = getSeasonDates();
+  // Walk backwards; days off don't break streak, just skip
   for (let i = 0; i < 200; i++) {
-    if (dates.includes(cur) || isDayOff(cur)) {
-      if (!isDayOff(cur)) streak++;
-    } else break;
+    if (cur < start.toISOString().slice(0,10)) break;
+    if (isDayOff(cur)) {
+      // skip day off, don't break streak, don't count
+    } else if (activeDates.has(cur)) {
+      streak++;
+    } else {
+      // Non-day-off with no accounts — only forgive if it's today (not yet knocked)
+      if (cur !== todayStr()) break;
+    }
     cur = prevDate(cur);
   }
   return streak;
