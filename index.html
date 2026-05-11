@@ -1676,24 +1676,31 @@ function renderDashboard() {
   const daysElapsed = workingDays;
   const weekNum = getWeekNumber(today, start);
 
+  // NET accounts = total sold minus inactive (per latest pulse)
+  // This is what matters for tiers, pace, bonuses, and projections
+  const latestPulseNet = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseInactiveNet = latestPulseNet ? parseInt(latestPulseNet.inactive||0) : 0;
+  const netAccounts = Math.max(0, totalAccounts - pulseInactiveNet);
+  const hasNetData = latestPulseNet !== undefined;
+
   // Hero
   const accountTarget = parseInt(S('accountTarget'));
-  const weeklyNeeded = daysLeft > 0 ? Math.ceil((accountTarget - totalAccounts) / Math.max(1, Math.ceil(daysLeft/5))) : 0;
   document.getElementById('heroWeekLabel').textContent = `Week ${weekNum} · ${daysLeft} knocking days left`;
   document.getElementById('heroTarget').innerHTML = `${accountTarget} <span style="font-size:18px;opacity:0.7">target</span>`;
-  const latestPulseHero = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
-  const pulseActiveHero = latestPulseHero ? (parseInt(latestPulseHero.serviced)||0) + (parseInt(latestPulseHero.pending)||0) : null;
-  const heroSubText = pulseActiveHero !== null
-    ? `${totalAccounts} sold · ${pulseActiveHero} active · ${accountTarget - totalAccounts} to go`
-    : `${totalAccounts} sold · ${accountTarget - totalAccounts} to go`;
+  const heroSubText = hasNetData
+    ? `${totalAccounts} sold · ${netAccounts} net · ${Math.max(0, accountTarget - netAccounts)} to go`
+    : `${totalAccounts} sold · ${Math.max(0, accountTarget - totalAccounts)} to go`;
   document.getElementById('heroSub').textContent = heroSubText;
-  document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - totalAccounts) / daysLeft).toFixed(1) : '—';
+  document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - netAccounts) / daysLeft).toFixed(1) : '—';
   document.getElementById('heroPaceCurrent').textContent = apd.toFixed(1);
   document.getElementById('heroDaysLeft').textContent = daysLeft;
 
   // KPIs
-  document.getElementById('kpiAccounts').textContent = totalAccounts;
+  document.getElementById('kpiAccounts').textContent = hasNetData ? netAccounts + ' net' : totalAccounts;
   document.getElementById('kpiAccountsTarget').textContent = accountTarget;
+  document.getElementById('kpiAcvSub').textContent = hasNetData
+    ? totalAccounts + ' sold · ' + pulseInactiveNet + ' inactive'
+    : 'avg per pest acct';
   document.getElementById('kpiRevenue').textContent = '$' + fmtK(totalRevenue);
   const revTarget = parseInt(S('revenueTarget'));
   document.getElementById('kpiRevenueTarget').textContent = '$' + fmtK(revTarget);
@@ -1710,11 +1717,12 @@ function renderDashboard() {
   document.getElementById('kpiAcv').textContent = '$' + Math.round(acv);
 
   // Define currentTier and dailyRevAvg early — used in multiple places below
-  const safeAccounts = isNaN(totalAccounts) ? 0 : totalAccounts;
+  const safeAccounts = isNaN(netAccounts) ? 0 : netAccounts;
   const currentTier = calcTier(safeAccounts);
   const dailyRevAvg = workingDays > 0 ? totalRevenue / workingDays : 0;
 
-  const gross = calcCommission(totalRevenue, totalAccounts);
+  // Commission tier determined by net accounts (inactive subtracted)
+  const gross = calcCommission(commissionBase, netAccountsComm);
   const advances = calcAdvances(stats.totalPest, stats.totalMosquito);
   // Count semi-monthly pay periods (10th and 25th) that have passed since season start
   // Housing deductions per contract: $250 on 10th & 25th, May 25 – Sep 10
@@ -1731,7 +1739,7 @@ function renderDashboard() {
   const net = gross - advances - Math.max(0, housingPayments);
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
 
-  const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(totalAccounts + apd * daysLeft) : totalAccounts;
+  const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(netAccounts + apd * daysLeft) : netAccounts;
   const projectedRevenue = daysLeft > 0 && workingDays > 0 ? Math.round(totalRevenue + dailyRevAvg * daysLeft) : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts + ' accts';
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
@@ -1801,9 +1809,10 @@ function renderDashboard() {
   }
 
   // Progress bars
-  const acctPct = Math.min(100, (totalAccounts / accountTarget) * 100);
+  const displayAccounts = hasNetData ? netAccounts : totalAccounts;
+  const acctPct = Math.min(100, (displayAccounts / accountTarget) * 100);
   const revPct = Math.min(100, (totalRevenue / revTarget) * 100);
-  document.getElementById('progAcctsVal').textContent = totalAccounts;
+  document.getElementById('progAcctsVal').textContent = displayAccounts;
   document.getElementById('progAcctsTarget').textContent = accountTarget;
   document.getElementById('progRevVal').textContent = '$' + fmtK(totalRevenue);
   document.getElementById('progRevTarget').textContent = '$' + fmtK(revTarget);
@@ -1833,8 +1842,8 @@ function renderDashboard() {
   document.getElementById('hlZeroDays').textContent = zeroDays;
 
   // Pace
-  const neededPerDay = daysLeft > 0 ? (accountTarget - totalAccounts) / daysLeft : 0;
-  const onPaceFor = workingDays > 0 ? Math.round(totalAccounts + apd * daysLeft) : totalAccounts;
+  const neededPerDay = daysLeft > 0 ? (accountTarget - netAccounts) / daysLeft : 0;
+  const onPaceFor = workingDays > 0 ? Math.round(netAccounts + apd * daysLeft) : netAccounts;
   const surplus = totalAccounts - Math.round(apd > 0 ? workingDays * (accountTarget / S('knockingDays')) : 0);
   // revPace uses dailyRevAvg defined above
   const revPace = workingDays > 0 ? '$' + fmtK(totalRevenue + dailyRevAvg * daysLeft) : '—';
@@ -1847,14 +1856,14 @@ function renderDashboard() {
   const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
   setPaceVal('paceOnTrack', onPaceFor + ' accounts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
   const totalSeasonDays = getTotalSeasonWorkingDays();
-  const surplusN = totalAccounts - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
+  const surplusN = netAccounts - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
   setPaceVal('paceSurplus', (surplusN >= 0 ? '+' : '') + surplusN + ' accounts', surplusN >= 0 ? 'good' : 'bad');
   setPaceVal('paceRevenue', revPace, '');
 
   // Door Stats
   const kt = totalKnocks > 0 ? ((totalTalks / totalKnocks) * 100).toFixed(1) + '%' : '—';
-  const ta = totalTalks > 0 ? ((totalAccounts / totalTalks) * 100).toFixed(1) + '%' : '—';
-  const da = totalKnocks > 0 ? ((totalAccounts / totalKnocks) * 100).toFixed(1) + '%' : '—';
+  const ta = totalTalks > 0 ? ((netAccounts / totalTalks) * 100).toFixed(1) + '%' : '—';
+  const da = totalKnocks > 0 ? ((netAccounts / totalKnocks) * 100).toFixed(1) + '%' : '—';
   document.getElementById('statKT').textContent = kt;
   document.getElementById('statTA').textContent = ta;
   document.getElementById('statDA').textContent = da;
@@ -1912,17 +1921,22 @@ function renderCommission() {
   const { start } = getSeasonDates();
   const today = new Date(); today.setHours(0,0,0,0);
 
-  // Tier Grid
-  const currentTier = calcTier(totalAccounts);
+  // Net accounts for commission (inactive subtracted)
+  const latestPulseComm2 = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const commInactive = latestPulseComm2 ? parseInt(latestPulseComm2.inactive||0) : 0;
+  const netAccountsComm = Math.max(0, totalAccounts - commInactive);
+
+  // Tier Grid — based on net accounts
+  const currentTier = calcTier(netAccountsComm);
   const tierGrid = document.getElementById('tierGrid');
   tierGrid.innerHTML = '';
   TIERS.forEach((t, i) => {
     const isActive = t === currentTier;
-    const isUnlocked = totalAccounts > t.min && t !== currentTier;
+    const isUnlocked = netAccountsComm > t.min && t !== currentTier;
     const div = document.createElement('div');
     div.className = 'tier-row' + (isActive ? ' active-tier' : isUnlocked ? ' unlocked-tier' : '');
     const rangeStr = t.max === Infinity ? `${t.min}+` : `${t.min}–${t.max}`;
-    const badge = isActive ? '<span class="tier-badge active">CURRENT</span>' : isUnlocked ? '<span class="tier-badge unlocked">✓</span>' : `<span class="tier-badge locked">${t.min > totalAccounts ? t.min - totalAccounts + ' away' : ''}</span>`;
+    const badge = isActive ? '<span class="tier-badge active">CURRENT</span>' : isUnlocked ? '<span class="tier-badge unlocked">✓</span>' : `<span class="tier-badge locked">${t.min > netAccountsComm ? t.min - netAccountsComm + ' away' : ''}</span>`;
     div.innerHTML = `<div class="tier-pct">${t.pct*100}%</div><div class="tier-range">${rangeStr} accounts</div>${badge}`;
     tierGrid.appendChild(div);
   });
@@ -1955,7 +1969,7 @@ function renderCommission() {
   const housingPayments = housingDeductionCount * parseFloat(S('housingPerPeriod'));
   const net = gross - advances - housingPayments;
   document.getElementById('ebRevenue').textContent = '$' + commissionBase.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2}) + (hasPulseRevData ? ' (active)' : '');
-  document.getElementById('ebRate').textContent = (calcTier(commissionAccounts).pct * 100) + '% (on ' + commissionAccounts + ' active accts)';
+  document.getElementById('ebRate').textContent = (calcTier(netAccountsComm).pct * 100) + '% on ' + netAccountsComm + ' net accts';
   document.getElementById('ebGross').textContent = '$' + Math.round(gross).toLocaleString();
   document.getElementById('ebAdvances').textContent = '—$' + Math.round(advances).toLocaleString();
   document.getElementById('ebHousing').textContent = '—$' + Math.round(housingPayments).toLocaleString();
@@ -2000,7 +2014,7 @@ function renderCommission() {
     if (v.accts > bestMonthVal) { bestMonthVal = v.accts; bestMonthKey = k; }
   });
   Object.entries(months).sort().forEach(([k, v]) => {
-    const comm = v.rev * calcTier(totalAccounts).pct;
+    const comm = v.rev * calcTier(netAccountsComm).pct;
     const [yr, mo] = k.split('-');
     const isBest = k === bestMonthKey;
     const tr = document.createElement('tr');
@@ -2025,10 +2039,10 @@ function renderCommission() {
   `;
 
   // Bonuses — per contract Exhibit A.1 and Exhibit E
-  const housingBonus = totalAccounts >= 175;
-  const tuitionBonus = augData.accts > bestOtherMonth && totalAccounts >= 100;
-  const flightBonus = totalAccounts > S('lyAccounts');
-  const tripBonus = totalAccounts >= 200; // 200 accounts with 1st service + re-sign by Sep 15
+  const housingBonus = netAccountsComm >= 175;
+  const tuitionBonus = augData.accts > bestOtherMonth && netAccountsComm >= 100;
+  const flightBonus = netAccountsComm > S('lyAccounts');
+  const tripBonus = netAccountsComm >= 200; // 200 net accounts + re-sign by Sep 15
   const bonusCard = document.getElementById('bonusCard');
   // Milestone thresholds — use pulse SERVICED revenue when available
   // (Vantage Pulse milestones track serviced revenue, not total sold)
@@ -2042,7 +2056,7 @@ function renderCommission() {
   const rev150k = milestoneRev >= 150000;
   const rev250k = milestoneRev >= 250000;
   const rev300k = milestoneRev >= 300000;
-  const accts100 = totalAccounts >= 100;
+  const accts100 = netAccountsComm >= 100;
   // Trip from contract = 200 accounts with 1st service (account-based)
   // Trip from Pulse = $250K serviced revenue qualifier (revenue-based)
   // Show both — need BOTH to qualify
@@ -2063,7 +2077,7 @@ function renderCommission() {
     bonusRow(
       housingBonus ? 'earned' : totalAccounts >= 160 ? 'close' : 'far',
       'Housing Bonus', '175+ active accounts by Oct 1, 2026',
-      '$2,000', (175 - totalAccounts) + ' to go'
+      '$2,000', (175 - netAccountsComm) + ' to go'
     ),
     bonusRow(
       tuitionBonus ? 'earned' : 'far',
@@ -2073,13 +2087,13 @@ function renderCommission() {
     bonusRow(
       flightBonus ? 'earned' : totalAccounts >= S('lyAccounts') - 5 ? 'close' : 'far',
       'Flight Reimbursement', "Beat last year's " + S('lyAccounts') + ' accounts',
-      '$256', (S('lyAccounts') - totalAccounts + 1) + ' to go'
+      '$256', (S('lyAccounts') - netAccountsComm + 1) + ' to go'
     ),
     bonusRow(
       tripBonus && rev250k ? 'earned' : (tripBonus || rev250k) ? 'close' : 'far',
       'Top Producer Trip', '200+ serviced accts + $250K serviced rev + re-sign by Sep 15',
       '✈️ Trip',
-      (!tripBonus ? (200 - totalAccounts) + ' accts' : '') +
+      (!tripBonus ? (200 - netAccountsComm) + ' accts' : '') +
       (!tripBonus && !rev250k ? ' · ' : '') +
       (!rev250k ? '$' + Math.round(250000 - milestoneRev).toLocaleString() + ' rev' : '')
       || 'Re-sign by Sep 15'
@@ -2087,7 +2101,7 @@ function renderCommission() {
     bonusRow(
       accts100 ? 'earned' : totalAccounts >= 85 ? 'close' : 'far',
       '100 Club — Red Hat 🧢', '100 accounts by May milestone',
-      'Swag', (100 - totalAccounts) + ' to go'
+      'Swag', (100 - netAccountsComm) + ' to go'
     ),
     bonusRow(
       rev100k ? 'earned' : totalRevenue >= 80000 ? 'close' : 'far',
@@ -2180,11 +2194,16 @@ function renderWeekly() {
   const thisWeekAccounts = thisWeekData ? thisWeekData.accounts : 0;
   const daysLeft = Math.max(0, getWorkingDaysRemaining(today));
   const weeksRemaining = Math.max(1, Math.ceil(daysLeft / 5));
-  const neededWeekly = Math.ceil((accountTarget - stats.totalAccounts) / weeksRemaining);
+  // Use net accounts (inactive subtracted) for weekly pace
+  const latestPulseWeekly = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const weeklyInactive = latestPulseWeekly ? parseInt(latestPulseWeekly.inactive||0) : 0;
+  const netAccountsWeekly = Math.max(0, stats.totalAccounts - weeklyInactive);
+  const neededWeekly = Math.ceil((accountTarget - netAccountsWeekly) / weeksRemaining);
   const weeklyPaceTarget = neededWeekly;
+  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk · ${netAccountsWeekly} net so far`;
   document.getElementById('wfThisWeek').textContent = thisWeekAccounts;
   document.getElementById('wfThisWeekSub').textContent = 'accounts sold this week';
-  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk to hit ${accountTarget}`;
+
   document.getElementById('wfNextWeek').textContent = neededWeekly;
   document.getElementById('wfNextWeekSub').textContent = 'needed to stay on pace';
 
