@@ -2014,38 +2014,87 @@ function renderCommission() {
   const flightBonus = totalAccounts > S('lyAccounts');
   const tripBonus = totalAccounts >= 200; // 200 accounts with 1st service + re-sign by Sep 15
   const bonusCard = document.getElementById('bonusCard');
-  bonusCard.innerHTML = `
-    <div class="bonus-row">
-      <div class="bonus-indicator ${housingBonus ? 'earned' : totalAccounts >= 160 ? 'close' : 'far'}"></div>
-      <div class="bonus-name">Housing Bonus<br><span style="font-size:11px;color:var(--text3)">175+ active accounts by Oct 1, 2026</span></div>
-      <div style="text-align:right"><div class="bonus-amount">$2,000</div>${!housingBonus ? `<div class="bonus-need">${175 - totalAccounts} to go</div>` : '<div class="bonus-need text-green">Earned ✓</div>'}</div>
-    </div>
-    <div class="bonus-row">
-      <div class="bonus-indicator ${tuitionBonus ? 'earned' : 'far'}"></div>
-      <div class="bonus-name">Tuition Bonus<br><span style="font-size:11px;color:var(--text3)">100+ accounts + August = best month</span></div>
-      <div style="text-align:right"><div class="bonus-amount">$1,500</div>${tuitionBonus ? '<div class="bonus-need text-green">Earned ✓</div>' : '<div class="bonus-need">See Aug tracker</div>'}</div>
-    </div>
-    <div class="bonus-row">
-      <div class="bonus-indicator ${flightBonus ? 'earned' : totalAccounts >= S('lyAccounts') - 5 ? 'close' : 'far'}"></div>
-      <div class="bonus-name">Flight Reimbursement<br><span style="font-size:11px;color:var(--text3)">Beat last year's ${S('lyAccounts')} accounts</span></div>
-      <div style="text-align:right"><div class="bonus-amount">$256</div>${flightBonus ? '<div class="bonus-need text-green">Earned ✓</div>' : `<div class="bonus-need">${S('lyAccounts') - totalAccounts + 1} to go</div>`}</div>
-    </div>
-    <div class="bonus-row">
-      <div class="bonus-indicator ${tripBonus ? 'earned' : totalAccounts >= 185 ? 'close' : 'far'}"></div>
-      <div class="bonus-name">Vantage Trip Bonus<br><span style="font-size:11px;color:var(--text3)">200+ serviced accounts + re-sign by Sep 15</span></div>
-      <div style="text-align:right"><div class="bonus-amount">Trip</div>${tripBonus ? '<div class="bonus-need text-green">Qualified ✓</div>' : `<div class="bonus-need">${200 - totalAccounts} to go</div>`}</div>
-    </div>
-    <div class="bonus-row">
-      <div class="bonus-indicator ${tripBonus ? 'earned' : 'far'}"></div>
-      <div class="bonus-name">Cruise / $500 Bonus (Exhibit E)<br><span style="font-size:11px;color:var(--text3)">If you don't hit trip → cruise. If you do → extra $500</span></div>
-      <div style="text-align:right"><div class="bonus-amount" style="color:var(--amber)">$500+</div><div class="bonus-need">${tripBonus ? 'Take the $500' : 'Take the cruise'}</div></div>
-    </div>
-    <div class="bonus-row">
-      <div class="bonus-indicator far"></div>
-      <div class="bonus-name">2027 Sign-On Bonus (Exhibit E)<br><span style="font-size:11px;color:var(--text3)">Re-sign + hit 200 accounts next summer</span></div>
-      <div style="text-align:right"><div class="bonus-amount">$1,000</div><div class="bonus-need">Next season</div></div>
-    </div>
-  `;
+  // Milestone thresholds — use pulse SERVICED revenue when available
+  // (Vantage Pulse milestones track serviced revenue, not total sold)
+  const latestPulseMilestone = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const servicedRev = latestPulseMilestone
+    ? (parseFloat(latestPulseMilestone.serviced_revenue)||0) + (parseFloat(latestPulseMilestone.pending_revenue)||0)
+    : 0;
+  // Use serviced revenue if pulse data exists, otherwise fall back to total logged revenue
+  const milestoneRev = servicedRev > 0 ? servicedRev : totalRevenue;
+  const rev100k = milestoneRev >= 100000;
+  const rev150k = milestoneRev >= 150000;
+  const rev250k = milestoneRev >= 250000;
+  const rev300k = milestoneRev >= 300000;
+  const accts100 = totalAccounts >= 100;
+  // Trip from contract = 200 accounts with 1st service (account-based)
+  // Trip from Pulse = $250K serviced revenue qualifier (revenue-based)
+  // Show both — need BOTH to qualify
+
+  function bonusRow(status, name, sub, amount, need) {
+    const ind = status === 'earned' ? 'earned' : status === 'close' ? 'close' : 'far';
+    const needHtml = status === 'earned'
+      ? '<div class="bonus-need text-green">Earned ✓</div>'
+      : `<div class="bonus-need">${need}</div>`;
+    return `<div class="bonus-row">
+      <div class="bonus-indicator ${ind}"></div>
+      <div class="bonus-name">${name}<br><span style="font-size:11px;color:var(--text3)">${sub}</span></div>
+      <div style="text-align:right"><div class="bonus-amount">${amount}</div>${needHtml}</div>
+    </div>`;
+  }
+
+  bonusCard.innerHTML = [
+    bonusRow(
+      housingBonus ? 'earned' : totalAccounts >= 160 ? 'close' : 'far',
+      'Housing Bonus', '175+ active accounts by Oct 1, 2026',
+      '$2,000', (175 - totalAccounts) + ' to go'
+    ),
+    bonusRow(
+      tuitionBonus ? 'earned' : 'far',
+      'Tuition Bonus', '100+ accounts + August = best month',
+      '$1,500', 'See Aug tracker'
+    ),
+    bonusRow(
+      flightBonus ? 'earned' : totalAccounts >= S('lyAccounts') - 5 ? 'close' : 'far',
+      'Flight Reimbursement', "Beat last year's " + S('lyAccounts') + ' accounts',
+      '$256', (S('lyAccounts') - totalAccounts + 1) + ' to go'
+    ),
+    bonusRow(
+      tripBonus && rev250k ? 'earned' : (tripBonus || rev250k) ? 'close' : 'far',
+      'Top Producer Trip', '200+ serviced accts + $250K serviced rev + re-sign by Sep 15',
+      '✈️ Trip',
+      (!tripBonus ? (200 - totalAccounts) + ' accts' : '') +
+      (!tripBonus && !rev250k ? ' · ' : '') +
+      (!rev250k ? '$' + Math.round(250000 - milestoneRev).toLocaleString() + ' rev' : '')
+      || 'Re-sign by Sep 15'
+    ),
+    bonusRow(
+      accts100 ? 'earned' : totalAccounts >= 85 ? 'close' : 'far',
+      '100 Club — Red Hat 🧢', '100 accounts by May milestone',
+      'Swag', (100 - totalAccounts) + ' to go'
+    ),
+    bonusRow(
+      rev100k ? 'earned' : totalRevenue >= 80000 ? 'close' : 'far',
+      '6 Digits Club — Sledge Hammer 🔨', '$100K serviced revenue',
+      'Swag', '$' + Math.round(100000 - milestoneRev).toLocaleString() + ' to go'
+    ),
+    bonusRow(
+      rev150k ? 'earned' : totalRevenue >= 120000 ? 'close' : 'far',
+      'Vantage Cruise 🚢', '$150K serviced revenue',
+      '🌊 Cruise', '$' + Math.round(150000 - milestoneRev).toLocaleString() + ' to go'
+    ),
+
+    bonusRow(
+      rev300k ? 'earned' : totalRevenue >= 250000 ? 'close' : 'far',
+      'Big Hitter Bat ⚾', '$300K+ serviced revenue',
+      'Swag', '$' + Math.round(300000 - milestoneRev).toLocaleString() + ' to go'
+    ),
+    bonusRow(
+      'far',
+      '2027 Sign-On Bonus', 'Re-sign + hit 200 accounts next summer',
+      '$1,000', 'Next season'
+    ),
+  ].join('');
 
   // Payout Timeline
   const timeline = document.getElementById('payoutTimeline');
