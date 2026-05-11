@@ -114,6 +114,7 @@ nav {
   text-transform: uppercase; background: rgba(91,141,239,0.14); color: var(--accent);
   border-radius: 99px; padding: 2px 7px; margin-top: 4px;
 }
+[data-theme="light"] .nav-logo-badge { background: rgba(45,100,216,0.1); }
 .nav-items { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; }
 .nav-tab {
   display: flex; align-items: center; gap: 9px;
@@ -125,6 +126,7 @@ nav {
 .nav-tab svg { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
 .nav-tab:hover { background: var(--border); color: var(--text2); }
 .nav-tab.active { background: rgba(91,141,239,0.12); color: var(--accent); }
+[data-theme="light"] .nav-tab.active { background: rgba(45,100,216,0.1); }
 .nav-tab span { flex: 1; }
 .nav-footer { padding: 10px 8px; border-top: 1px solid var(--border); }
 .sync-row {
@@ -220,6 +222,8 @@ nav {
 .hero-sub { font-size: 13px; opacity: 0.6; margin-top: 6px; font-weight: 400; }
 .hero-pace-row { display: flex; gap: 10px; margin-top: 20px; }
 .hero-pace-item { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 14px 18px; }
+[data-theme="light"] .hero-card { background: linear-gradient(135deg, #1e3a7a 0%, #162d68 55%, #1a1f5e 100%); }
+[data-theme="light"] .hero-pace-item { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.2); }
 .hero-pace-num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-family: var(--font-mono); }
 .hero-pace-lbl { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; font-weight: 500; }
 
@@ -255,6 +259,10 @@ nav {
 .pulse-item.serviced { border-color: rgba(52,201,120,0.28); background: rgba(52,201,120,0.07); }
 .pulse-item.pending { border-color: rgba(240,160,48,0.28); background: rgba(240,160,48,0.07); }
 .pulse-item.inactive { border-color: rgba(232,82,106,0.28); background: rgba(232,82,106,0.07); }
+[data-theme="light"] .pulse-item.sold { border-color: rgba(45,100,216,0.3); background: rgba(45,100,216,0.06); }
+[data-theme="light"] .pulse-item.serviced { border-color: rgba(24,144,78,0.3); background: rgba(24,144,78,0.06); }
+[data-theme="light"] .pulse-item.pending { border-color: rgba(184,112,16,0.3); background: rgba(184,112,16,0.06); }
+[data-theme="light"] .pulse-item.inactive { border-color: rgba(192,48,80,0.3); background: rgba(192,48,80,0.06); }
 .pulse-num { font-family: var(--font-mono); font-size: 30px; font-weight: 600; letter-spacing: -0.04em; }
 .pulse-item.sold .pulse-num { color: var(--accent); }
 .pulse-item.serviced .pulse-num { color: var(--green); }
@@ -271,6 +279,10 @@ nav {
   border-radius: var(--radius-sm); padding: 14px 18px;
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 16px;
+}
+[data-theme="light"] .tier-banner {
+  background: linear-gradient(90deg, rgba(109,64,208,0.07), rgba(45,100,216,0.07));
+  border-color: rgba(109,64,208,0.25);
 }
 .tier-banner-left { display: flex; flex-direction: column; gap: 2px; }
 .tier-current { font-size: 11px; color: var(--text3); font-weight: 500; }
@@ -296,6 +308,7 @@ nav {
   transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
   position: relative;
 }
+[data-theme="light"] .progress-track { background: var(--border); }
 .progress-marker {
   position: absolute; top: -2px; width: 2px; height: 12px;
   background: var(--amber); border-radius: 1px;
@@ -313,7 +326,9 @@ nav {
 .retention-segments { display: flex; height: 10px; border-radius: 99px; overflow: hidden; gap: 1px; }
 .ret-seg { height: 100%; transition: flex 0.5s ease; }
 .ret-seg.active { background: var(--green); }
+[data-theme="light"] .ret-seg.active { background: var(--green2); }
 .ret-seg.inactive { background: var(--red); }
+[data-theme="light"] .ret-seg.inactive { background: var(--red2); }
 
 /* ============================================================
    HIGHLIGHTS ROW
@@ -385,6 +400,7 @@ nav {
 }
 @media (min-width: 701px) { .form-input { font-size: 13px; } }
 .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,141,239,0.18); }
+[data-theme="light"] .form-input:focus { box-shadow: 0 0 0 3px rgba(45,100,216,0.14); }
 .form-input::placeholder { color: var(--text3); }
 textarea.form-input { resize: vertical; min-height: 70px; }
 .btn {
@@ -438,6 +454,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .tier-row.active-tier { border-color: var(--purple); background: rgba(157,114,240,0.08); }
 .tier-row.unlocked-tier { border-color: rgba(52,201,120,0.28); background: rgba(52,201,120,0.06); }
+[data-theme="light"] .tier-row.active-tier { background: rgba(109,64,208,0.06); }
+[data-theme="light"] .tier-row.unlocked-tier { border-color: rgba(24,144,78,0.3); background: rgba(24,144,78,0.05); }
 .tier-pct { font-family: var(--font-mono); font-size: 17px; font-weight: 600; min-width: 48px; }
 .tier-row.active-tier .tier-pct { color: var(--purple); }
 .tier-row.unlocked-tier .tier-pct { color: var(--green); }
@@ -445,6 +463,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .tier-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
 .tier-badge.active { background: rgba(157,114,240,0.16); color: var(--purple); }
 .tier-badge.unlocked { background: rgba(52,201,120,0.14); color: var(--green); }
+[data-theme="light"] .tier-badge.active { background: rgba(109,64,208,0.12); }
+[data-theme="light"] .tier-badge.unlocked { background: rgba(24,144,78,0.12); }
 .tier-badge.locked { background: var(--bg3); color: var(--text3); }
 
 .earnings-breakdown { display: flex; flex-direction: column; gap: 0; margin-bottom: 12px; }
@@ -469,6 +489,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 /* August tracker */
 .aug-tracker { background: linear-gradient(135deg, rgba(240,160,48,0.09), rgba(240,160,48,0.04)); border: 1px solid rgba(240,160,48,0.25); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; }
 .aug-tracker-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin-bottom: 8px; }
+[data-theme="light"] .aug-tracker { background: linear-gradient(135deg, rgba(184,112,16,0.08), rgba(184,112,16,0.03)); border-color: rgba(184,112,16,0.28); }
 .aug-stats-row { display: flex; gap: 16px; }
 .aug-stat { display: flex; flex-direction: column; gap: 2px; }
 .aug-stat-val { font-family: var(--font-mono); font-size: 20px; font-weight: 600; }
@@ -540,6 +561,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   font-size: 11px; font-weight: 600; background: var(--bg3);
 }
 .scorecard-day-dot.has-data { background: var(--accent); color: white; }
+[data-theme="light"] .scorecard-day-dot.has-data { background: var(--accent2); }
 .scorecard-day-dot.day-off { background: var(--border2); color: var(--text3); font-size: 9px; }
 .scorecard-day-lbl { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; }
 
@@ -549,6 +571,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   border-radius: var(--radius-sm); padding: 12px 14px;
   display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
 }
+[data-theme="light"] .warning-banner { background: rgba(192,48,80,0.07); border-color: rgba(192,48,80,0.3); }
 .warning-icon { font-size: 20px; }
 .warning-text { font-size: 13px; line-height: 1.4; }
 .warning-text strong { color: var(--red); }
@@ -676,6 +699,17 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .chip-red { background: rgba(255,79,106,0.15); color: var(--red); }
 .chip-amber { background: rgba(255,179,64,0.15); color: var(--amber); }
 .chip-accent { background: rgba(91,140,255,0.15); color: var(--accent); }
+
+/* Pulse history status cards */
+.pulse-status-card { border-radius: 6px; padding: 8px 10px; }
+.pulse-status-card.sold { background: rgba(91,141,239,0.07); border: 1px solid rgba(91,141,239,0.2); }
+.pulse-status-card.serviced { background: rgba(52,201,120,0.07); border: 1px solid rgba(52,201,120,0.2); }
+.pulse-status-card.pending { background: rgba(240,160,48,0.07); border: 1px solid rgba(240,160,48,0.2); }
+.pulse-status-card.inactive { background: rgba(232,82,106,0.07); border: 1px solid rgba(232,82,106,0.2); }
+[data-theme="light"] .pulse-status-card.sold { background: rgba(45,100,216,0.06); border-color: rgba(45,100,216,0.2); }
+[data-theme="light"] .pulse-status-card.serviced { background: rgba(24,144,78,0.06); border-color: rgba(24,144,78,0.2); }
+[data-theme="light"] .pulse-status-card.pending { background: rgba(184,112,16,0.06); border-color: rgba(184,112,16,0.2); }
+[data-theme="light"] .pulse-status-card.inactive { background: rgba(192,48,80,0.06); border-color: rgba(192,48,80,0.2); }
 </style>
 </head>
 <body>
@@ -2306,22 +2340,22 @@ function renderPulseHistory() {
         <button class="btn btn-danger btn-sm" onclick="deletePulse('${p.id}')">Delete</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
-        <div style="background:rgba(91,141,239,0.07);border:1px solid rgba(91,141,239,0.2);border-radius:6px;padding:8px 10px;">
+        <div class="pulse-status-card sold">
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Sold</div>
           <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--accent);">${p.sold||'—'}</div>
           ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.sold_revenue||0).toLocaleString()}</div>` : ''}
         </div>
-        <div style="background:rgba(52,201,120,0.07);border:1px solid rgba(52,201,120,0.2);border-radius:6px;padding:8px 10px;">
+        <div class="pulse-status-card serviced">
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Serviced</div>
           <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--green);">${p.serviced||'—'}</div>
           ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.serviced_revenue||0).toLocaleString()}</div>` : ''}
         </div>
-        <div style="background:rgba(240,160,48,0.07);border:1px solid rgba(240,160,48,0.2);border-radius:6px;padding:8px 10px;">
+        <div class="pulse-status-card pending">
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Pending</div>
           <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--amber);">${p.pending||'—'}</div>
           ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.pending_revenue||0).toLocaleString()}</div>` : ''}
         </div>
-        <div style="background:rgba(232,82,106,0.07);border:1px solid rgba(232,82,106,0.2);border-radius:6px;padding:8px 10px;">
+        <div class="pulse-status-card inactive">
           <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Inactive</div>
           <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--red);">${p.inactive||'—'}</div>
           ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.inactive_revenue||0).toLocaleString()}</div>` : ''}
