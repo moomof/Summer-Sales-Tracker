@@ -829,6 +829,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <span id="retActiveLabel">— active</span>
       <span id="retInactiveLabel">— inactive</span>
     </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);" id="inactiveImpact">Log a pulse snapshot to see inactive impact</div>
   </div>
 
   <!-- Progress Bars -->
@@ -1006,6 +1007,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="earning-row"><span class="earning-key">Gross Commission</span><span class="earning-val green" id="ebGross">$0</span></div>
     <div class="earning-row"><span class="earning-key">Advances Taken</span><span class="earning-val red" id="ebAdvances">—$0</span></div>
     <div class="earning-row"><span class="earning-key">Housing (Semi-monthly)</span><span class="earning-val red" id="ebHousing">—$0</span></div>
+    <div class="earning-row"><span class="earning-key" style="color:var(--red);">At Risk (inactive accts)</span><span class="earning-val red" id="ebAtRisk">$0</span></div>
     <div class="earning-row total-row"><span class="earning-key" style="font-weight:600;color:var(--text);">Net Est. Commission</span><span class="earning-val bold" id="ebNet">$0</span></div>
   </div>
 
@@ -1472,7 +1474,7 @@ function aggregateStats() {
   const totalMosquito = db.logs.reduce((s, l) => s + (parseInt(l.mosquito)||0), 0);
   const workingDays = db.logs.filter(l => !isDayOff(l.date)).length;
   const apd = workingDays > 0 ? totalAccounts / workingDays : 0;
-  const acv = totalAccounts > 0 ? totalRevenue / totalAccounts : 0;
+  const acv = totalPest > 0 ? totalRevenue / totalPest : 0;
   return { totalAccounts, totalRevenue, totalKnocks, totalTalks, totalPest, totalMosquito, workingDays, apd, acv };
 }
 
@@ -1567,11 +1569,23 @@ function renderDashboard() {
       document.getElementById('retInactiveLabel').textContent = inactive + ' inactive';
       const segs = document.getElementById('retentionSegments');
       segs.innerHTML = `<div class="ret-seg active" style="flex:${active}"></div><div class="ret-seg inactive" style="flex:${inactive}"></div>`;
+
+      // Inactive revenue impact: estimate lost commission using current ACV × inactive × tier rate
+      const inactiveRevEst = inactive * acv;
+      const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
+      const inactiveImpactEl = document.getElementById('inactiveImpact');
+      if (inactiveImpactEl) {
+        inactiveImpactEl.textContent = inactive > 0
+          ? `${inactive} inactive · ~$${Math.round(inactiveRevEst).toLocaleString()} est. revenue at risk · ~$${Math.round(inactiveCommEst).toLocaleString()} commission`
+          : 'No inactive accounts';
+      }
     }
   } else {
     ['pulseTotal','pulseServiced','pulsePending','pulseInactive'].forEach(id => document.getElementById(id).textContent = '—');
     document.getElementById('retentionPct').textContent = '—';
     document.getElementById('retentionSegments').innerHTML = '<div style="flex:1;height:10px;background:var(--border2);border-radius:99px;"></div>';
+    const inactiveImpactEl = document.getElementById('inactiveImpact');
+    if (inactiveImpactEl) inactiveImpactEl.textContent = 'No pulse data logged yet';
   }
 
   // Progress bars
@@ -1698,6 +1712,13 @@ function renderCommission() {
   document.getElementById('ebGross').textContent = '$' + Math.round(gross).toLocaleString();
   document.getElementById('ebAdvances').textContent = '—$' + Math.round(advances).toLocaleString();
   document.getElementById('ebHousing').textContent = '—$' + Math.round(housingPayments).toLocaleString();
+  // Inactive at-risk estimate
+  const latestPulseComm = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const inactiveCount = latestPulseComm ? parseInt(latestPulseComm.inactive||0) : 0;
+  const pestAcv = totalPest > 0 ? totalRevenue / totalPest : 0;
+  const atRiskRev = inactiveCount * pestAcv;
+  const atRiskComm = atRiskRev * currentTier.pct;
+  document.getElementById('ebAtRisk').textContent = inactiveCount > 0 ? '~$' + Math.round(atRiskComm).toLocaleString() : '$0';
   document.getElementById('ebNet').textContent = '$' + Math.round(net).toLocaleString();
 
   // Advances
