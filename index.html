@@ -1325,14 +1325,14 @@ textarea.form-input { resize: vertical; min-height: 70px; }
    CONSTANTS & CONFIG
    ============================================================ */
 const TIERS = [
-  { min: 0,   max: 74,  pct: 0.30 },
-  { min: 75,  max: 99,  pct: 0.33 },
-  { min: 100, max: 124, pct: 0.36 },
-  { min: 125, max: 149, pct: 0.38 },
-  { min: 150, max: 174, pct: 0.40 },
-  { min: 175, max: 199, pct: 0.43 },
-  { min: 200, max: 249, pct: 0.46 },
-  { min: 250, max: Infinity, pct: 0.50 },
+  { min: 1,   max: 149, pct: 0.30 },
+  { min: 150, max: 174, pct: 0.33 },
+  { min: 175, max: 199, pct: 0.35 },
+  { min: 200, max: 249, pct: 0.38 },
+  { min: 250, max: 299, pct: 0.40 },
+  { min: 300, max: 349, pct: 0.45 },
+  { min: 350, max: 399, pct: 0.48 },
+  { min: 400, max: Infinity, pct: 0.50 },
 ];
 const PEST_ADVANCE = 75;
 const MOSQUITO_ADVANCE = 50;
@@ -1701,18 +1701,16 @@ function renderDashboard() {
   const gross = calcCommission(totalRevenue, totalAccounts);
   const advances = calcAdvances(stats.totalPest, stats.totalMosquito);
   // Count semi-monthly pay periods (10th and 25th) that have passed since season start
-  function countHousingDeductions(seasonStart, asOfDate) {
-    let count = 0;
-    const cur = new Date(seasonStart);
-    cur.setDate(cur.getDate() + 1); // start checking day after season start
-    while (cur <= asOfDate) {
-      const d = cur.getDate();
-      if (d === 10 || d === 25) count++;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return count;
+  // Housing deductions per contract: $250 on 10th & 25th, May 25 – Sep 10
+  function countHousingDeductions(asOfDate) {
+    const schedule = [
+      '2026-05-25','2026-06-10','2026-06-25','2026-07-10',
+      '2026-07-25','2026-08-10','2026-08-25','2026-09-10'
+    ];
+    const todayStr = asOfDate.toISOString().slice(0,10);
+    return schedule.filter(d => d <= todayStr).length;
   }
-  const housingDeductionCount = countHousingDeductions(start, today);
+  const housingDeductionCount = countHousingDeductions(today);
   const housingPayments = housingDeductionCount * parseFloat(S('housingPerPeriod'));
   const net = gross - advances - Math.max(0, housingPayments);
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
@@ -1928,19 +1926,16 @@ function renderCommission() {
   const commissionAccounts = hasPulseRevData ? pulseActiveAccounts : totalAccounts;
   const gross = calcCommission(commissionBase, commissionAccounts);
   const advances = calcAdvances(totalPest, totalMosquito);
-  // Count semi-monthly pay periods (10th and 25th) that have passed since season start
-  function countHousingDeductionsComm(seasonStart, asOfDate) {
-    let count = 0;
-    const cur = new Date(seasonStart);
-    cur.setDate(cur.getDate() + 1);
-    while (cur <= asOfDate) {
-      const d = cur.getDate();
-      if (d === 10 || d === 25) count++;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return count;
+  // Housing deductions per contract: $250 on 10th & 25th, May 25 – Sep 10 (8 payments total)
+  function countHousingDeductionsComm(asOfDate) {
+    const schedule = [
+      '2026-05-25','2026-06-10','2026-06-25','2026-07-10',
+      '2026-07-25','2026-08-10','2026-08-25','2026-09-10'
+    ];
+    const ds = asOfDate.toISOString().slice(0,10);
+    return schedule.filter(d => d <= ds).length;
   }
-  const housingDeductionCount = countHousingDeductionsComm(start, today);
+  const housingDeductionCount = countHousingDeductionsComm(today);
   const housingPayments = housingDeductionCount * parseFloat(S('housingPerPeriod'));
   const net = gross - advances - housingPayments;
   document.getElementById('ebRevenue').textContent = '$' + commissionBase.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2}) + (hasPulseRevData ? ' (active)' : '');
@@ -2013,20 +2008,21 @@ function renderCommission() {
     <div style="font-size:11px;color:var(--text3);margin-top:8px;">Aug must be best month + 100+ total accounts for $1,500 tuition bonus.</div>
   `;
 
-  // Bonuses
+  // Bonuses — per contract Exhibit A.1 and Exhibit E
   const housingBonus = totalAccounts >= 175;
   const tuitionBonus = augData.accts > bestOtherMonth && totalAccounts >= 100;
   const flightBonus = totalAccounts > S('lyAccounts');
+  const tripBonus = totalAccounts >= 200; // 200 accounts with 1st service + re-sign by Sep 15
   const bonusCard = document.getElementById('bonusCard');
   bonusCard.innerHTML = `
     <div class="bonus-row">
       <div class="bonus-indicator ${housingBonus ? 'earned' : totalAccounts >= 160 ? 'close' : 'far'}"></div>
-      <div class="bonus-name">Housing Bonus<br><span style="font-size:11px;color:var(--text3)">175+ active accounts</span></div>
+      <div class="bonus-name">Housing Bonus<br><span style="font-size:11px;color:var(--text3)">175+ active accounts by Oct 1, 2026</span></div>
       <div style="text-align:right"><div class="bonus-amount">$2,000</div>${!housingBonus ? `<div class="bonus-need">${175 - totalAccounts} to go</div>` : '<div class="bonus-need text-green">Earned ✓</div>'}</div>
     </div>
     <div class="bonus-row">
       <div class="bonus-indicator ${tuitionBonus ? 'earned' : 'far'}"></div>
-      <div class="bonus-name">Tuition Bonus<br><span style="font-size:11px;color:var(--text3)">100+ accts, August = best month</span></div>
+      <div class="bonus-name">Tuition Bonus<br><span style="font-size:11px;color:var(--text3)">100+ accounts + August = best month</span></div>
       <div style="text-align:right"><div class="bonus-amount">$1,500</div>${tuitionBonus ? '<div class="bonus-need text-green">Earned ✓</div>' : '<div class="bonus-need">See Aug tracker</div>'}</div>
     </div>
     <div class="bonus-row">
@@ -2034,15 +2030,36 @@ function renderCommission() {
       <div class="bonus-name">Flight Reimbursement<br><span style="font-size:11px;color:var(--text3)">Beat last year's ${S('lyAccounts')} accounts</span></div>
       <div style="text-align:right"><div class="bonus-amount">$256</div>${flightBonus ? '<div class="bonus-need text-green">Earned ✓</div>' : `<div class="bonus-need">${S('lyAccounts') - totalAccounts + 1} to go</div>`}</div>
     </div>
+    <div class="bonus-row">
+      <div class="bonus-indicator ${tripBonus ? 'earned' : totalAccounts >= 185 ? 'close' : 'far'}"></div>
+      <div class="bonus-name">Vantage Trip Bonus<br><span style="font-size:11px;color:var(--text3)">200+ serviced accounts + re-sign by Sep 15</span></div>
+      <div style="text-align:right"><div class="bonus-amount">Trip</div>${tripBonus ? '<div class="bonus-need text-green">Qualified ✓</div>' : `<div class="bonus-need">${200 - totalAccounts} to go</div>`}</div>
+    </div>
+    <div class="bonus-row">
+      <div class="bonus-indicator ${tripBonus ? 'earned' : 'far'}"></div>
+      <div class="bonus-name">Cruise / $500 Bonus (Exhibit E)<br><span style="font-size:11px;color:var(--text3)">If you don't hit trip → cruise. If you do → extra $500</span></div>
+      <div style="text-align:right"><div class="bonus-amount" style="color:var(--amber)">$500+</div><div class="bonus-need">${tripBonus ? 'Take the $500' : 'Take the cruise'}</div></div>
+    </div>
+    <div class="bonus-row">
+      <div class="bonus-indicator far"></div>
+      <div class="bonus-name">2027 Sign-On Bonus (Exhibit E)<br><span style="font-size:11px;color:var(--text3)">Re-sign + hit 200 accounts next summer</span></div>
+      <div style="text-align:right"><div class="bonus-amount">$1,000</div><div class="bonus-need">Next season</div></div>
+    </div>
   `;
 
   // Payout Timeline
   const timeline = document.getElementById('payoutTimeline');
-  // Payout is on NET (gross - advances already taken - housing)
+  // Per contract Exhibit B: payouts on NET commission
+  // Oct 25 2026: 75% for accounts with 1st service before Oct 1
+  // Mar 25 2027: 100% for same (remainder = 25%)
+  // May 25 2027: 100% for accounts with 1st service after Sep 30
+  // For simplicity, assume all accounts serviced before Oct 1 (typical for season)
   const payoutBase = Math.max(0, net);
+  const todayDate = today.toISOString().slice(0,10);
   const payouts = [
-    { date: 'Oct 25, 2026', desc: '75% of net backend', pct: 0.75, status: 'future' },
-    { date: 'Mar–May 2027', desc: 'Remaining 25% of net', pct: 0.25, status: 'future' },
+    { date: 'Oct 25, 2026', desc: '75% of net (accts serviced before Oct 1)', amt: Math.round(payoutBase * 0.75), status: todayDate > '2026-10-25' ? 'past' : todayDate === '2026-10-25' ? 'next' : 'future' },
+    { date: 'Mar 25, 2027', desc: 'Remaining 25% of net (same accts)', amt: Math.round(payoutBase * 0.25), status: todayDate > '2027-03-25' ? 'past' : 'future' },
+    { date: 'May 25, 2027', desc: '100% of net (accts serviced after Sep 30)', amt: 0, status: 'future' },
   ];
   timeline.innerHTML = payouts.map(p => `
     <div class="payout-item">
@@ -2051,7 +2068,7 @@ function renderCommission() {
         <div class="payout-date">${p.date}</div>
         <div class="payout-desc">${p.desc}</div>
       </div>
-      <div class="payout-amount">~$${Math.round(payoutBase * p.pct).toLocaleString()}</div>
+      <div class="payout-amount">${p.amt > 0 ? '~$' + p.amt.toLocaleString() : '—'}</div>
     </div>
   `).join('');
 }
