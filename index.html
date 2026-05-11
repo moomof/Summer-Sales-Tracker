@@ -1780,7 +1780,7 @@ function renderDashboard() {
     const pulseInactiveRev = parseFloat(latestPulse.inactive_revenue)||0;
     const pulseHasRevData = pulseActiveRev + pulseInactiveRev > 0;
 
-    document.getElementById('pulseTotal').textContent = latestPulse.sold || '—';
+    document.getElementById('pulseTotal').textContent = latestPulse.sold || totalAccounts;
     document.getElementById('pulseServiced').textContent = latestPulse.serviced || '—';
     document.getElementById('pulsePending').textContent = latestPulse.pending || '—';
     document.getElementById('pulseInactive').textContent = latestPulse.inactive || '—';
@@ -1816,7 +1816,8 @@ function renderDashboard() {
       }
     }
   } else {
-    ['pulseTotal','pulseServiced','pulsePending','pulseInactive'].forEach(id => document.getElementById(id).textContent = '—');
+    document.getElementById('pulseTotal').textContent = totalAccounts;
+    ['pulseServiced','pulsePending','pulseInactive'].forEach(id => document.getElementById(id).textContent = '—');
     document.getElementById('retentionPct').textContent = '—';
     document.getElementById('retentionSegments').innerHTML = '<div style="flex:1;height:10px;background:var(--border2);border-radius:99px;"></div>';
     const inactiveImpactEl = document.getElementById('inactiveImpact');
