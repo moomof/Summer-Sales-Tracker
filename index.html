@@ -1094,7 +1094,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="earning-row"><span class="earning-key">Gross Commission</span><span class="earning-val green" id="ebGross">$0</span></div>
     <div class="earning-row"><span class="earning-key">Advances Taken</span><span class="earning-val red" id="ebAdvances">—$0</span></div>
     <div class="earning-row"><span class="earning-key">Housing (Semi-monthly)</span><span class="earning-val red" id="ebHousing">—$0</span></div>
-    <div class="earning-row"><span class="earning-key" style="color:var(--red);">At Risk (inactive accts)</span><span class="earning-val red" id="ebAtRisk">$0</span></div>
+    <div class="earning-row"><span class="earning-key" style="color:var(--red);">Inactive Revenue Lost</span><span class="earning-val red" id="ebAtRisk">$0</span></div>
     <div class="earning-row total-row"><span class="earning-key" style="font-weight:600;color:var(--text);">Net Est. Commission</span><span class="earning-val bold" id="ebNet">$0</span></div>
   </div>
 
@@ -1204,7 +1204,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           <input type="number" class="form-input" id="settingRevenueTarget" placeholder="250000" min="1" onchange="saveSetting('revenueTarget', this.value)">
         </div>
         <div class="form-field">
-          <label class="form-label">Knocking Days</label>
+          <label class="form-label">Knocking Days (excl. Sundays)</label>
           <input type="number" class="form-input" id="settingKnockingDays" placeholder="101" min="1" onchange="saveSetting('knockingDays', this.value)">
         </div>
         <div class="form-field">
@@ -1252,6 +1252,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="settings-section">
     <div class="section-label">Days Off</div>
     <div class="card">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Sundays are automatically excluded from all calculations. Add any other days off below.</div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <input type="date" class="form-input" id="daysOffStart" style="flex:1;">
         <input type="date" class="form-input" id="daysOffEnd" style="flex:1;" placeholder="End (optional)">
@@ -1533,7 +1534,13 @@ function getWeekNumber(date, seasonStart) {
   return Math.floor(diff / 7) + 1;
 }
 
+function isSunday(dateStr) {
+  return new Date(dateStr + 'T00:00:00').getDay() === 0;
+}
+
 function isDayOff(dateStr) {
+  // Sundays are always off — never count as knocking days
+  if (isSunday(dateStr)) return true;
   return db.daysOff.some(d => {
     if (!d.end_date || d.end_date === d.start_date) return d.start_date === dateStr;
     return dateStr >= d.start_date && dateStr <= d.end_date;
@@ -1564,8 +1571,9 @@ function aggregateStats() {
   const totalMosquito = db.logs.reduce((s, l) => s + (parseInt(l.mosquito)||0), 0);
   // Count distinct knocking days logged (not days off, not duplicates)
   const loggedDates = [...new Set(db.logs.map(l => l.date))];
-  const workingDays = loggedDates.filter(d => !isDayOff(d)).length;
-  const apd = workingDays > 0 ? totalAccounts / workingDays : 0;
+  // Exclude Sundays and manual days-off from knocking day count
+  const workingDays = loggedDates.filter(d => !isDayOff(d) && !isSunday(d)).length;
+  const apd = workingDays > 0 && !isNaN(totalAccounts) ? totalAccounts / workingDays : 0;
   const acv = totalPest > 0 ? totalRevenue / totalPest : 0;
   return { totalAccounts, totalRevenue, totalKnocks, totalTalks, totalPest, totalMosquito, workingDays, apd, acv };
 }
@@ -1649,14 +1657,15 @@ function renderDashboard() {
   const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(totalAccounts + apd * daysLeft) : totalAccounts;
   document.getElementById('kpiProjected').textContent = projectedAccounts;
 
-  // Tier Banner
-  const currentTier = calcTier(totalAccounts);
+  // Tier Banner — always based on total accounts sold (not pulse active)
+  const safeAccounts = isNaN(totalAccounts) ? 0 : totalAccounts;
+  const currentTier = calcTier(safeAccounts);
   const currentTierIdx = TIERS.indexOf(currentTier);
-  document.getElementById('tierCurrentLabel').textContent = `Tier ${currentTierIdx + 1} (${currentTier.min}–${currentTier.max === Infinity ? '∞' : currentTier.max} accts)`;
+  document.getElementById('tierCurrentLabel').textContent = `Tier ${currentTierIdx + 1} · ${currentTier.min}–${currentTier.max === Infinity ? '∞' : currentTier.max} accts`;
   document.getElementById('tierCurrentRate').textContent = (currentTier.pct * 100) + '%';
   const nextTier = TIERS[currentTierIdx + 1];
   if (nextTier) {
-    document.getElementById('tierNextVal').textContent = (nextTier.min - totalAccounts) + ' accts → ' + (nextTier.pct * 100) + '%';
+    document.getElementById('tierNextVal').textContent = (nextTier.min - safeAccounts) + ' accts → ' + (nextTier.pct * 100) + '%';
   } else {
     document.getElementById('tierNextVal').textContent = 'Max tier reached 🏆';
   }
@@ -1696,12 +1705,12 @@ function renderDashboard() {
         } else if (pulseHasRevData) {
           // Use actual inactive revenue from pulse — most accurate
           const inactiveCommEst = pulseInactiveRev * calcTier(totalAccounts).pct;
-          inactiveImpactEl.textContent = `${pulseInactiveAccts} inactive · $${Math.round(pulseInactiveRev).toLocaleString()} revenue at risk · ~$${Math.round(inactiveCommEst).toLocaleString()} commission`;
+          inactiveImpactEl.textContent = `${pulseInactiveAccts} cancelled · $${Math.round(pulseInactiveRev).toLocaleString()} revenue lost · ~$${Math.round(inactiveCommEst).toLocaleString()} less commission`;
         } else {
           // Fall back to ACV estimate if no revenue data entered
           const inactiveRevEst = pulseInactiveAccts * acv;
           const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
-          inactiveImpactEl.textContent = `${pulseInactiveAccts} inactive · ~$${Math.round(inactiveRevEst).toLocaleString()} est. at risk (enter pulse revenue for exact figure)`;
+          inactiveImpactEl.textContent = `${pulseInactiveAccts} cancelled · ~$${Math.round(inactiveRevEst).toLocaleString()} est. revenue lost (add pulse revenue for exact)`;
         }
       }
     }
@@ -1877,11 +1886,11 @@ function renderCommission() {
     atRiskEl.textContent = '$0';
     atRiskEl.style.color = 'var(--green)';
   } else if (actualInactiveRev > 0) {
-    atRiskEl.textContent = '$' + Math.round(atRiskRev).toLocaleString() + ' · ~$' + Math.round(atRiskComm).toLocaleString() + ' comm';
+    atRiskEl.textContent = '$' + Math.round(atRiskRev).toLocaleString() + ' lost · ~$' + Math.round(atRiskComm).toLocaleString() + ' less comm';
     atRiskEl.style.color = '';
     atRiskEl.style.fontSize = '';
   } else {
-    atRiskEl.textContent = '~$' + Math.round(atRiskComm).toLocaleString() + ' est. (add pulse revenue for exact)';
+    atRiskEl.textContent = '~$' + Math.round(atRiskComm).toLocaleString() + ' est. loss (add pulse revenue for exact)';
     atRiskEl.style.fontSize = '11px';
     atRiskEl.style.color = '';
   }
