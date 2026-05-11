@@ -69,50 +69,50 @@
   --hero-pace-border: rgba(255,255,255,0.08);
 }
 [data-theme="light"] {
-  --bg: #f0f0f5;
-  --bg2: #e6e6ee;
-  --bg3: #fafafc;
+  --bg: #f5f5f7;
+  --bg2: #ebebf0;
+  --bg3: #ffffff;
   --card: #ffffff;
-  --card2: #f5f5fa;
-  --border: #dcdce8;
-  --border2: #c8c8d8;
-  --text: #14141e;
-  --text2: #44445c;
-  --text3: #7878a0;
-  --accent: #2d64d8;
-  --accent2: #1a50c0;
-  --green: #18904e;
-  --green2: #106838;
-  --red: #cc2844;
-  --red2: #a01830;
-  --amber: #b87010;
-  --amber2: #906000;
-  --purple: #6d40d0;
-  --teal: #147c84;
+  --card2: #f9f9fb;
+  --border: #e2e2e8;
+  --border2: #ceceda;
+  --text: #111118;
+  --text2: #3e3e52;
+  --text3: #808098;
+  --accent: #3567d4;
+  --accent2: #2455c0;
+  --green: #167a42;
+  --green2: #0d5c30;
+  --red: #c82240;
+  --red2: #9e1830;
+  --amber: #a86508;
+  --amber2: #845000;
+  --purple: #6438c8;
+  --teal: #0e7070;
   --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 
-  /* Light mode tints — stronger for visibility on white */
-  --tint-accent: rgba(45,100,216,0.08);
-  --tint-accent-border: rgba(45,100,216,0.22);
-  --tint-green: rgba(24,144,78,0.08);
-  --tint-green-border: rgba(24,144,78,0.28);
-  --tint-amber: rgba(184,112,16,0.08);
-  --tint-amber-border: rgba(184,112,16,0.28);
-  --tint-red: rgba(192,48,80,0.08);
-  --tint-red-border: rgba(192,48,80,0.28);
-  --tint-purple: rgba(109,64,208,0.08);
-  --tint-purple-border: rgba(109,64,208,0.22);
+  /* Light mode tints */
+  --tint-accent: rgba(53,103,212,0.07);
+  --tint-accent-border: rgba(53,103,212,0.2);
+  --tint-green: rgba(22,122,66,0.07);
+  --tint-green-border: rgba(22,122,66,0.25);
+  --tint-amber: rgba(168,101,8,0.07);
+  --tint-amber-border: rgba(168,101,8,0.25);
+  --tint-red: rgba(200,34,64,0.07);
+  --tint-red-border: rgba(200,34,64,0.25);
+  --tint-purple: rgba(100,56,200,0.07);
+  --tint-purple-border: rgba(100,56,200,0.2);
   --overlay: rgba(0,0,0,0.5);
-  /* Hero card — dark slate on light page, clean and premium */
-  --hero-from: #1e2433;
-  --hero-mid: #1a2040;
-  --hero-to: #16192e;
-  --hero-border: rgba(255,255,255,0.06);
-  --hero-glow1: rgba(91,141,239,0.2);
-  --hero-glow2: rgba(155,114,240,0.15);
-  --hero-pace-bg: rgba(255,255,255,0.08);
-  --hero-pace-border: rgba(255,255,255,0.12);
+  /* Hero card — clean white card in light mode */
+  --hero-from: #ffffff;
+  --hero-mid: #f8f8fc;
+  --hero-to: #f4f4fa;
+  --hero-border: #dcdce8;
+  --hero-glow1: rgba(79,127,255,0.06);
+  --hero-glow2: rgba(109,64,208,0.04);
+  --hero-pace-bg: #f0f0f8;
+  --hero-pace-border: #dcdce8;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; -webkit-text-size-adjust: none; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
@@ -265,6 +265,21 @@ nav {
 .hero-pace-item { flex: 1; background: var(--hero-pace-bg); border: 1px solid var(--hero-pace-border); border-radius: var(--radius-sm); padding: 14px 18px; }
 .hero-pace-num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-family: var(--font-mono); }
 .hero-pace-lbl { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; font-weight: 500; }
+/* Light mode hero — text switches to dark, accent stripe on top */
+[data-theme="light"] .hero-card {
+  border-top: 3px solid var(--accent);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .hero-week-label { color: var(--text3); opacity: 1; }
+[data-theme="light"] .hero-target { color: var(--text); }
+[data-theme="light"] .hero-sub { color: var(--text2); opacity: 1; }
+[data-theme="light"] .hero-pace-num { color: var(--text); }
+[data-theme="light"] .hero-pace-lbl { color: var(--text3); opacity: 1; }
+[data-theme="light"] .hero-card::before,
+[data-theme="light"] .hero-card::after { display: none; }
 
 /* ============================================================
    KPI GRID
