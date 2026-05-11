@@ -1711,10 +1711,13 @@ function renderDashboard() {
   document.getElementById('heroDaysLeft').textContent = daysLeft;
 
   // KPIs
-  document.getElementById('kpiAccounts').textContent = hasNetData ? netAccounts + ' net' : totalAccounts;
+  document.getElementById('kpiAccounts').textContent = hasNetData ? netAccounts : totalAccounts;
   document.getElementById('kpiAccountsTarget').textContent = accountTarget;
-  document.getElementById('kpiAcvSub').textContent = hasNetData
-    ? totalAccounts + ' sold · ' + pulseInactiveNet + ' inactive'
+  // Show sold count in sub if we have net data
+  const kpiAcctsSub = document.querySelector('#kpiAccounts')?.closest('.kpi-card')?.querySelector('.kpi-sub');
+  if (kpiAcctsSub) kpiAcctsSub.textContent = hasNetData ? totalAccounts + ' sold · ' + pulseInactiveNet + ' inactive' : 'of ' + accountTarget + ' target';
+  document.getElementById('kpiAcvSub').textContent = hasNetData && pulseInactiveNet > 0
+    ? netAccounts + ' net · ' + pulseInactiveNet + ' inactive'
     : 'avg per pest acct';
   document.getElementById('kpiRevenue').textContent = '$' + fmtK(totalRevenue);
   const revTarget = parseInt(S('revenueTarget'));
@@ -1825,10 +1828,9 @@ function renderDashboard() {
   }
 
   // Progress bars
-  const displayAccounts = hasNetData ? netAccounts : totalAccounts;
-  const acctPct = Math.min(100, (displayAccounts / accountTarget) * 100);
+  const acctPct = Math.min(100, ((hasNetData ? netAccounts : totalAccounts) / accountTarget) * 100);
   const revPct = Math.min(100, (totalRevenue / revTarget) * 100);
-  document.getElementById('progAcctsVal').textContent = displayAccounts;
+  document.getElementById('progAcctsVal').textContent = hasNetData ? netAccounts : totalAccounts;
   document.getElementById('progAcctsTarget').textContent = accountTarget;
   document.getElementById('progRevVal').textContent = '$' + fmtK(totalRevenue);
   document.getElementById('progRevTarget').textContent = '$' + fmtK(revTarget);
@@ -1866,11 +1868,11 @@ function renderDashboard() {
 
   const todayTarget = Math.ceil(neededPerDay);
   const weekTarget = Math.ceil(neededPerDay * 5);
-  setPaceVal('paceTodayTarget', todayTarget + ' accts/day needed', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
-  setPaceVal('paceWeekTarget', weekTarget + ' accts/week needed', '');
+  setPaceVal('paceTodayTarget', todayTarget + ' net/day needed', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
+  setPaceVal('paceWeekTarget', weekTarget + ' net/week needed', '');
   const paceGap = onPaceFor - accountTarget;
   const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
-  setPaceVal('paceOnTrack', onPaceFor + ' accounts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
+  setPaceVal('paceOnTrack', onPaceFor + ' net accts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
   const totalSeasonDays = getTotalSeasonWorkingDays();
   const surplusN = netAccounts - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
   setPaceVal('paceSurplus', (surplusN >= 0 ? '+' : '') + surplusN + ' accounts', surplusN >= 0 ? 'good' : 'bad');
@@ -1878,8 +1880,8 @@ function renderDashboard() {
 
   // Door Stats
   const kt = totalKnocks > 0 ? ((totalTalks / totalKnocks) * 100).toFixed(1) + '%' : '—';
-  const ta = totalTalks > 0 ? ((netAccounts / totalTalks) * 100).toFixed(1) + '%' : '—';
-  const da = totalKnocks > 0 ? ((netAccounts / totalKnocks) * 100).toFixed(1) + '%' : '—';
+  const ta = totalTalks > 0 ? ((totalAccounts / totalTalks) * 100).toFixed(1) + '%' : '—';
+  const da = totalKnocks > 0 ? ((totalAccounts / totalKnocks) * 100).toFixed(1) + '%' : '—';
   document.getElementById('statKT').textContent = kt;
   document.getElementById('statTA').textContent = ta;
   document.getElementById('statDA').textContent = da;
@@ -2216,7 +2218,7 @@ function renderWeekly() {
   const netAccountsWeekly = Math.max(0, stats.totalAccounts - weeklyInactive);
   const neededWeekly = Math.ceil((accountTarget - netAccountsWeekly) / weeksRemaining);
   const weeklyPaceTarget = neededWeekly;
-  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk · ${netAccountsWeekly} net so far`;
+  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk · ${netAccountsWeekly} net active`;
   document.getElementById('wfThisWeek').textContent = thisWeekAccounts;
   document.getElementById('wfThisWeekSub').textContent = 'accounts sold this week';
 
