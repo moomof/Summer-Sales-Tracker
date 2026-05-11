@@ -1702,20 +1702,18 @@ function renderDashboard() {
   const accountTarget = parseInt(S('accountTarget'));
   document.getElementById('heroWeekLabel').textContent = `Week ${weekNum} · ${daysLeft} knocking days left`;
   document.getElementById('heroTarget').innerHTML = `${accountTarget} <span style="font-size:18px;opacity:0.7">target</span>`;
-  const heroSubText = hasNetData
-    ? `${totalAccounts} sold · ${netAccounts} net · ${Math.max(0, accountTarget - netAccounts)} to go`
-    : `${totalAccounts} sold · ${Math.max(0, accountTarget - totalAccounts)} to go`;
+  const inactiveLabel = pulseInactiveNet > 0 ? ` · ${pulseInactiveNet} inactive` : '';
+  const heroSubText = `${totalAccounts} sold${inactiveLabel} · ${Math.max(0, accountTarget - netAccounts)} to go`;
   document.getElementById('heroSub').textContent = heroSubText;
   document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - netAccounts) / daysLeft).toFixed(1) : '—';
   document.getElementById('heroPaceCurrent').textContent = apd.toFixed(1);
   document.getElementById('heroDaysLeft').textContent = daysLeft;
 
   // KPIs
-  document.getElementById('kpiAccounts').textContent = hasNetData ? netAccounts : totalAccounts;
+  document.getElementById('kpiAccounts').textContent = netAccounts;
   document.getElementById('kpiAccountsTarget').textContent = accountTarget;
-  // Show sold count in sub if we have net data
   const kpiAcctsSub = document.querySelector('#kpiAccounts')?.closest('.kpi-card')?.querySelector('.kpi-sub');
-  if (kpiAcctsSub) kpiAcctsSub.textContent = hasNetData ? totalAccounts + ' sold · ' + pulseInactiveNet + ' inactive' : 'of ' + accountTarget + ' target';
+  if (kpiAcctsSub) kpiAcctsSub.textContent = pulseInactiveNet > 0 ? totalAccounts + ' sold · ' + pulseInactiveNet + ' cancelled' : 'of ' + accountTarget + ' target';
   document.getElementById('kpiAcvSub').textContent = hasNetData && pulseInactiveNet > 0
     ? netAccounts + ' net · ' + pulseInactiveNet + ' inactive'
     : 'avg per pest acct';
@@ -1828,9 +1826,9 @@ function renderDashboard() {
   }
 
   // Progress bars
-  const acctPct = Math.min(100, ((hasNetData ? netAccounts : totalAccounts) / accountTarget) * 100);
+  const acctPct = Math.min(100, (netAccounts / accountTarget) * 100);
   const revPct = Math.min(100, (totalRevenue / revTarget) * 100);
-  document.getElementById('progAcctsVal').textContent = hasNetData ? netAccounts : totalAccounts;
+  document.getElementById('progAcctsVal').textContent = netAccounts;
   document.getElementById('progAcctsTarget').textContent = accountTarget;
   document.getElementById('progRevVal').textContent = '$' + fmtK(totalRevenue);
   document.getElementById('progRevTarget').textContent = '$' + fmtK(revTarget);
