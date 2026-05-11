@@ -1610,19 +1610,6 @@ function getWeekNumber(date, seasonStart) {
   return Math.floor(diff / 7) + 1;
 }
 
-function getTotalSeasonWorkingDays() {
-  // Count all knocking days in the full season (excl Sundays and days off)
-  const { start, end } = getSeasonDates();
-  let count = 0;
-  const cur = new Date(start);
-  while (cur <= end) {
-    const ds = cur.toISOString().slice(0,10);
-    if (!isDayOff(ds)) count++;
-    cur.setDate(cur.getDate() + 1);
-  }
-  return count;
-}
-
 function isSunday(dateStr) {
   return new Date(dateStr + 'T00:00:00').getDay() === 0;
 }
@@ -1634,6 +1621,19 @@ function isDayOff(dateStr) {
     if (!d.end_date || d.end_date === d.start_date) return d.start_date === dateStr;
     return dateStr >= d.start_date && dateStr <= d.end_date;
   });
+}
+
+function getTotalSeasonWorkingDays() {
+  // Count all knocking days in the full season (excl Sundays and days off)
+  const { start, end } = getSeasonDates();
+  let count = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const ds = cur.toISOString().slice(0,10);
+    if (!isDayOff(ds)) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
 }
 
 function getWorkingDaysRemaining(fromDate) {
@@ -1736,8 +1736,8 @@ function renderDashboard() {
   const currentTier = calcTier(safeAccounts);
   const dailyRevAvg = workingDays > 0 ? totalRevenue / workingDays : 0;
 
-  // Commission tier determined by net accounts (inactive subtracted)
-  const gross = calcCommission(commissionBase, netAccountsComm);
+  // Commission KPI — use netAccounts (dashboard context)
+  const gross = calcCommission(totalRevenue, netAccounts);
   const advances = calcAdvances(stats.totalPest, stats.totalMosquito);
   // Count semi-monthly pay periods (10th and 25th) that have passed since season start
   // Housing deductions per contract: $250 on 10th & 25th, May 25 – Sep 10
@@ -1805,12 +1805,12 @@ function renderDashboard() {
           inactiveImpactEl.textContent = 'No inactive accounts ✓';
         } else if (pulseHasRevData) {
           // Use actual inactive revenue from pulse — most accurate
-          const inactiveCommEst = pulseInactiveRev * calcTier(totalAccounts).pct;
+          const inactiveCommEst = pulseInactiveRev * calcTier(netAccounts).pct;
           inactiveImpactEl.textContent = `${pulseInactiveAccts} cancelled · $${Math.round(pulseInactiveRev).toLocaleString()} revenue lost · ~$${Math.round(inactiveCommEst).toLocaleString()} less commission`;
         } else {
           // Fall back to ACV estimate if no revenue data entered
           const inactiveRevEst = pulseInactiveAccts * acv;
-          const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
+          const inactiveCommEst = inactiveRevEst * calcTier(netAccounts).pct;
           inactiveImpactEl.textContent = `${pulseInactiveAccts} cancelled · ~$${Math.round(inactiveRevEst).toLocaleString()} est. revenue lost (add pulse revenue for exact)`;
         }
       }
