@@ -1459,11 +1459,12 @@ async function syncFromCloud() {
   setSyncStatus('syncing');
   showToast('Syncing from cloud...', 'info');
   try {
+    // Fetch each table independently so one failure doesn't block others
     const [logs, pulses, daysOff, settings] = await Promise.all([
-      sbFetch('days', { params: { order: 'date.desc' } }),
-      sbFetch('pulse_snapshots', { params: { order: 'date.desc' } }),
-      sbFetch('days_off', {}),
-      sbFetch('settings', { params: { key: 'eq.app_settings' } }),
+      sbFetch('days', { params: { order: 'date.desc' } }).catch(() => null),
+      sbFetch('pulse_snapshots', { params: { order: 'date.desc' } }).catch(() => null),
+      sbFetch('days_off', {}).catch(() => null),
+      sbFetch('settings', { params: { key: 'eq.app_settings' } }).catch(() => null),
     ]);
     if (logs) db.logs = logs;
     if (pulses) db.pulses = pulses;
@@ -2833,6 +2834,34 @@ function updatePulsePreview() {
   document.getElementById('pfsRevRetention').style.color = revRetPct >= 80 ? 'var(--green)' : revRetPct >= 60 ? 'var(--amber)' : 'var(--red)';
 }
 
+
+async function syncSilent() {
+  if (!supabase) return;
+  setSyncStatus('syncing');
+  try {
+    const [logs, pulses, daysOff, settings] = await Promise.all([
+      sbFetch('days', { params: { order: 'date.desc' } }).catch(() => null),
+      sbFetch('pulse_snapshots', { params: { order: 'date.desc' } }).catch(() => null),
+      sbFetch('days_off', {}).catch(() => null),
+      sbFetch('settings', { params: { key: 'eq.app_settings' } }).catch(() => null),
+    ]);
+    if (logs) db.logs = logs;
+    if (pulses) db.pulses = pulses;
+    if (daysOff) db.daysOff = daysOff;
+    if (settings && settings[0]) {
+      const s = JSON.parse(settings[0].value);
+      db.settings = { ...DEFAULT_SETTINGS, ...s };
+      applySettings();
+    }
+    saveLocal();
+    renderAll();
+    setSyncStatus('idle');
+  } catch(e) {
+    setSyncStatus('error');
+    // Silent
+  }
+}
+
 function init() {
   loadLocal();
   applySettings();
@@ -2859,12 +2888,9 @@ function init() {
 
   renderAll();
 
-  // Background sync on load
+  // Background sync on load — silent (no toast, just dot indicator)
   if (supabase) {
-    setTimeout(() => {
-      setSyncStatus('syncing');
-      syncFromCloud().catch(() => setSyncStatus('error'));
-    }, 1500);
+    setTimeout(() => syncSilent(), 1500);
   }
 }
 
