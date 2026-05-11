@@ -876,8 +876,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     </div>
     <div class="progress-track">
       <div class="progress-fill" id="progRevFill" style="width:0%;background:linear-gradient(90deg,var(--green),var(--teal))"></div>
-      <div class="progress-marker" style="left:46.8%">
-        <div class="progress-marker-label">LY: $117K</div>
+      <div class="progress-marker" id="progRevMarker" style="left:46.8%">
+        <div class="progress-marker-label" id="progRevMarkerLabel">LY: $117K</div>
       </div>
     </div>
   </div>
@@ -1534,6 +1534,19 @@ function getWeekNumber(date, seasonStart) {
   return Math.floor(diff / 7) + 1;
 }
 
+function getTotalSeasonWorkingDays() {
+  // Count all knocking days in the full season (excl Sundays and days off)
+  const { start, end } = getSeasonDates();
+  let count = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const ds = cur.toISOString().slice(0,10);
+    if (!isDayOff(ds)) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
 function isSunday(dateStr) {
   return new Date(dateStr + 'T00:00:00').getDay() === 0;
 }
@@ -1655,7 +1668,9 @@ function renderDashboard() {
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
 
   const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(totalAccounts + apd * daysLeft) : totalAccounts;
+  const projectedRevenue = daysLeft > 0 && workingDays > 0 ? totalRevenue + dailyRevAvg * daysLeft : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts;
+  const projSubEl = document.querySelector('#kpiProjected + .kpi-sub') || document.getElementById('kpiProjectedSub');
 
   // Tier Banner — always based on total accounts sold (not pulse active)
   const safeAccounts = isNaN(totalAccounts) ? 0 : totalAccounts;
@@ -1733,6 +1748,15 @@ function renderDashboard() {
   document.getElementById('progRevFill').style.width = revPct + '%';
   const lyAcctPct = Math.min(100, (S('lyAccounts') / accountTarget) * 100);
   document.getElementById('progAcctsMarker').style.left = lyAcctPct + '%';
+  // Update LY accounts marker label dynamically
+  const progAcctsMarkerLabel = document.querySelector('#progAcctsMarker .progress-marker-label');
+  if (progAcctsMarkerLabel) progAcctsMarkerLabel.textContent = 'LY: ' + S('lyAccounts');
+  // Update LY revenue marker dynamically
+  const lyRevPct = Math.min(100, (S('lyRevenue') / revTarget) * 100);
+  const progRevMarker = document.getElementById('progRevMarker');
+  if (progRevMarker) progRevMarker.style.left = lyRevPct + '%';
+  const progRevMarkerLabel = document.getElementById('progRevMarkerLabel');
+  if (progRevMarkerLabel) progRevMarkerLabel.textContent = 'LY: $' + fmtK(S('lyRevenue'));
 
   // Highlights
   const streak = calcStreak();
@@ -1755,12 +1779,13 @@ function renderDashboard() {
 
   const todayTarget = Math.ceil(neededPerDay);
   const weekTarget = Math.ceil(neededPerDay * 5);
-  setPaceVal('paceTodayTarget', todayTarget + ' accts', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
-  setPaceVal('paceWeekTarget', weekTarget + ' accts', '');
+  setPaceVal('paceTodayTarget', todayTarget + ' accts/day needed', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
+  setPaceVal('paceWeekTarget', weekTarget + ' accts/week needed', '');
   const paceGap = onPaceFor - accountTarget;
   const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
   setPaceVal('paceOnTrack', onPaceFor + ' accounts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
-  const surplusN = totalAccounts - Math.round(workingDays * accountTarget / S('knockingDays'));
+  const totalSeasonDays = getTotalSeasonWorkingDays();
+  const surplusN = totalAccounts - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
   setPaceVal('paceSurplus', (surplusN >= 0 ? '+' : '') + surplusN + ' accounts', surplusN >= 0 ? 'good' : 'bad');
   setPaceVal('paceRevenue', revPace, '');
 
@@ -2024,11 +2049,11 @@ function renderWeekly() {
   const thisWeekData = weeklyTotals.find(w => w.week === currentWeek);
   const thisWeekAccounts = thisWeekData ? thisWeekData.accounts : 0;
   const daysLeft = Math.max(0, getWorkingDaysRemaining(today));
-  const neededWeekly = Math.ceil(((accountTarget - stats.totalAccounts) / Math.max(1, Math.ceil(daysLeft / 5))) * 1);
+  const weeksRemaining = Math.max(1, Math.ceil(daysLeft / 5));
+  const neededWeekly = Math.ceil((accountTarget - stats.totalAccounts) / weeksRemaining);
+  const weeklyPaceTarget = neededWeekly;
   document.getElementById('wfThisWeek').textContent = thisWeekAccounts;
   document.getElementById('wfThisWeekSub').textContent = 'accounts sold this week';
-  const weeksRemaining = Math.max(1, Math.ceil(getWorkingDaysRemaining(today) / 5));
-  const weeklyPaceTarget = Math.ceil((accountTarget - stats.totalAccounts) / weeksRemaining);
   document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk to hit ${accountTarget}`;
   document.getElementById('wfNextWeek').textContent = neededWeekly;
   document.getElementById('wfNextWeekSub').textContent = 'needed to stay on pace';
@@ -2070,14 +2095,18 @@ function renderWeekly() {
     const wkStart = new Date(start); wkStart.setDate(wkStart.getDate() + (wk.week-1)*7);
     const div = document.createElement('div');
     div.className = 'week-scorecard';
-    const dayDots = ['M','T','W','T','F','S','Su'].map((d, i) => {
+    // Build day dots using actual dates (not assumed Mon-start)
+    const DAY_ABBR = ['Su','M','T','W','T','F','Sa'];
+    const dayDots = Array.from({length: 7}, (_, i) => {
       const dayDate = new Date(wkStart); dayDate.setDate(dayDate.getDate() + i);
       const dayStr = dayDate.toISOString().slice(0,10);
+      const dow = dayDate.getDay(); // 0=Sun
       const logEntry = db.logs.find(l => l.date === dayStr);
       const hasData = logEntry && ((parseInt(logEntry.pest)||0) + (parseInt(logEntry.mosquito)||0)) > 0;
       const off = isDayOff(dayStr);
       const cnt = logEntry ? (parseInt(logEntry.pest)||0) + (parseInt(logEntry.mosquito)||0) : 0;
-      return `<div class="scorecard-day"><div class="scorecard-day-dot ${off ? 'day-off' : hasData ? 'has-data' : ''}">${off ? 'off' : hasData ? cnt : '—'}</div><div class="scorecard-day-lbl">${d}</div></div>`;
+      const lbl = DAY_ABBR[dow];
+      return `<div class="scorecard-day"><div class="scorecard-day-dot ${off ? 'day-off' : hasData ? 'has-data' : ''}">${off ? '·' : hasData ? cnt : '—'}</div><div class="scorecard-day-lbl">${lbl}</div></div>`;
     }).join('');
     div.innerHTML = `
       <div class="scorecard-header">
@@ -2107,6 +2136,25 @@ function saveLog() {
     mosquito: parseInt(document.getElementById('logMosquito').value)||0,
     notes: document.getElementById('logNotes').value.trim(),
   };
+  // Warn if talks > knocks (logically impossible)
+  if (entry.talks > entry.knocks && entry.knocks > 0) {
+    showToast('Warning: talks cannot exceed knocks', 'error'); return;
+  }
+  // Warn if logging on a Sunday
+  if (isSunday(entry.date)) {
+    if (!confirm('This date is a Sunday (normally off). Save anyway?')) return;
+  }
+  // Warn if date is outside season
+  const { start, end } = getSeasonDates();
+  const entryDate = new Date(entry.date + 'T00:00:00');
+  if (entryDate < start || entryDate > end) {
+    if (!confirm('This date is outside your season range. Save anyway?')) return;
+  }
+  // Prevent duplicate date (unless editing)
+  if (!editId && db.logs.some(l => l.date === entry.date)) {
+    if (!confirm('An entry already exists for this date. Replace it?')) return;
+    db.logs = db.logs.filter(l => l.date !== entry.date);
+  }
   if (editId) {
     const idx = db.logs.findIndex(l => l.id === editId);
     if (idx !== -1) db.logs[idx] = entry;
@@ -2505,16 +2553,28 @@ function toggleDarkMode() {
 }
 
 function exportTSV() {
-  const headers = ['Date','Revenue','Knocks','Talks','Pest','Mosquito','Notes'];
-  const rows = [...db.logs].sort((a,b) => a.date.localeCompare(b.date)).map(l =>
-    [l.date, l.revenue, l.knocks, l.talks, l.pest, l.mosquito, l.notes].join('\t')
+  // Daily logs
+  const logHeaders = ['Date','Revenue','Knocks','Talks','Pest','Mosquito','Notes'];
+  const logRows = [...db.logs].sort((a,b) => a.date.localeCompare(b.date)).map(l =>
+    [l.date, l.revenue||0, l.knocks||0, l.talks||0, l.pest||0, l.mosquito||0,
+     (l.notes||'').replace(/\t/g,' ').replace(/\n/g,' ')].join('\t')
   );
-  const tsv = [headers.join('\t'), ...rows].join('\n');
+  // Pulse snapshots
+  const pulseHeaders = ['\nPulse Date','Sold','Sold Rev','Serviced','Serviced Rev','Pending','Pending Rev','Inactive','Inactive Rev'];
+  const pulseRows = [...db.pulses].sort((a,b) => a.date.localeCompare(b.date)).map(p =>
+    [p.date, p.sold||0, p.sold_revenue||0, p.serviced||0, p.serviced_revenue||0,
+     p.pending||0, p.pending_revenue||0, p.inactive||0, p.inactive_revenue||0].join('\t')
+  );
+  const tsv = [
+    logHeaders.join('\t'), ...logRows,
+    pulseHeaders.join('\t'), ...pulseRows
+  ].join('\n');
   const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'field-tracker-export.tsv';
+  const season = S('seasonStart').slice(0,4);
+  const a = document.createElement('a'); a.href = url; a.download = `field-tracker-${season}.tsv`;
   a.click(); URL.revokeObjectURL(url);
-  showToast('Exported! ✓', 'success');
+  showToast('Exported ' + db.logs.length + ' days + ' + db.pulses.length + ' pulse snapshots', 'success');
 }
 
 function confirmClearData() {
