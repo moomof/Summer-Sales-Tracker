@@ -9,117 +9,157 @@
 <meta name="theme-color" content="#0a0a0f">
 <title>Field Tracker Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ============================================================
-   CSS VARIABLES & RESET
-   ============================================================ */
 :root {
-  --bg: #0a0a0f;
-  --bg2: #111118;
-  --bg3: #18181f;
-  --card: #1c1c26;
-  --card2: #22222e;
-  --border: #2a2a38;
-  --border2: #333345;
-  --text: #f0f0f8;
-  --text2: #9090aa;
-  --text3: #5a5a72;
-  --accent: #5b8cff;
-  --accent2: #3d6bff;
-  --green: #2dd882;
-  --green2: #1ab868;
-  --red: #ff4f6a;
-  --red2: #cc3050;
-  --amber: #ffb340;
-  --amber2: #e09020;
-  --purple: #9b6cff;
-  --teal: #2ecbcb;
-  --nav-h: 64px;
+  --bg: #0c0c10;
+  --bg2: #111115;
+  --bg3: #16161c;
+  --card: #1a1a22;
+  --card2: #1e1e28;
+  --border: #252530;
+  --border2: #2e2e3e;
+  --text: #ededf5;
+  --text2: #8888a8;
+  --text3: #50506a;
+  --accent: #4f7fff;
+  --accent2: #3060ee;
+  --green: #25d07a;
+  --green2: #18a860;
+  --red: #f04060;
+  --red2: #b82840;
+  --amber: #f5a623;
+  --amber2: #cc8010;
+  --purple: #8b5cf6;
+  --teal: #22c5c5;
+  --sidebar-w: 220px;
+  --content-max: 1000px;
+  --nav-h: 60px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --radius: 14px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 48px rgba(0,0,0,0.6);
-  --font-head: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
-  --font-mono: 'DM Mono', monospace;
+  --radius: 10px;
+  --radius-sm: 7px;
+  --radius-xs: 5px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
+  --font-head: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 }
 [data-theme="light"] {
-  --bg: #f0f0f8;
-  --bg2: #e8e8f2;
+  --bg: #f2f2f6;
+  --bg2: #e8e8f0;
   --bg3: #ffffff;
   --card: #ffffff;
-  --card2: #f5f5fc;
-  --border: #dddde8;
-  --border2: #c8c8dc;
-  --text: #0e0e1a;
-  --text2: #50506a;
-  --text3: #9090aa;
-  --shadow: 0 2px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  --card2: #f7f7fc;
+  --border: #e0e0ec;
+  --border2: #d0d0e0;
+  --text: #0c0c18;
+  --text2: #484860;
+  --text3: #8888a8;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { font-size: 14px; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
   overflow-x: hidden;
-  padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
-  transition: background 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.25s, color 0.25s;
 }
 button { font-family: var(--font-body); cursor: pointer; border: none; background: none; color: inherit; }
 input, select, textarea { font-family: var(--font-body); }
 a { color: inherit; text-decoration: none; }
 
-/* ============================================================
-   SCROLLBAR
-   ============================================================ */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
-/* ============================================================
-   NAVIGATION
-   ============================================================ */
+/* ============================================================ LAYOUT ============================================================ */
+.app-shell { display: flex; min-height: 100dvh; }
+
 nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  height: calc(var(--nav-h) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
   background: var(--bg2);
-  border-top: 1px solid var(--border);
-  display: flex; align-items: stretch;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 100;
 }
+.nav-logo {
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo-name { font-size: 13px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.nav-logo-badge {
+  display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; background: rgba(79,127,255,0.15); color: var(--accent);
+  border-radius: 99px; padding: 2px 7px; margin-top: 4px;
+}
+.nav-items { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; }
 .nav-tab {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 8px 0; transition: color 0.2s; color: var(--text3);
-  font-size: 10px; font-weight: 500; letter-spacing: 0.03em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; border-radius: var(--radius-xs);
+  color: var(--text3); font-size: 13px; font-weight: 500;
+  letter-spacing: -0.01em; transition: color 0.12s, background 0.12s;
+  cursor: pointer; text-align: left; width: 100%;
 }
-.nav-tab svg { width: 22px; height: 22px; stroke-width: 1.8; transition: transform 0.2s; }
-.nav-tab.active { color: var(--accent); }
-.nav-tab.active svg { transform: translateY(-1px); }
-.nav-tab:active svg { transform: scale(0.9); }
+.nav-tab svg { width: 15px; height: 15px; stroke-width: 2; flex-shrink: 0; }
+.nav-tab:hover { background: var(--border); color: var(--text2); }
+.nav-tab.active { background: rgba(79,127,255,0.1); color: var(--accent); }
+.nav-tab span { flex: 1; }
+.nav-footer { padding: 10px 8px; border-top: 1px solid var(--border); }
+.sync-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 10px; font-size: 11px; color: var(--text3);
+  border-radius: var(--radius-xs);
+}
 
-/* ============================================================
-   PAGES
-   ============================================================ */
-.page { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
-.page.active { display: block; animation: fadeIn 0.2s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100dvh; }
 
-/* ============================================================
-   TYPOGRAPHY HELPERS
-   ============================================================ */
-.page-title { font-family: var(--font-head); font-size: 26px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 16px; }
+/* ============================================================ PAGES ============================================================ */
+.page { display: none; padding: 32px 32px 48px; max-width: var(--content-max); }
+.page.active { display: block; animation: fadeIn 0.15s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header { margin-bottom: 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.025em; color: var(--text); line-height: 1.2; }
+.page-subtitle { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
 .section-label {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text3); margin-bottom: 10px; padding-left: 2px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 8px; padding-left: 1px;
 }
 .mono { font-family: var(--font-mono); }
+
+/* ============================================================ MOBILE ============================================================ */
+@media (max-width: 700px) {
+  nav {
+    position: fixed; top: auto; left: 0; bottom: 0; right: 0; width: 100%;
+    height: calc(var(--nav-h) + var(--safe-bottom));
+    flex-direction: row; border-right: none; border-top: 1px solid var(--border);
+    padding-bottom: var(--safe-bottom);
+  }
+  .nav-logo, .nav-footer, .nav-items { display: none; }
+  .nav-mobile { display: flex !important; flex: 1; }
+  .main-content { margin-left: 0; }
+  .page { padding: 16px 16px 32px; }
+  .page-title { font-size: 17px; }
+}
+.nav-mobile { display: none; width: 100%; }
+.nav-mobile .nav-tab {
+  flex: 1; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 8px 0; font-size: 10px; letter-spacing: 0.04em;
+  text-transform: uppercase; border-radius: 0; color: var(--text3);
+}
+.nav-mobile .nav-tab svg { width: 19px; height: 19px; }
+.nav-mobile .nav-tab.active { background: transparent; color: var(--accent); }
+.nav-mobile .nav-tab span { flex: none; }
 
 /* ============================================================
    CARDS
@@ -128,63 +168,67 @@ nav {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 18px;
   box-shadow: var(--shadow);
 }
-.card + .card { margin-top: 12px; }
+.card + .card { margin-top: 10px; }
 
 /* ============================================================
    HERO CARD (Dashboard top)
    ============================================================ */
 .hero-card {
-  background: linear-gradient(135deg, var(--accent2) 0%, var(--purple) 100%);
-  border: none;
-  padding: 20px;
+  background: linear-gradient(135deg, #1e2d5c 0%, #16213e 60%, #1a1040 100%);
+  border: 1px solid rgba(79,127,255,0.2);
+  padding: 24px 28px;
   border-radius: var(--radius);
   position: relative; overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .hero-card::before {
   content: '';
-  position: absolute; top: -40px; right: -40px;
-  width: 160px; height: 160px;
-  background: rgba(255,255,255,0.06);
+  position: absolute; top: -60px; right: -60px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(79,127,255,0.12) 0%, transparent 70%);
   border-radius: 50%;
 }
 .hero-card::after {
   content: '';
-  position: absolute; bottom: -60px; left: -20px;
-  width: 200px; height: 200px;
-  background: rgba(255,255,255,0.04);
+  position: absolute; bottom: -40px; left: 40%;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%);
   border-radius: 50%;
 }
-.hero-week-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; margin-bottom: 4px; }
-.hero-target { font-family: var(--font-head); font-size: 38px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
-.hero-sub { font-size: 13px; opacity: 0.8; margin-top: 6px; }
-.hero-pace-row { display: flex; gap: 12px; margin-top: 16px; }
-.hero-pace-item { flex: 1; background: rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; }
-.hero-pace-num { font-family: var(--font-head); font-size: 20px; font-weight: 700; }
-.hero-pace-lbl { font-size: 10px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+.hero-week-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.55; margin-bottom: 8px; font-family: var(--font-mono); }
+.hero-target { font-size: 42px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+.hero-sub { font-size: 13px; opacity: 0.6; margin-top: 6px; font-weight: 400; }
+.hero-pace-row { display: flex; gap: 10px; margin-top: 20px; }
+.hero-pace-item { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 12px 14px; }
+.hero-pace-num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-family: var(--font-mono); }
+.hero-pace-lbl { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; font-weight: 500; }
 
 /* ============================================================
    KPI GRID
    ============================================================ */
-.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 700px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
 .kpi-card {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 14px;
+  border-radius: var(--radius-sm); padding: 16px 18px;
+  transition: border-color 0.15s;
 }
-.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
-.kpi-value { font-family: var(--font-head); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
-.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
-.kpi-delta { font-size: 11px; margin-top: 3px; }
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+.kpi-value { font-family: var(--font-mono); font-size: 26px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
+.kpi-delta { font-size: 11px; margin-top: 5px; }
 .kpi-delta.pos { color: var(--green); }
 .kpi-delta.neg { color: var(--red); }
 
 /* ============================================================
    PULSE BOARD
    ============================================================ */
-.pulse-board { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.pulse-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 700px) { .pulse-board { grid-template-columns: 1fr 1fr; } }
 .pulse-item {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 12px 14px;
@@ -194,29 +238,29 @@ nav {
 .pulse-item.serviced { border-color: rgba(45,216,130,0.3); background: rgba(45,216,130,0.06); }
 .pulse-item.pending { border-color: rgba(255,179,64,0.3); background: rgba(255,179,64,0.06); }
 .pulse-item.inactive { border-color: rgba(255,79,106,0.3); background: rgba(255,79,106,0.06); }
-.pulse-num { font-family: var(--font-head); font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+.pulse-num { font-family: var(--font-mono); font-size: 30px; font-weight: 600; letter-spacing: -0.04em; }
 .pulse-item.sold .pulse-num { color: var(--accent); }
 .pulse-item.serviced .pulse-num { color: var(--green); }
 .pulse-item.pending .pulse-num { color: var(--amber); }
 .pulse-item.inactive .pulse-num { color: var(--red); }
-.pulse-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); }
+.pulse-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-top: 2px; }
 
 /* ============================================================
    TIER BANNER
    ============================================================ */
 .tier-banner {
-  background: linear-gradient(90deg, rgba(155,108,255,0.15), rgba(91,140,255,0.15));
-  border: 1px solid rgba(155,108,255,0.3);
-  border-radius: var(--radius-sm); padding: 12px 16px;
+  background: linear-gradient(90deg, rgba(139,92,246,0.08), rgba(79,127,255,0.08));
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--radius-sm); padding: 14px 18px;
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .tier-banner-left { display: flex; flex-direction: column; gap: 2px; }
 .tier-current { font-size: 11px; color: var(--text3); font-weight: 500; }
-.tier-rate { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--purple); }
+.tier-rate { font-family: var(--font-mono); font-size: 20px; font-weight: 600; color: var(--purple); }
 .tier-banner-right { text-align: right; }
 .tier-next-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
-.tier-next-val { font-family: var(--font-mono); font-size: 15px; font-weight: 500; color: var(--text); margin-top: 2px; }
+.tier-next-val { font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--text); margin-top: 2px; }
 
 /* ============================================================
    PROGRESS BARS
@@ -226,7 +270,7 @@ nav {
 .progress-title { font-size: 13px; font-weight: 500; }
 .progress-vals { font-family: var(--font-mono); font-size: 12px; color: var(--text2); }
 .progress-track {
-  height: 8px; background: var(--bg3); border-radius: 99px;
+  height: 6px; background: var(--bg3); border-radius: 99px;
   position: relative; overflow: visible;
 }
 .progress-fill {
@@ -290,7 +334,7 @@ nav {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 12px 10px; text-align: center;
 }
-.door-stat-pct { font-family: var(--font-head); font-size: 22px; font-weight: 700; }
+.door-stat-pct { font-family: var(--font-mono); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
 .door-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
 
 /* ============================================================
@@ -314,28 +358,28 @@ nav {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-field { display: flex; flex-direction: column; gap: 5px; }
 .form-field.full { grid-column: 1 / -1; }
-.form-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
+.form-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
 .form-input {
-  background: var(--bg3); border: 1px solid var(--border2);
-  border-radius: var(--radius-sm); padding: 10px 12px;
-  color: var(--text); font-size: 14px; font-family: var(--font-body);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  color: var(--text); font-size: 13px; font-family: var(--font-body);
+  transition: border-color 0.15s, box-shadow 0.15s;
   -webkit-appearance: none;
 }
 .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,140,255,0.15); }
 .form-input::placeholder { color: var(--text3); }
 textarea.form-input { resize: vertical; min-height: 70px; }
 .btn {
-  border-radius: var(--radius-sm); padding: 11px 20px;
-  font-weight: 600; font-size: 14px; letter-spacing: 0.01em;
-  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+  border-radius: var(--radius-sm); padding: 9px 18px;
+  font-weight: 500; font-size: 13px; letter-spacing: -0.01em;
+  transition: transform 0.12s, opacity 0.12s, box-shadow 0.12s;
 }
 .btn:active { transform: scale(0.97); opacity: 0.9; }
 .btn-primary { background: var(--accent); color: white; }
 .btn-primary:hover { box-shadow: 0 4px 20px rgba(91,140,255,0.4); }
 .btn-danger { background: rgba(255,79,106,0.15); color: var(--red); border: 1px solid rgba(255,79,106,0.3); }
 .btn-ghost { background: var(--card2); color: var(--text2); border: 1px solid var(--border); }
-.btn-sm { padding: 7px 12px; font-size: 12px; }
+.btn-sm { padding: 5px 10px; font-size: 11.5px; border-radius: var(--radius-xs); }
 .btn-full { width: 100%; }
 
 /* ============================================================
@@ -348,10 +392,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .log-entry:hover { border-color: var(--border2); }
 .log-entry-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.log-date { font-family: var(--font-head); font-size: 15px; font-weight: 700; }
-.log-revenue { font-family: var(--font-mono); font-size: 15px; color: var(--green); font-weight: 500; }
+.log-date { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+.log-revenue { font-family: var(--font-mono); font-size: 13px; color: var(--green); font-weight: 500; }
 .log-stats { display: flex; flex-wrap: wrap; gap: 8px; }
-.log-stat { font-size: 12px; color: var(--text2); background: var(--bg3); border-radius: 99px; padding: 3px 10px; }
+.log-stat { font-size: 11.5px; color: var(--text2); background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 3px 9px; }
 .log-stat span { color: var(--text); font-weight: 500; }
 .log-notes { font-size: 12px; color: var(--text3); margin-top: 8px; font-style: italic; }
 .log-actions { display: flex; gap: 6px; margin-top: 10px; justify-content: flex-end; }
@@ -376,7 +420,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .tier-row.active-tier { border-color: var(--purple); background: rgba(155,108,255,0.08); }
 .tier-row.unlocked-tier { border-color: rgba(45,216,130,0.3); background: rgba(45,216,130,0.05); }
-.tier-pct { font-family: var(--font-head); font-size: 18px; font-weight: 700; min-width: 48px; }
+.tier-pct { font-family: var(--font-mono); font-size: 17px; font-weight: 600; min-width: 48px; }
 .tier-row.active-tier .tier-pct { color: var(--purple); }
 .tier-row.unlocked-tier .tier-pct { color: var(--green); }
 .tier-range { font-size: 12px; color: var(--text3); flex: 1; }
@@ -390,11 +434,11 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .earning-row:last-child { border-bottom: none; }
 .earning-row.total-row { background: var(--bg3); border-radius: var(--radius-sm); border: none; margin-top: 4px; }
 .earning-key { font-size: 13px; color: var(--text2); }
-.earning-val { font-family: var(--font-mono); font-size: 14px; font-weight: 500; }
+.earning-val { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
 .earning-val.green { color: var(--green); }
 .earning-val.red { color: var(--red); }
 .earning-val.amber { color: var(--amber); }
-.earning-val.bold { font-size: 16px; font-weight: 700; color: var(--text); }
+.earning-val.bold { font-size: 15px; font-weight: 700; color: var(--text); }
 
 /* Month breakdown table */
 .month-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -409,7 +453,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .aug-tracker-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); margin-bottom: 8px; }
 .aug-stats-row { display: flex; gap: 16px; }
 .aug-stat { display: flex; flex-direction: column; gap: 2px; }
-.aug-stat-val { font-family: var(--font-head); font-size: 20px; font-weight: 700; }
+.aug-stat-val { font-family: var(--font-mono); font-size: 20px; font-weight: 600; }
 .aug-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Bonuses */
@@ -447,7 +491,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .week-focus-card.this-week { border-color: rgba(91,140,255,0.4); }
 .week-focus-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 6px; }
-.week-focus-num { font-family: var(--font-head); font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+.week-focus-num { font-family: var(--font-mono); font-size: 28px; font-weight: 600; letter-spacing: -0.03em; }
 .week-focus-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
 /* Season timeline */
@@ -497,10 +541,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .settings-section { margin-bottom: 20px; }
 .settings-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 14px; background: var(--card); border: 1px solid var(--border);
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-sm); margin-bottom: 6px;
 }
-.settings-row-label { font-size: 14px; }
+.settings-row-label { font-size: 13px; font-weight: 500; }
 .settings-row-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
 .toggle {
   width: 44px; height: 26px; border-radius: 13px; background: var(--border2);
@@ -529,21 +573,30 @@ textarea.form-input { resize: vertical; min-height: 70px; }
    ============================================================ */
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  display: flex; align-items: flex-end; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
 .modal-backdrop.open { opacity: 1; pointer-events: all; }
 .modal-sheet {
-  background: var(--bg2); border-radius: var(--radius) var(--radius) 0 0;
-  padding: 24px 20px calc(24px + var(--safe-bottom));
-  width: 100%; max-width: 480px;
-  transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.34,1.2,0.64,1);
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 28px 28px 28px;
+  width: 100%; max-width: 440px;
+  transform: scale(0.96) translateY(8px); 
+  transition: transform 0.25s cubic-bezier(0.34,1.2,0.64,1);
   max-height: 90dvh; overflow-y: auto;
+  box-shadow: var(--shadow-lg);
 }
-.modal-backdrop.open .modal-sheet { transform: translateY(0); }
-.modal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border2); margin: 0 auto 20px; }
-.modal-title { font-family: var(--font-head); font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.modal-backdrop.open .modal-sheet { transform: scale(1) translateY(0); }
+.modal-handle { display: none; }
+.modal-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+@media (max-width: 700px) {
+  .modal-backdrop { align-items: flex-end; }
+  .modal-sheet { border-radius: var(--radius) var(--radius) 0 0; transform: translateY(100%); max-width: 100%; }
+  .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+  .modal-handle { display: block; width: 36px; height: 4px; border-radius: 2px; background: var(--border2); margin: 0 auto 20px; }
+}
 .modal-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
 .wizard-steps { display: flex; gap: 4px; margin-bottom: 24px; }
 .wizard-step { height: 3px; flex: 1; border-radius: 99px; background: var(--border2); transition: background 0.3s; }
@@ -572,9 +625,9 @@ textarea.form-input { resize: vertical; min-height: 70px; }
    SYNC INDICATOR
    ============================================================ */
 .sync-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green); position: fixed; top: 14px; right: 16px; z-index: 90;
-  transition: background 0.3s;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); display: inline-block;
+  transition: background 0.3s; flex-shrink: 0;
 }
 .sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
 .sync-dot.error { background: var(--red); }
@@ -602,9 +655,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 </style>
 </head>
 <body>
-
-<!-- SYNC DOT -->
-<div class="sync-dot" id="syncDot" title="Sync status"></div>
+<div class="app-shell">
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -617,38 +668,81 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   </div>
 </div>
 
-<!-- NAVIGATION -->
+<!-- SIDEBAR NAVIGATION -->
 <nav>
-  <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-    Dash
-  </button>
-  <button class="nav-tab" data-tab="log" onclick="switchTab('log')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg>
-    Log
-  </button>
-  <button class="nav-tab" data-tab="pulse" onclick="switchTab('pulse')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Pulse
-  </button>
-  <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    Pay
-  </button>
-  <button class="nav-tab" data-tab="weekly" onclick="switchTab('weekly')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    Week
-  </button>
-  <button class="nav-tab" data-tab="more" onclick="switchTab('more')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-    More
-  </button>
+  <div class="nav-logo">
+    <div class="nav-logo-name">Field Tracker Pro</div>
+    <div class="nav-logo-badge">2026 Season</div>
+  </div>
+  <div class="nav-items">
+    <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-tab" data-tab="log" onclick="switchTab('log')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path d="M17.657 3.757a2 2 0 0 1 2.829 2.829L12 15l-4 1 1-4 9.657-9.243z"/></svg>
+      <span>Log Day</span>
+    </button>
+    <button class="nav-tab" data-tab="pulse" onclick="switchTab('pulse')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Pulse Board</span>
+    </button>
+    <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Commission</span>
+    </button>
+    <button class="nav-tab" data-tab="weekly" onclick="switchTab('weekly')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Weekly</span>
+    </button>
+    <button class="nav-tab" data-tab="more" onclick="switchTab('more')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>
+      <span>Settings</span>
+    </button>
+  </div>
+  <div class="nav-footer">
+    <div class="sync-row">
+      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+      <span id="syncLabel">Ready</span>
+    </div>
+  </div>
+  <!-- Mobile nav (shown only on small screens) -->
+  <div class="nav-mobile">
+    <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span>Dash</span>
+    </button>
+    <button class="nav-tab" data-tab="log" onclick="switchTab('log')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path d="M17.657 3.757a2 2 0 0 1 2.829 2.829L12 15l-4 1 1-4z"/></svg>
+      <span>Log</span>
+    </button>
+    <button class="nav-tab" data-tab="pulse" onclick="switchTab('pulse')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Pulse</span>
+    </button>
+    <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Pay</span>
+    </button>
+    <button class="nav-tab" data-tab="weekly" onclick="switchTab('weekly')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Week</span>
+    </button>
+    <button class="nav-tab" data-tab="more" onclick="switchTab('more')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>
+      <span>More</span>
+    </button>
+  </div>
 </nav>
+
+<!-- MAIN CONTENT WRAPPER -->
+<div class="main-content">
 
 <!-- ============================================================ -->
 <!-- DASHBOARD PAGE -->
 <!-- ============================================================ -->
 <div id="page-dashboard" class="page active">
+  <div class="page-header"><div class="page-header-left"><div class="page-title">Dashboard</div><div class="page-subtitle" id="pageSubtitle">2026 Sales Season</div></div></div>
   <div id="heroCard" class="hero-card">
     <div class="hero-week-label" id="heroWeekLabel">Week — of Season</div>
     <div class="hero-target" id="heroTarget">0 <span style="font-size:18px;opacity:0.7">accounts</span></div>
@@ -813,10 +907,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- LOG PAGE -->
 <!-- ============================================================ -->
 <div id="page-log" class="page">
-  <div class="flex-between mb-12">
-    <div class="page-title">Log Day</div>
-    <div id="logSyncStatus" style="font-size:11px;color:var(--text3)"></div>
-  </div>
+  <div class="page-header"><div class="page-title">Log Day</div></div>
 
   <div class="card log-form-card">
     <input type="hidden" id="editingId">
@@ -864,7 +955,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- PULSE PAGE -->
 <!-- ============================================================ -->
 <div id="page-pulse" class="page">
-  <div class="page-title">Pulse Board</div>
+  <div class="page-header"><div class="page-title">Pulse Board</div></div>
 
   <div class="card mb-12">
     <div class="section-label">Log Weekly Pulse</div>
@@ -901,7 +992,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- COMMISSION PAGE -->
 <!-- ============================================================ -->
 <div id="page-commission" class="page">
-  <div class="page-title">Commission</div>
+  <div class="page-header"><div class="page-title">Commission</div></div>
 
   <!-- Tier Grid -->
   <div class="section-label">Tier Structure</div>
@@ -958,7 +1049,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- WEEKLY PAGE -->
 <!-- ============================================================ -->
 <div id="page-weekly" class="page">
-  <div class="page-title">Weekly</div>
+  <div class="page-header"><div class="page-title">Weekly</div></div>
 
   <div id="sixServicedWarning" style="display:none;" class="warning-banner">
     <div class="warning-icon">⚠️</div>
@@ -996,7 +1087,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- MORE PAGE -->
 <!-- ============================================================ -->
 <div id="page-more" class="page">
-  <div class="page-title">Settings</div>
+  <div class="page-header"><div class="page-title">Settings</div></div>
 
   <!-- Appearance -->
   <div class="settings-section">
@@ -1182,8 +1273,10 @@ async function sbFetch(table, opts = {}) {
    ============================================================ */
 function setSyncStatus(status) {
   const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
   dot.className = 'sync-dot' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
   dot.title = status === 'syncing' ? 'Syncing...' : status === 'error' ? 'Sync error' : 'Synced';
+  if (label) label.textContent = status === 'syncing' ? 'Syncing...' : status === 'error' ? 'Sync error' : 'Synced';
 }
 
 function scheduleSyncUp() {
@@ -2148,8 +2241,8 @@ function switchTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
-  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelectorAll(`[data-tab="${tab}"]`).forEach(el => el.classList.add('active'));
+  document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ============================================================
@@ -2218,5 +2311,7 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
+</div><!-- end main-content -->
+</div><!-- end app-shell -->
 </body>
 </html>
