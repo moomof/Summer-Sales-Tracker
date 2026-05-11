@@ -32,10 +32,11 @@
   --amber2: #cc8010;
   --purple: #8b5cf6;
   --teal: #22c5c5;
-  --sidebar-w: 220px;
-  --content-max: 1000px;
+  --sidebar-w: 200px;
+  --content-max: 100%;
   --nav-h: 60px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
   --radius: 10px;
   --radius-sm: 7px;
   --radius-xs: 5px;
@@ -70,6 +71,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.25s, color 0.25s;
+  overscroll-behavior: none;
 }
 button { font-family: var(--font-body); cursor: pointer; border: none; background: none; color: inherit; }
 input, select, textarea { font-family: var(--font-body); }
@@ -123,11 +125,11 @@ nav {
 .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100dvh; }
 
 /* ============================================================ PAGES ============================================================ */
-.page { display: none; padding: 32px 32px 48px; max-width: var(--content-max); }
+.page { display: none; padding: 36px 40px 56px; width: 100%; }
 .page.active { display: block; animation: fadeIn 0.15s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
-.page-header { margin-bottom: 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.page-header { margin-bottom: 28px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
 .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.025em; color: var(--text); line-height: 1.2; }
 .page-subtitle { font-size: 12px; color: var(--text3); margin-top: 3px; }
 
@@ -147,8 +149,8 @@ nav {
   }
   .nav-logo, .nav-footer, .nav-items { display: none; }
   .nav-mobile { display: flex !important; flex: 1; }
-  .main-content { margin-left: 0; }
-  .page { padding: 16px 16px 32px; }
+  .main-content { margin-left: 0; padding-bottom: calc(var(--nav-h) + var(--safe-bottom)); }
+  .page { padding: calc(16px + var(--safe-top)) 16px 32px; }
   .page-title { font-size: 17px; }
 }
 .nav-mobile { display: none; width: 100%; }
@@ -202,14 +204,14 @@ nav {
 .hero-target { font-size: 42px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
 .hero-sub { font-size: 13px; opacity: 0.6; margin-top: 6px; font-weight: 400; }
 .hero-pace-row { display: flex; gap: 10px; margin-top: 20px; }
-.hero-pace-item { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 12px 14px; }
+.hero-pace-item { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 14px 18px; }
 .hero-pace-num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-family: var(--font-mono); }
 .hero-pace-lbl { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; font-weight: 500; }
 
 /* ============================================================
    KPI GRID
    ============================================================ */
-.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
 @media (max-width: 700px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
 .kpi-card {
   background: var(--card); border: 1px solid var(--border);
@@ -1570,14 +1572,20 @@ function renderDashboard() {
       const segs = document.getElementById('retentionSegments');
       segs.innerHTML = `<div class="ret-seg active" style="flex:${active}"></div><div class="ret-seg inactive" style="flex:${inactive}"></div>`;
 
-      // Inactive revenue impact: estimate lost commission using current ACV × inactive × tier rate
-      const inactiveRevEst = inactive * acv;
-      const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
+      // Inactive revenue impact — only show if pulse sold is plausible vs logged accounts
+      const pulseSoldDash = parseInt(latestPulse.sold||0);
       const inactiveImpactEl = document.getElementById('inactiveImpact');
       if (inactiveImpactEl) {
-        inactiveImpactEl.textContent = inactive > 0
-          ? `${inactive} inactive · ~$${Math.round(inactiveRevEst).toLocaleString()} est. revenue at risk · ~$${Math.round(inactiveCommEst).toLocaleString()} commission`
-          : 'No inactive accounts';
+        const pulseReasonable = pulseSoldDash > 0 && pulseSoldDash <= totalAccounts * 2 && inactive <= pulseSoldDash;
+        if (!pulseReasonable && inactive > 0) {
+          inactiveImpactEl.textContent = 'Pulse sold count doesn't match logs — update pulse data for accurate estimate';
+        } else if (inactive > 0) {
+          const inactiveRevEst = inactive * acv;
+          const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
+          inactiveImpactEl.textContent = `${inactive} inactive · ~$${Math.round(inactiveRevEst).toLocaleString()} est. revenue at risk · ~$${Math.round(inactiveCommEst).toLocaleString()} commission`;
+        } else {
+          inactiveImpactEl.textContent = 'No inactive accounts';
+        }
       }
     }
   } else {
@@ -1712,13 +1720,25 @@ function renderCommission() {
   document.getElementById('ebGross').textContent = '$' + Math.round(gross).toLocaleString();
   document.getElementById('ebAdvances').textContent = '—$' + Math.round(advances).toLocaleString();
   document.getElementById('ebHousing').textContent = '—$' + Math.round(housingPayments).toLocaleString();
-  // Inactive at-risk estimate
+  // Inactive at-risk estimate — only meaningful when pulse sold ≈ logged accounts
   const latestPulseComm = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
   const inactiveCount = latestPulseComm ? parseInt(latestPulseComm.inactive||0) : 0;
+  const pulseSold = latestPulseComm ? parseInt(latestPulseComm.sold||0) : 0;
   const pestAcv = totalPest > 0 ? totalRevenue / totalPest : 0;
-  const atRiskRev = inactiveCount * pestAcv;
+  // Only show estimate if pulse sold is in a plausible range of logged accounts (within 50%)
+  // This prevents garbage output from test/placeholder pulse data
+  const pulseDataReasonable = pulseSold > 0 && pulseSold <= totalAccounts * 2 && inactiveCount <= pulseSold;
+  const atRiskRev = pulseDataReasonable ? inactiveCount * pestAcv : 0;
   const atRiskComm = atRiskRev * currentTier.pct;
-  document.getElementById('ebAtRisk').textContent = inactiveCount > 0 ? '~$' + Math.round(atRiskComm).toLocaleString() : '$0';
+  const atRiskEl = document.getElementById('ebAtRisk');
+  if (!pulseDataReasonable && inactiveCount > 0) {
+    atRiskEl.textContent = 'Pulse data mismatch';
+    atRiskEl.style.fontSize = '11px';
+    atRiskEl.style.color = 'var(--text3)';
+  } else {
+    atRiskEl.textContent = inactiveCount > 0 ? '~$' + Math.round(atRiskComm).toLocaleString() : '$0';
+    atRiskEl.style.color = '';
+  }
   document.getElementById('ebNet').textContent = '$' + Math.round(net).toLocaleString();
 
   // Advances
