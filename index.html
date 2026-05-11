@@ -980,33 +980,96 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- PULSE PAGE -->
 <!-- ============================================================ -->
 <div id="page-pulse" class="page">
-  <div class="page-header"><div class="page-title">Pulse Board</div></div>
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">Pulse Board</div>
+      <div class="page-subtitle">Enter figures directly from your company dashboard</div>
+    </div>
+  </div>
 
   <div class="card mb-12">
-    <div class="section-label">Log Weekly Pulse</div>
+    <div class="section-label">Log Snapshot</div>
     <div class="form-grid">
-      <div class="form-field">
-        <label class="form-label">Week Ending</label>
+      <div class="form-field full">
+        <label class="form-label">Week Ending (Date)</label>
         <input type="date" class="form-input" id="pulseDate">
       </div>
-      <div class="form-field">
-        <label class="form-label">Total Sold</label>
-        <input type="number" class="form-input" id="pulseInputSold" placeholder="0" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Serviced</label>
-        <input type="number" class="form-input" id="pulseInputServiced" placeholder="0" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Pending</label>
-        <input type="number" class="form-input" id="pulseInputPending" placeholder="0" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Inactive</label>
-        <input type="number" class="form-input" id="pulseInputInactive" placeholder="0" min="0">
+    </div>
+
+    <!-- Sold -->
+    <div style="margin-top:14px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Total Sold</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Accounts Sold</label>
+          <input type="number" class="form-input" id="pulseInputSold" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Sold Revenue ($)</label>
+          <input type="number" class="form-input" id="pulseInputSoldRevenue" placeholder="0" min="0" step="0.01">
+        </div>
       </div>
     </div>
-    <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="savePulse()">Save Pulse Snapshot</button>
+
+    <!-- Serviced -->
+    <div style="margin-top:10px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--green);">Serviced</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Serviced Accounts</label>
+          <input type="number" class="form-input" id="pulseInputServiced" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Serviced Revenue ($)</label>
+          <input type="number" class="form-input" id="pulseInputServicedRevenue" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div style="margin-top:10px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--amber);">Pending</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Pending Accounts</label>
+          <input type="number" class="form-input" id="pulseInputPending" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Pending Revenue ($)</label>
+          <input type="number" class="form-input" id="pulseInputPendingRevenue" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+    </div>
+
+    <!-- Inactive -->
+    <div style="margin-top:10px;margin-bottom:14px;">
+      <div class="section-label" style="margin-bottom:8px;color:var(--red);">Inactive</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Inactive Accounts</label>
+          <input type="number" class="form-input" id="pulseInputInactive" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Inactive Revenue ($)</label>
+          <input type="number" class="form-input" id="pulseInputInactiveRevenue" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-calc summary -->
+    <div id="pulseFormSummary" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;display:none;">
+      <div class="section-label" style="margin-bottom:8px;">Snapshot Preview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
+        <div>Active accounts: <span id="pfsActive" style="font-weight:600;color:var(--green);">—</span></div>
+        <div>Active revenue: <span id="pfsActiveRev" style="font-weight:600;color:var(--green);">—</span></div>
+        <div>Inactive accounts: <span id="pfsInactive" style="font-weight:600;color:var(--red);">—</span></div>
+        <div>Inactive revenue: <span id="pfsInactiveRev" style="font-weight:600;color:var(--red);">—</span></div>
+        <div>Retention rate: <span id="pfsRetention" style="font-weight:600;">—</span></div>
+        <div>Revenue retention: <span id="pfsRevRetention" style="font-weight:600;">—</span></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="savePulse()">Save Pulse Snapshot</button>
   </div>
 
   <div class="section-label">Pulse History</div>
@@ -1180,7 +1243,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <label class="form-label">Anon Key</label>
         <input type="text" class="form-input" id="settingSupabaseKey" placeholder="eyJ..." onchange="saveSetting('supabaseKey', this.value); initSupabase();">
       </div>
-      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>.</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs columns: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue.</div>
       <button class="btn btn-ghost btn-full" style="margin-top:12px;" onclick="testSupabaseConnection()">Test Connection</button>
     </div>
   </div>
@@ -1536,7 +1599,12 @@ function renderDashboard() {
   const weeklyNeeded = daysLeft > 0 ? Math.ceil((accountTarget - totalAccounts) / Math.max(1, Math.ceil(daysLeft/5))) : 0;
   document.getElementById('heroWeekLabel').textContent = `Week ${weekNum} · ${daysLeft} knocking days left`;
   document.getElementById('heroTarget').innerHTML = `${accountTarget} <span style="font-size:18px;opacity:0.7">target</span>`;
-  document.getElementById('heroSub').textContent = `${totalAccounts} sold · ${accountTarget - totalAccounts} to go`;
+  const latestPulseHero = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseActiveHero = latestPulseHero ? (parseInt(latestPulseHero.serviced)||0) + (parseInt(latestPulseHero.pending)||0) : null;
+  const heroSubText = pulseActiveHero !== null
+    ? `${totalAccounts} sold · ${pulseActiveHero} active · ${accountTarget - totalAccounts} to go`
+    : `${totalAccounts} sold · ${accountTarget - totalAccounts} to go`;
+  document.getElementById('heroSub').textContent = heroSubText;
   document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - totalAccounts) / daysLeft).toFixed(1) : '—';
   document.getElementById('heroPaceCurrent').textContent = apd.toFixed(1);
   document.getElementById('heroDaysLeft').textContent = daysLeft;
@@ -1596,35 +1664,44 @@ function renderDashboard() {
   // Pulse Board
   const latestPulse = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
   if (latestPulse) {
+    const pulseActiveAccts = (parseInt(latestPulse.serviced)||0) + (parseInt(latestPulse.pending)||0);
+    const pulseInactiveAccts = parseInt(latestPulse.inactive)||0;
+    const pulseActiveRev = (parseFloat(latestPulse.serviced_revenue)||0) + (parseFloat(latestPulse.pending_revenue)||0);
+    const pulseInactiveRev = parseFloat(latestPulse.inactive_revenue)||0;
+    const pulseHasRevData = pulseActiveRev + pulseInactiveRev > 0;
+
     document.getElementById('pulseTotal').textContent = latestPulse.sold || '—';
     document.getElementById('pulseServiced').textContent = latestPulse.serviced || '—';
     document.getElementById('pulsePending').textContent = latestPulse.pending || '—';
     document.getElementById('pulseInactive').textContent = latestPulse.inactive || '—';
-    // Retention
-    const active = parseInt(latestPulse.serviced||0) + parseInt(latestPulse.pending||0);
-    const inactive = parseInt(latestPulse.inactive||0);
-    const total = active + inactive;
-    if (total > 0) {
-      const retPct = Math.round((active / total) * 100);
-      document.getElementById('retentionPct').textContent = retPct + '%';
-      document.getElementById('retActiveLabel').textContent = active + ' active';
-      document.getElementById('retInactiveLabel').textContent = inactive + ' inactive';
-      const segs = document.getElementById('retentionSegments');
-      segs.innerHTML = `<div class="ret-seg active" style="flex:${active}"></div><div class="ret-seg inactive" style="flex:${inactive}"></div>`;
 
-      // Inactive revenue impact — only show if pulse sold is plausible vs logged accounts
-      const pulseSoldDash = parseInt(latestPulse.sold||0);
+    // Retention by accounts
+    const totalPulseAccts = pulseActiveAccts + pulseInactiveAccts;
+    if (totalPulseAccts > 0) {
+      const retPct = Math.round((pulseActiveAccts / totalPulseAccts) * 100);
+      // If we have revenue data, show revenue retention too
+      const totalPulseRev = pulseActiveRev + pulseInactiveRev;
+      const revRetPct = totalPulseRev > 0 ? Math.round(pulseActiveRev / totalPulseRev * 100) : null;
+      const retLabel = revRetPct !== null ? `${retPct}% accts · ${revRetPct}% rev` : retPct + '%';
+      document.getElementById('retentionPct').textContent = retLabel;
+      document.getElementById('retActiveLabel').textContent = pulseActiveAccts + ' active';
+      document.getElementById('retInactiveLabel').textContent = pulseInactiveAccts + ' inactive';
+      const segs = document.getElementById('retentionSegments');
+      segs.innerHTML = `<div class="ret-seg active" style="flex:${pulseActiveAccts}"></div><div class="ret-seg inactive" style="flex:${Math.max(1,pulseInactiveAccts)}"></div>`;
+
       const inactiveImpactEl = document.getElementById('inactiveImpact');
       if (inactiveImpactEl) {
-        const pulseReasonable = pulseSoldDash > 0 && pulseSoldDash <= totalAccounts * 2 && inactive <= pulseSoldDash;
-        if (!pulseReasonable && inactive > 0) {
-          inactiveImpactEl.textContent = "Pulse sold count doesn't match logs — update pulse data for accurate estimate";
-        } else if (inactive > 0) {
-          const inactiveRevEst = inactive * acv;
-          const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
-          inactiveImpactEl.textContent = `${inactive} inactive · ~$${Math.round(inactiveRevEst).toLocaleString()} est. revenue at risk · ~$${Math.round(inactiveCommEst).toLocaleString()} commission`;
+        if (pulseInactiveAccts === 0) {
+          inactiveImpactEl.textContent = 'No inactive accounts ✓';
+        } else if (pulseHasRevData) {
+          // Use actual inactive revenue from pulse — most accurate
+          const inactiveCommEst = pulseInactiveRev * calcTier(totalAccounts).pct;
+          inactiveImpactEl.textContent = `${pulseInactiveAccts} inactive · $${Math.round(pulseInactiveRev).toLocaleString()} revenue at risk · ~$${Math.round(inactiveCommEst).toLocaleString()} commission`;
         } else {
-          inactiveImpactEl.textContent = 'No inactive accounts';
+          // Fall back to ACV estimate if no revenue data entered
+          const inactiveRevEst = pulseInactiveAccts * acv;
+          const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
+          inactiveImpactEl.textContent = `${pulseInactiveAccts} inactive · ~$${Math.round(inactiveRevEst).toLocaleString()} est. at risk (enter pulse revenue for exact figure)`;
         }
       }
     }
@@ -1755,7 +1832,19 @@ function renderCommission() {
   });
 
   // Earnings Breakdown
-  const gross = calcCommission(totalRevenue, totalAccounts);
+  // If pulse has revenue data, use active revenue as commission base (excludes inactive/cancelled)
+  const latestPulseForComm = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseActiveRevenue = latestPulseForComm
+    ? (parseFloat(latestPulseForComm.serviced_revenue)||0) + (parseFloat(latestPulseForComm.pending_revenue)||0)
+    : 0;
+  const pulseActiveAccounts = latestPulseForComm
+    ? (parseInt(latestPulseForComm.serviced)||0) + (parseInt(latestPulseForComm.pending)||0)
+    : 0;
+  const hasPulseRevData = pulseActiveRevenue > 0;
+  // Use pulse active revenue if available (more accurate), else fall back to log revenue
+  const commissionBase = hasPulseRevData ? pulseActiveRevenue : totalRevenue;
+  const commissionAccounts = hasPulseRevData ? pulseActiveAccounts : totalAccounts;
+  const gross = calcCommission(commissionBase, commissionAccounts);
   const advances = calcAdvances(totalPest, totalMosquito);
   // Count semi-monthly pay periods (10th and 25th) that have passed since season start
   function countHousingDeductionsComm(seasonStart, asOfDate) {
@@ -1772,28 +1861,28 @@ function renderCommission() {
   const housingDeductionCount = countHousingDeductionsComm(start, today);
   const housingPayments = housingDeductionCount * parseFloat(S('housingPerPeriod'));
   const net = gross - advances - housingPayments;
-  document.getElementById('ebRevenue').textContent = '$' + totalRevenue.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('ebRate').textContent = (currentTier.pct * 100) + '%';
+  document.getElementById('ebRevenue').textContent = '$' + commissionBase.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2}) + (hasPulseRevData ? ' (active)' : '');
+  document.getElementById('ebRate').textContent = (calcTier(commissionAccounts).pct * 100) + '% (on ' + commissionAccounts + ' active accts)';
   document.getElementById('ebGross').textContent = '$' + Math.round(gross).toLocaleString();
   document.getElementById('ebAdvances').textContent = '—$' + Math.round(advances).toLocaleString();
   document.getElementById('ebHousing').textContent = '—$' + Math.round(housingPayments).toLocaleString();
-  // Inactive at-risk estimate — only meaningful when pulse sold ≈ logged accounts
-  const latestPulseComm = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
-  const inactiveCount = latestPulseComm ? parseInt(latestPulseComm.inactive||0) : 0;
-  const pulseSold = latestPulseComm ? parseInt(latestPulseComm.sold||0) : 0;
-  const pestAcv = totalPest > 0 ? totalRevenue / totalPest : 0;
-  // Only show estimate if pulse sold is in a plausible range of logged accounts (within 50%)
-  // This prevents garbage output from test/placeholder pulse data
-  const pulseDataReasonable = pulseSold > 0 && pulseSold <= totalAccounts * 2 && inactiveCount <= pulseSold;
-  const atRiskRev = pulseDataReasonable ? inactiveCount * pestAcv : 0;
-  const atRiskComm = atRiskRev * currentTier.pct;
+  // At-risk: use actual inactive revenue from pulse if available
+  const inactiveCount = latestPulseForComm ? parseInt(latestPulseForComm.inactive||0) : 0;
+  const actualInactiveRev = latestPulseForComm ? parseFloat(latestPulseForComm.inactive_revenue||0) : 0;
+  const pestAcv = stats.totalPest > 0 ? totalRevenue / stats.totalPest : 0;
+  const atRiskRev = actualInactiveRev > 0 ? actualInactiveRev : (inactiveCount * pestAcv);
+  const atRiskComm = atRiskRev * calcTier(commissionAccounts).pct;
   const atRiskEl = document.getElementById('ebAtRisk');
-  if (!pulseDataReasonable && inactiveCount > 0) {
-    atRiskEl.textContent = 'Pulse data mismatch';
-    atRiskEl.style.fontSize = '11px';
-    atRiskEl.style.color = 'var(--text3)';
+  if (inactiveCount === 0) {
+    atRiskEl.textContent = '$0';
+    atRiskEl.style.color = 'var(--green)';
+  } else if (actualInactiveRev > 0) {
+    atRiskEl.textContent = '$' + Math.round(atRiskRev).toLocaleString() + ' · ~$' + Math.round(atRiskComm).toLocaleString() + ' comm';
+    atRiskEl.style.color = '';
+    atRiskEl.style.fontSize = '';
   } else {
-    atRiskEl.textContent = inactiveCount > 0 ? '~$' + Math.round(atRiskComm).toLocaleString() : '$0';
+    atRiskEl.textContent = '~$' + Math.round(atRiskComm).toLocaleString() + ' est. (add pulse revenue for exact)';
+    atRiskEl.style.fontSize = '11px';
     atRiskEl.style.color = '';
   }
   document.getElementById('ebNet').textContent = '$' + Math.round(net).toLocaleString();
@@ -2106,9 +2195,13 @@ function savePulse() {
     id: generateId(),
     date,
     sold: parseInt(document.getElementById('pulseInputSold').value)||0,
+    sold_revenue: parseFloat(document.getElementById('pulseInputSoldRevenue').value)||0,
     serviced: parseInt(document.getElementById('pulseInputServiced').value)||0,
+    serviced_revenue: parseFloat(document.getElementById('pulseInputServicedRevenue').value)||0,
     pending: parseInt(document.getElementById('pulseInputPending').value)||0,
+    pending_revenue: parseFloat(document.getElementById('pulseInputPendingRevenue').value)||0,
     inactive: parseInt(document.getElementById('pulseInputInactive').value)||0,
+    inactive_revenue: parseFloat(document.getElementById('pulseInputInactiveRevenue').value)||0,
   };
   // Remove old entry for same date
   db.pulses = db.pulses.filter(x => x.date !== date);
@@ -2117,7 +2210,10 @@ function savePulse() {
   upsertPulse(p);
   renderAll();
   showToast('Pulse saved', 'success');
-  ['pulseInputSold','pulseInputServiced','pulseInputPending','pulseInputInactive'].forEach(id => document.getElementById(id).value = '');
+  ['pulseInputSold','pulseInputSoldRevenue','pulseInputServiced','pulseInputServicedRevenue',
+   'pulseInputPending','pulseInputPendingRevenue','pulseInputInactive','pulseInputInactiveRevenue']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pulseFormSummary').style.display = 'none';
 }
 
 function deletePulse(id) {
@@ -2136,20 +2232,53 @@ function renderPulseHistory() {
     container.innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">No pulse snapshots yet</div></div>';
     return;
   }
-  container.innerHTML = sorted.map(p => `
+  container.innerHTML = sorted.map(p => {
+    const activeAccts = (parseInt(p.serviced)||0) + (parseInt(p.pending)||0);
+    const activeRev = (parseFloat(p.serviced_revenue)||0) + (parseFloat(p.pending_revenue)||0);
+    const inactiveAccts = parseInt(p.inactive)||0;
+    const inactiveRev = parseFloat(p.inactive_revenue)||0;
+    const totalAccts = activeAccts + inactiveAccts;
+    const totalRev = activeRev + inactiveRev;
+    const retPct = totalAccts > 0 ? Math.round(activeAccts / totalAccts * 100) : 0;
+    const revRetPct = totalRev > 0 ? Math.round(activeRev / totalRev * 100) : 0;
+    const hasRevData = (p.sold_revenue||0) + (p.serviced_revenue||0) + (p.pending_revenue||0) + (p.inactive_revenue||0) > 0;
+    return `
     <div class="log-entry fade-in">
       <div class="log-entry-header">
         <div class="log-date">${fmtDateFull(p.date)}</div>
         <button class="btn btn-danger btn-sm" onclick="deletePulse('${p.id}')">Delete</button>
       </div>
-      <div class="log-stats">
-        <div class="log-stat">📊 <span>${p.sold}</span> sold</div>
-        <div class="log-stat">✅ <span>${p.serviced}</span> serviced</div>
-        <div class="log-stat">⏳ <span>${p.pending}</span> pending</div>
-        <div class="log-stat">❌ <span>${p.inactive}</span> inactive</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div style="background:rgba(91,141,239,0.07);border:1px solid rgba(91,141,239,0.2);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Sold</div>
+          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--accent);">${p.sold||'—'}</div>
+          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.sold_revenue||0).toLocaleString()}</div>` : ''}
+        </div>
+        <div style="background:rgba(52,201,120,0.07);border:1px solid rgba(52,201,120,0.2);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Serviced</div>
+          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--green);">${p.serviced||'—'}</div>
+          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.serviced_revenue||0).toLocaleString()}</div>` : ''}
+        </div>
+        <div style="background:rgba(240,160,48,0.07);border:1px solid rgba(240,160,48,0.2);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Pending</div>
+          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--amber);">${p.pending||'—'}</div>
+          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.pending_revenue||0).toLocaleString()}</div>` : ''}
+        </div>
+        <div style="background:rgba(232,82,106,0.07);border:1px solid rgba(232,82,106,0.2);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Inactive</div>
+          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--red);">${p.inactive||'—'}</div>
+          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.inactive_revenue||0).toLocaleString()}</div>` : ''}
+        </div>
       </div>
-    </div>
-  `).join('');
+      ${hasRevData ? `
+      <div style="display:flex;gap:12px;font-size:11.5px;color:var(--text3);padding-top:6px;border-top:1px solid var(--border);">
+        <span>Account retention: <strong style="color:${retPct>=80?'var(--green)':retPct>=60?'var(--amber)':'var(--red)'}">${retPct}%</strong></span>
+        <span>Revenue retention: <strong style="color:${revRetPct>=80?'var(--green)':revRetPct>=60?'var(--amber)':'var(--red)'}">${revRetPct}%</strong></span>
+        <span>Active rev: <strong style="color:var(--text)">$${Math.round(activeRev).toLocaleString()}</strong></span>
+        <span>At risk: <strong style="color:var(--red)">$${Math.round(inactiveRev).toLocaleString()}</strong></span>
+      </div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 /* ============================================================
@@ -2392,6 +2521,33 @@ function confirmClearData() {
 /* ============================================================
    INIT
    ============================================================ */
+
+function updatePulsePreview() {
+  const serviced = parseInt(document.getElementById('pulseInputServiced').value)||0;
+  const servicedRev = parseFloat(document.getElementById('pulseInputServicedRevenue').value)||0;
+  const pending = parseInt(document.getElementById('pulseInputPending').value)||0;
+  const pendingRev = parseFloat(document.getElementById('pulseInputPendingRevenue').value)||0;
+  const inactive = parseInt(document.getElementById('pulseInputInactive').value)||0;
+  const inactiveRev = parseFloat(document.getElementById('pulseInputInactiveRevenue').value)||0;
+  const activeAccts = serviced + pending;
+  const activeRev = servicedRev + pendingRev;
+  const totalAccts = activeAccts + inactive;
+  const totalRev = activeRev + inactiveRev;
+  const summary = document.getElementById('pulseFormSummary');
+  if (totalAccts === 0 && totalRev === 0) { summary.style.display = 'none'; return; }
+  summary.style.display = 'block';
+  document.getElementById('pfsActive').textContent = activeAccts;
+  document.getElementById('pfsActiveRev').textContent = '$' + Math.round(activeRev).toLocaleString();
+  document.getElementById('pfsInactive').textContent = inactive;
+  document.getElementById('pfsInactiveRev').textContent = '$' + Math.round(inactiveRev).toLocaleString();
+  const retPct = totalAccts > 0 ? Math.round(activeAccts/totalAccts*100) : 0;
+  const revRetPct = totalRev > 0 ? Math.round(activeRev/totalRev*100) : 0;
+  document.getElementById('pfsRetention').textContent = retPct + '%';
+  document.getElementById('pfsRetention').style.color = retPct >= 80 ? 'var(--green)' : retPct >= 60 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('pfsRevRetention').textContent = revRetPct + '%';
+  document.getElementById('pfsRevRetention').style.color = revRetPct >= 80 ? 'var(--green)' : revRetPct >= 60 ? 'var(--amber)' : 'var(--red)';
+}
+
 function init() {
   loadLocal();
   applySettings();
@@ -2400,6 +2556,14 @@ function init() {
   // Set default dates on forms
   document.getElementById('logDate').value = todayStr();
   document.getElementById('pulseDate').value = todayStr();
+
+  // Live pulse form preview
+  ['pulseInputSold','pulseInputSoldRevenue','pulseInputServiced','pulseInputServicedRevenue',
+   'pulseInputPending','pulseInputPendingRevenue','pulseInputInactive','pulseInputInactiveRevenue']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updatePulsePreview);
+    });
 
   // First run wizard
   const hasData = db.logs.length > 0 || db.settings.supabaseUrl;
