@@ -1124,7 +1124,7 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 let db = {
   logs: [],         // {id, date, revenue, knocks, talks, pest, mosquito, notes}
   pulses: [],       // {id, date, sold, serviced, pending, inactive}
-  daysOff: [],      // {id, start, end} date strings
+  daysOff: [],      // {id, start_date, end_date} date strings
   settings: {}
 };
 
@@ -1353,8 +1353,8 @@ function getWeekNumber(date, seasonStart) {
 
 function isDayOff(dateStr) {
   return db.daysOff.some(d => {
-    if (!d.end || d.end === d.start) return d.start === dateStr;
-    return dateStr >= d.start && dateStr <= d.end;
+    if (!d.end_date || d.end_date === d.start_date) return d.start_date === dateStr;
+    return dateStr >= d.start_date && dateStr <= d.end_date;
   });
 }
 
@@ -1965,7 +1965,7 @@ function addDayOff() {
   if (!start) { showToast('Select a date', 'error'); return; }
   const end = document.getElementById('daysOffEnd').value || start;
   const id = generateId();
-  db.daysOff.push({ id, start, end });
+  db.daysOff.push({ id, start_date: start, end_date: end });
   saveLocal();
   renderDaysOff();
   renderAll();
@@ -1989,7 +1989,7 @@ function renderDaysOff() {
     return;
   }
   list.innerHTML = db.daysOff.sort((a,b) => a.start.localeCompare(b.start)).map(d => {
-    const label = d.start === d.end || !d.end ? fmtDateFull(d.start) : fmtDateFull(d.start) + ' – ' + fmtDateFull(d.end);
+    const label = d.start_date === d.end_date || !d.end_date ? fmtDateFull(d.start_date) : fmtDateFull(d.start_date) + ' – ' + fmtDateFull(d.end_date);
     return `<div class="days-off-chip">${label}<button onclick="removeDayOff('${d.id}')">×</button></div>`;
   }).join('');
 }
