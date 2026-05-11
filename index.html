@@ -2,8 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Field Tracker">
 <meta name="theme-color" content="#0a0a0f">
@@ -153,6 +154,10 @@ nav {
   .page { padding: calc(20px + var(--safe-top)) 16px calc(var(--nav-h) + var(--safe-bottom) + 32px); }
   .page-title { font-size: 17px; }
 }
+@media (display-mode: standalone) and (max-width: 700px) {
+  .page { padding-top: calc(24px + var(--safe-top)); }
+}
+
 .nav-mobile { display: none; width: 100%; }
 .nav-mobile .nav-tab {
   flex: 1; flex-direction: column; align-items: center; justify-content: center;
@@ -1585,7 +1590,7 @@ function renderDashboard() {
       if (inactiveImpactEl) {
         const pulseReasonable = pulseSoldDash > 0 && pulseSoldDash <= totalAccounts * 2 && inactive <= pulseSoldDash;
         if (!pulseReasonable && inactive > 0) {
-          inactiveImpactEl.textContent = 'Pulse sold count doesn't match logs — update pulse data for accurate estimate';
+          inactiveImpactEl.textContent = "Pulse sold count doesn't match logs — update pulse data for accurate estimate";
         } else if (inactive > 0) {
           const inactiveRevEst = inactive * acv;
           const inactiveCommEst = inactiveRevEst * calcTier(totalAccounts).pct;
@@ -2355,6 +2360,14 @@ function init() {
       syncFromCloud().catch(() => setSyncStatus('error'));
     }, 1500);
   }
+}
+
+
+// Reset zoom on PWA launch
+if (window.navigator.standalone) {
+  document.documentElement.style.zoom = '1';
+  const vp = document.querySelector('meta[name=viewport]');
+  if (vp) vp.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover';
 }
 
 document.addEventListener('DOMContentLoaded', init);
