@@ -2338,13 +2338,15 @@ function saveLog() {
   }
   saveLocal();
   upsertLog(entry);
-  // Re-render without scrolling to top
-  renderDashboard();
-  renderCommission();
-  renderWeekly();
-  renderLogHistory();
   resetLogForm();
   showToast(editId ? 'Entry updated ✓' : 'Entry saved ✓', 'success');
+  // Use requestAnimationFrame to ensure DOM updates render visibly
+  requestAnimationFrame(() => {
+    try { renderLogHistory(); } catch(e) { console.error('renderLogHistory:', e); }
+    try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
+    try { renderCommission(); } catch(e) { console.error('renderCommission:', e); }
+    try { renderWeekly(); } catch(e) { console.error('renderWeekly:', e); }
+  });
 }
 
 function editLog(id) {
@@ -2368,11 +2370,13 @@ function deleteLog(id) {
   db.logs = db.logs.filter(l => l.id !== id);
   saveLocal();
   deleteLogCloud(id);
-  renderDashboard();
-  renderCommission();
-  renderWeekly();
-  renderLogHistory();
   showToast('Entry deleted', 'info');
+  requestAnimationFrame(() => {
+    try { renderLogHistory(); } catch(e) { console.error('renderLogHistory:', e); }
+    try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
+    try { renderCommission(); } catch(e) { console.error('renderCommission:', e); }
+    try { renderWeekly(); } catch(e) { console.error('renderWeekly:', e); }
+  });
 }
 
 function cancelEdit() {
@@ -2449,10 +2453,12 @@ function savePulse() {
   db.pulses.push(p);
   saveLocal();
   upsertPulse(p);
-  renderDashboard();
-  renderCommission();
-  renderPulseHistory();
   showToast('Pulse saved ✓', 'success');
+  requestAnimationFrame(() => {
+    try { renderPulseHistory(); } catch(e) { console.error('renderPulseHistory:', e); }
+    try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
+    try { renderCommission(); } catch(e) { console.error('renderCommission:', e); }
+  });
   ['pulseInputSold','pulseInputSoldRevenue','pulseInputServiced','pulseInputServicedRevenue',
    'pulseInputPending','pulseInputPendingRevenue','pulseInputInactive','pulseInputInactiveRevenue']
     .forEach(id => document.getElementById(id).value = '');
@@ -2464,10 +2470,12 @@ function deletePulse(id) {
   db.pulses = db.pulses.filter(p => p.id !== id);
   saveLocal();
   deletePulseCloud(id);
-  renderDashboard();
-  renderCommission();
-  renderPulseHistory();
   showToast('Snapshot deleted', 'info');
+  requestAnimationFrame(() => {
+    try { renderPulseHistory(); } catch(e) { console.error('renderPulseHistory:', e); }
+    try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
+    try { renderCommission(); } catch(e) { console.error('renderCommission:', e); }
+  });
 }
 
 function renderPulseHistory() {
