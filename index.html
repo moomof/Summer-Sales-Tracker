@@ -2338,9 +2338,13 @@ function saveLog() {
   }
   saveLocal();
   upsertLog(entry);
-  renderAll();
+  // Re-render without scrolling to top
+  renderDashboard();
+  renderCommission();
+  renderWeekly();
+  renderLogHistory();
   resetLogForm();
-  showToast(editId ? 'Entry updated' : 'Entry saved', 'success');
+  showToast(editId ? 'Entry updated ✓' : 'Entry saved ✓', 'success');
 }
 
 function editLog(id) {
@@ -2364,7 +2368,10 @@ function deleteLog(id) {
   db.logs = db.logs.filter(l => l.id !== id);
   saveLocal();
   deleteLogCloud(id);
-  renderAll();
+  renderDashboard();
+  renderCommission();
+  renderWeekly();
+  renderLogHistory();
   showToast('Entry deleted', 'info');
 }
 
@@ -2386,12 +2393,14 @@ function resetLogForm() {
 
 function renderLogHistory() {
   const container = document.getElementById('logHistory');
+  const scrollY = document.querySelector('.main-content')?.scrollTop || 0;
   const sorted = [...db.logs].sort((a,b) => b.date.localeCompare(a.date));
   document.getElementById('logCount').textContent = sorted.length;
   if (sorted.length === 0) {
     container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No entries yet. Log your first day above!</div></div>';
     return;
   }
+  const prevScrollY = scrollY;
   container.innerHTML = sorted.map(l => {
     const accounts = (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0);
     return `
@@ -2440,8 +2449,10 @@ function savePulse() {
   db.pulses.push(p);
   saveLocal();
   upsertPulse(p);
-  renderAll();
-  showToast('Pulse saved', 'success');
+  renderDashboard();
+  renderCommission();
+  renderPulseHistory();
+  showToast('Pulse saved ✓', 'success');
   ['pulseInputSold','pulseInputSoldRevenue','pulseInputServiced','pulseInputServicedRevenue',
    'pulseInputPending','pulseInputPendingRevenue','pulseInputInactive','pulseInputInactiveRevenue']
     .forEach(id => document.getElementById(id).value = '');
@@ -2453,7 +2464,9 @@ function deletePulse(id) {
   db.pulses = db.pulses.filter(p => p.id !== id);
   saveLocal();
   deletePulseCloud(id);
-  renderAll();
+  renderDashboard();
+  renderCommission();
+  renderPulseHistory();
   showToast('Snapshot deleted', 'info');
 }
 
