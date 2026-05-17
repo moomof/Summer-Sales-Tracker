@@ -1055,22 +1055,15 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="page-header">
     <div class="page-header-left">
       <div class="page-title">Pulse Board</div>
-      <div class="page-subtitle">Enter figures directly from your company dashboard</div>
+      <div class="page-subtitle">Update with your current season totals from Vantage Pulse</div>
     </div>
+    <div style="font-size:11px;color:var(--text3);text-align:right;">Last updated:<br><span id="pulseLastUpdated" style="color:var(--text2);font-weight:500;">Never</span></div>
   </div>
 
   <div class="card mb-12">
-    <div class="section-label">Log Snapshot</div>
-    <div class="form-grid">
-      <div class="form-field full">
-        <label class="form-label">Week Ending (Date)</label>
-        <input type="date" class="form-input" id="pulseDate">
-      </div>
-    </div>
-
     <!-- Sold -->
-    <div style="margin-top:14px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Total Sold</div>
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Total Sold (Season)</div>
       <div class="form-grid">
         <div class="form-field">
           <label class="form-label">Accounts Sold</label>
@@ -1084,7 +1077,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     </div>
 
     <!-- Serviced -->
-    <div style="margin-top:10px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
       <div class="section-label" style="margin-bottom:8px;color:var(--green);">Serviced</div>
       <div class="form-grid">
         <div class="form-field">
@@ -1099,7 +1092,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     </div>
 
     <!-- Pending -->
-    <div style="margin-top:10px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
       <div class="section-label" style="margin-bottom:8px;color:var(--amber);">Pending</div>
       <div class="form-grid">
         <div class="form-field">
@@ -1114,8 +1107,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     </div>
 
     <!-- Inactive -->
-    <div style="margin-top:10px;margin-bottom:14px;">
-      <div class="section-label" style="margin-bottom:8px;color:var(--red);">Inactive</div>
+    <div style="margin-bottom:14px;">
+      <div class="section-label" style="margin-bottom:8px;color:var(--red);">Inactive / Cancelled</div>
       <div class="form-grid">
         <div class="form-field">
           <label class="form-label">Inactive Accounts</label>
@@ -1128,7 +1121,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       </div>
     </div>
 
-    <!-- Auto-calc summary -->
+    <!-- Live preview -->
     <div id="pulseFormSummary" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;display:none;">
       <div class="section-label" style="margin-bottom:8px;">Snapshot Preview</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
@@ -1136,21 +1129,18 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <div>Active revenue: <span id="pfsActiveRev" style="font-weight:600;color:var(--green);">—</span></div>
         <div>Inactive accounts: <span id="pfsInactive" style="font-weight:600;color:var(--red);">—</span></div>
         <div>Inactive revenue: <span id="pfsInactiveRev" style="font-weight:600;color:var(--red);">—</span></div>
-        <div>Retention rate: <span id="pfsRetention" style="font-weight:600;">—</span></div>
-        <div>Revenue retention: <span id="pfsRevRetention" style="font-weight:600;">—</span></div>
+        <div>Retention: <span id="pfsRetention" style="font-weight:600;">—</span></div>
+        <div>Rev retention: <span id="pfsRevRetention" style="font-weight:600;">—</span></div>
       </div>
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="savePulse()">Save Pulse Snapshot</button>
+    <button class="btn btn-primary btn-full" onclick="savePulse()">Update Pulse</button>
   </div>
 
-  <div class="section-label">Pulse History</div>
-  <div id="pulseHistory"></div>
+  <!-- Current snapshot display -->
+  <div id="pulseCurrentDisplay"></div>
 </div>
 
-<!-- ============================================================ -->
-<!-- COMMISSION PAGE -->
-<!-- ============================================================ -->
 <div id="page-commission" class="page">
   <div class="page-header"><div class="page-title">Commission</div></div>
 
@@ -2434,11 +2424,9 @@ function renderLogHistory() {
    PULSE CRUD
    ============================================================ */
 function savePulse() {
-  const date = document.getElementById('pulseDate').value;
-  if (!date) { showToast('Date is required', 'error'); return; }
   const p = {
-    id: generateId(),
-    date,
+    id: 'current_pulse',  // Always the same ID — single overwriting record
+    date: todayStr(),
     sold: parseInt(document.getElementById('pulseInputSold').value)||0,
     sold_revenue: parseFloat(document.getElementById('pulseInputSoldRevenue').value)||0,
     serviced: parseInt(document.getElementById('pulseInputServiced').value)||0,
@@ -2448,21 +2436,17 @@ function savePulse() {
     inactive: parseInt(document.getElementById('pulseInputInactive').value)||0,
     inactive_revenue: parseFloat(document.getElementById('pulseInputInactiveRevenue').value)||0,
   };
-  // Remove old entry for same date
-  db.pulses = db.pulses.filter(x => x.date !== date);
-  db.pulses.push(p);
+  // Always replace — only ever one pulse record
+  db.pulses = [p];
   saveLocal();
   upsertPulse(p);
-  showToast('Pulse saved ✓', 'success');
+  showToast('Pulse updated ✓', 'success');
+  document.getElementById('pulseFormSummary').style.display = 'none';
   requestAnimationFrame(() => {
-    try { renderPulseHistory(); } catch(e) { console.error('renderPulseHistory:', e); }
+    try { renderPulseTab(); } catch(e) { console.error('renderPulseTab:', e); }
     try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); }
     try { renderCommission(); } catch(e) { console.error('renderCommission:', e); }
   });
-  ['pulseInputSold','pulseInputSoldRevenue','pulseInputServiced','pulseInputServicedRevenue',
-   'pulseInputPending','pulseInputPendingRevenue','pulseInputInactive','pulseInputInactiveRevenue']
-    .forEach(id => document.getElementById(id).value = '');
-  document.getElementById('pulseFormSummary').style.display = 'none';
 }
 
 function deletePulse(id) {
@@ -2478,65 +2462,86 @@ function deletePulse(id) {
   });
 }
 
-function renderPulseHistory() {
-  const container = document.getElementById('pulseHistory');
-  const sorted = [...db.pulses].sort((a,b) => b.date.localeCompare(a.date));
-  if (sorted.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">No pulse snapshots yet</div></div>';
+function renderPulseHistory() { renderPulseTab(); }
+
+function renderPulseTab() {
+  const latest = db.pulses[0] || null;
+  const display = document.getElementById('pulseCurrentDisplay');
+  const lastUpdated = document.getElementById('pulseLastUpdated');
+
+  if (!display) return;
+
+  if (!latest) {
+    display.innerHTML = '<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-text">No pulse data yet. Enter your current season totals above.</div></div>';
+    if (lastUpdated) lastUpdated.textContent = 'Never';
     return;
   }
-  container.innerHTML = sorted.map(p => {
-    const activeAccts = (parseInt(p.serviced)||0) + (parseInt(p.pending)||0);
-    const activeRev = (parseFloat(p.serviced_revenue)||0) + (parseFloat(p.pending_revenue)||0);
-    const inactiveAccts = parseInt(p.inactive)||0;
-    const inactiveRev = parseFloat(p.inactive_revenue)||0;
-    const totalAccts = activeAccts + inactiveAccts;
-    const totalRev = activeRev + inactiveRev;
-    const retPct = totalAccts > 0 ? Math.round(activeAccts / totalAccts * 100) : 0;
-    const revRetPct = totalRev > 0 ? Math.round(activeRev / totalRev * 100) : 0;
-    const hasRevData = (p.sold_revenue||0) + (p.serviced_revenue||0) + (p.pending_revenue||0) + (p.inactive_revenue||0) > 0;
-    return `
-    <div class="log-entry fade-in">
-      <div class="log-entry-header">
-        <div class="log-date">${fmtDateFull(p.date)}</div>
-        <button class="btn btn-danger btn-sm" onclick="deletePulse('${p.id}')">Delete</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+
+  if (lastUpdated) lastUpdated.textContent = fmtDateFull(latest.date);
+
+  // Pre-fill form with current values
+  const fields = {
+    pulseInputSold: latest.sold||0,
+    pulseInputSoldRevenue: latest.sold_revenue||0,
+    pulseInputServiced: latest.serviced||0,
+    pulseInputServicedRevenue: latest.serviced_revenue||0,
+    pulseInputPending: latest.pending||0,
+    pulseInputPendingRevenue: latest.pending_revenue||0,
+    pulseInputInactive: latest.inactive||0,
+    pulseInputInactiveRevenue: latest.inactive_revenue||0,
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = val || '';
+  });
+
+  const activeAccts = (parseInt(latest.serviced)||0) + (parseInt(latest.pending)||0);
+  const inactiveAccts = parseInt(latest.inactive)||0;
+  const activeRev = (parseFloat(latest.serviced_revenue)||0) + (parseFloat(latest.pending_revenue)||0);
+  const inactiveRev = parseFloat(latest.inactive_revenue)||0;
+  const totalAccts = activeAccts + inactiveAccts;
+  const totalRev = activeRev + inactiveRev;
+  const retPct = totalAccts > 0 ? Math.round(activeAccts/totalAccts*100) : 0;
+  const revRetPct = totalRev > 0 ? Math.round(activeRev/totalRev*100) : 0;
+  const hasRev = totalRev > 0;
+
+  display.innerHTML = `
+    <div class="section-label">Current Season Snapshot</div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
         <div class="pulse-status-card sold">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Sold</div>
-          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--accent);">${p.sold||'—'}</div>
-          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.sold_revenue||0).toLocaleString()}</div>` : ''}
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Sold</div>
+          <div style="font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--accent);">${latest.sold||0}</div>
+          ${hasRev ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">$${Math.round(latest.sold_revenue||0).toLocaleString()}</div>` : ''}
         </div>
         <div class="pulse-status-card serviced">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Serviced</div>
-          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--green);">${p.serviced||'—'}</div>
-          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.serviced_revenue||0).toLocaleString()}</div>` : ''}
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Serviced</div>
+          <div style="font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--green);">${latest.serviced||0}</div>
+          ${hasRev ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">$${Math.round(latest.serviced_revenue||0).toLocaleString()}</div>` : ''}
         </div>
         <div class="pulse-status-card pending">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Pending</div>
-          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--amber);">${p.pending||'—'}</div>
-          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.pending_revenue||0).toLocaleString()}</div>` : ''}
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Pending</div>
+          <div style="font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--amber);">${latest.pending||0}</div>
+          ${hasRev ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">$${Math.round(latest.pending_revenue||0).toLocaleString()}</div>` : ''}
         </div>
         <div class="pulse-status-card inactive">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Inactive</div>
-          <div style="font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--red);">${p.inactive||'—'}</div>
-          ${hasRevData ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">$${Math.round(p.inactive_revenue||0).toLocaleString()}</div>` : ''}
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Inactive</div>
+          <div style="font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--red);">${latest.inactive||0}</div>
+          ${hasRev ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">$${Math.round(latest.inactive_revenue||0).toLocaleString()}</div>` : ''}
         </div>
       </div>
-      ${hasRevData ? `
-      <div style="display:flex;gap:12px;font-size:11.5px;color:var(--text3);padding-top:6px;border-top:1px solid var(--border);">
+      ${hasRev ? `
+      <div style="display:flex;gap:16px;font-size:12px;color:var(--text3);padding-top:10px;border-top:1px solid var(--border);">
         <span>Account retention: <strong style="color:${retPct>=80?'var(--green)':retPct>=60?'var(--amber)':'var(--red)'}">${retPct}%</strong></span>
         <span>Revenue retention: <strong style="color:${revRetPct>=80?'var(--green)':revRetPct>=60?'var(--amber)':'var(--red)'}">${revRetPct}%</strong></span>
-        <span>Active rev: <strong style="color:var(--text)">$${Math.round(activeRev).toLocaleString()}</strong></span>
-        <span>At risk: <strong style="color:var(--red)">$${Math.round(inactiveRev).toLocaleString()}</strong></span>
+        <span>Active revenue: <strong style="color:var(--text)">$${Math.round(activeRev).toLocaleString()}</strong></span>
+        <span>Lost revenue: <strong style="color:var(--red)">$${Math.round(inactiveRev).toLocaleString()}</strong></span>
       </div>` : ''}
-    </div>`;
-  }).join('');
+    </div>
+  `;
 }
 
-/* ============================================================
-   DAYS OFF
-   ============================================================ */
+
 function addDayOff() {
   const start = document.getElementById('daysOffStart').value;
   if (!start) { showToast('Select a date', 'error'); return; }
@@ -2901,7 +2906,7 @@ function init() {
 
   // Set default dates on forms
   document.getElementById('logDate').value = todayStr();
-  document.getElementById('pulseDate').value = todayStr();
+  // pulseDate removed — pulse is now a single overwriting record
 
   // Live pulse form preview
   ['pulseInputSold','pulseInputSoldRevenue','pulseInputServiced','pulseInputServicedRevenue',
