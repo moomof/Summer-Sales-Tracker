@@ -1008,114 +1008,57 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <div class="card log-form-card">
     <input type="hidden" id="editingId">
-
-    <!-- Date -->
-    <div class="form-grid" style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+    <div class="form-grid">
       <div class="form-field full">
         <label class="form-label">Date</label>
         <input type="date" class="form-input" id="logDate">
       </div>
-    </div>
 
-    <!-- Active (calculated) -->
-    <div style="margin-bottom:14px;padding:12px 14px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
-      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Active (Auto-calculated)</div>
-      <div style="display:flex;gap:24px;font-size:13px;">
-        <div>Accounts: <span id="logCalcActiveAccts" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">0</span></div>
-        <div>Revenue: <span id="logCalcActiveRev" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">$0</span></div>
+      <!-- Sold today — with pest/mosquito split for advance calc -->
+      <div class="form-field">
+        <label class="form-label">Sold Revenue ($)</label>
+        <input type="number" class="form-input" id="logRevenue" placeholder="0" step="0.01" min="0">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Sold Accounts</label>
+        <input type="number" class="form-input" id="logSoldAccounts" placeholder="0" min="0">
+      </div>
+      <div class="form-field">
+        <label class="form-label">🐛 Pest Accts ($75)</label>
+        <input type="number" class="form-input" id="logPest" placeholder="0" min="0">
+      </div>
+      <div class="form-field">
+        <label class="form-label">🦟 Mosquito Accts ($50)</label>
+        <input type="number" class="form-input" id="logMosquito" placeholder="0" min="0">
+      </div>
+
+      <!-- Door stats -->
+      <div class="form-field">
+        <label class="form-label">Knocks</label>
+        <input type="number" class="form-input" id="logKnocks" placeholder="0" min="0">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Talks</label>
+        <input type="number" class="form-input" id="logTalks" placeholder="0" min="0">
+      </div>
+
+      <!-- Hidden fields kept for data compatibility -->
+      <input type="hidden" id="logSoldAccounts_dup">
+      <input type="hidden" id="logServicedRevenue">
+      <input type="hidden" id="logServicedAccounts">
+      <input type="hidden" id="logPendingRevenue">
+      <input type="hidden" id="logPendingAccounts">
+      <input type="hidden" id="logInactiveRevenue">
+      <input type="hidden" id="logInactiveAccounts">
+      <input type="hidden" id="logCalcActiveAccts">
+      <input type="hidden" id="logCalcActiveRev">
+
+      <div class="form-field full">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="logNotes" placeholder="Anything worth remembering..."></textarea>
       </div>
     </div>
-
-    <!-- Serviced -->
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--green);">Serviced</div>
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">Serviced Revenue ($)</label>
-          <input type="number" class="form-input" id="logServicedRevenue" placeholder="0" step="0.01" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Serviced Accounts</label>
-          <input type="number" class="form-input" id="logServicedAccounts" placeholder="0" min="0">
-        </div>
-      </div>
-    </div>
-
-    <!-- Pending -->
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--amber);">Pending Service</div>
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">Pending Revenue ($)</label>
-          <input type="number" class="form-input" id="logPendingRevenue" placeholder="0" step="0.01" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Pending Accounts</label>
-          <input type="number" class="form-input" id="logPendingAccounts" placeholder="0" min="0">
-        </div>
-      </div>
-    </div>
-
-    <!-- Sold (with pest/mosquito split for advance tracking) -->
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Sold Today</div>
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">Sold Revenue ($)</label>
-          <input type="number" class="form-input" id="logRevenue" placeholder="0" step="0.01" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Sold Accounts</label>
-          <input type="number" class="form-input" id="logSoldAccounts" placeholder="0" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Pest Accounts ($75 advance)</label>
-          <input type="number" class="form-input" id="logPest" placeholder="0" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Mosquito Accounts ($50 advance)</label>
-          <input type="number" class="form-input" id="logMosquito" placeholder="0" min="0">
-        </div>
-      </div>
-    </div>
-
-    <!-- Inactive -->
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--red);">Inactive / Cancelled</div>
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">Inactive Revenue ($)</label>
-          <input type="number" class="form-input" id="logInactiveRevenue" placeholder="0" step="0.01" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Inactive Accounts</label>
-          <input type="number" class="form-input" id="logInactiveAccounts" placeholder="0" min="0">
-        </div>
-      </div>
-    </div>
-
-    <!-- Door stats -->
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;">Door Stats</div>
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">Knocks</label>
-          <input type="number" class="form-input" id="logKnocks" placeholder="0" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Talks</label>
-          <input type="number" class="form-input" id="logTalks" placeholder="0" min="0">
-        </div>
-      </div>
-    </div>
-
-    <!-- Notes -->
-    <div class="form-field" style="margin-bottom:12px;">
-      <label class="form-label">Notes</label>
-      <textarea class="form-input" id="logNotes" placeholder="Anything worth remembering..."></textarea>
-    </div>
-
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn btn-primary btn-full" onclick="saveLog()">Save Entry</button>
       <button class="btn btn-ghost btn-sm" id="cancelEdit" onclick="cancelEdit()" style="display:none;white-space:nowrap">Cancel</button>
     </div>
@@ -2449,19 +2392,12 @@ function editLog(id) {
   document.getElementById('logDate').value = entry.date;
   document.getElementById('logRevenue').value = entry.revenue || '';
   document.getElementById('logSoldAccounts').value = entry.sold_accounts || '';
-  document.getElementById('logServicedRevenue').value = entry.serviced_revenue || '';
-  document.getElementById('logServicedAccounts').value = entry.serviced_accounts || '';
-  document.getElementById('logPendingRevenue').value = entry.pending_revenue || '';
-  document.getElementById('logPendingAccounts').value = entry.pending_accounts || '';
-  document.getElementById('logInactiveRevenue').value = entry.inactive_revenue || '';
-  document.getElementById('logInactiveAccounts').value = entry.inactive_accounts || '';
-  document.getElementById('logKnocks').value = entry.knocks || '';
-  document.getElementById('logTalks').value = entry.talks || '';
   document.getElementById('logPest').value = entry.pest || '';
   document.getElementById('logMosquito').value = entry.mosquito || '';
+  document.getElementById('logKnocks').value = entry.knocks || '';
+  document.getElementById('logTalks').value = entry.talks || '';
   document.getElementById('logNotes').value = entry.notes || '';
   document.getElementById('cancelEdit').style.display = 'inline-flex';
-  updateLogActiveCalc();
   switchTab('log');
   document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
 }
