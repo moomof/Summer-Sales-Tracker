@@ -1479,7 +1479,8 @@ async function syncFromCloud() {
     if (daysOff) db.daysOff = daysOff;
     if (settings && settings[0]) {
       const s = JSON.parse(settings[0].value);
-      db.settings = { ...DEFAULT_SETTINGS, ...s };
+      // Merge: cloud settings as base, local settings take priority
+      db.settings = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
       applySettings();
     }
     saveLocal();
@@ -2858,7 +2859,9 @@ async function syncSilent() {
     if (daysOff) db.daysOff = daysOff;
     if (settings && settings[0]) {
       const s = JSON.parse(settings[0].value);
-      db.settings = { ...DEFAULT_SETTINGS, ...s };
+      // Merge carefully — don't overwrite local settings that user has changed
+      // Only pull in settings keys that aren't already set locally
+      db.settings = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
       applySettings();
     }
     saveLocal();
@@ -2898,7 +2901,11 @@ function init() {
 
   // Background sync on load — silent (no toast, just dot indicator)
   if (supabase) {
-    setTimeout(() => syncSilent(), 1500);
+    setTimeout(async () => {
+      await syncSilent();
+      // Push current settings up after sync
+      await syncUp();
+    }, 1500);
   }
 }
 
