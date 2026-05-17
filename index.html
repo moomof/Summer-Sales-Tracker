@@ -1055,7 +1055,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="page-header">
     <div class="page-header-left">
       <div class="page-title">Pulse Board</div>
-      <div class="page-subtitle">Update with your current season totals from Vantage Pulse</div>
+      <div class="page-subtitle">Enter current season totals from vantagepulse.com → Metrics</div>
     </div>
     <div style="font-size:11px;color:var(--text3);text-align:right;">Last updated:<br><span id="pulseLastUpdated" style="color:var(--text2);font-weight:500;">Never</span></div>
   </div>
@@ -1063,10 +1063,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="card mb-12">
     <!-- Sold -->
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Total Sold (Season)</div>
+      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Sold Accounts (Season Total)</div>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">Accounts Sold</label>
+          <label class="form-label">Sold Accounts</label>
           <input type="number" class="form-input" id="pulseInputSold" placeholder="0" min="0">
         </div>
         <div class="form-field">
@@ -1078,7 +1078,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
     <!-- Serviced -->
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--green);">Serviced</div>
+      <div class="section-label" style="margin-bottom:8px;color:var(--green);">Serviced (First Service Complete)</div>
       <div class="form-grid">
         <div class="form-field">
           <label class="form-label">Serviced Accounts</label>
@@ -1093,17 +1093,27 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
     <!-- Pending -->
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--amber);">Pending</div>
+      <div class="section-label" style="margin-bottom:8px;color:var(--amber);">Pending Service (Awaiting First Visit)</div>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">Pending Accounts</label>
+          <label class="form-label">Pending Service Accounts</label>
           <input type="number" class="form-input" id="pulseInputPending" placeholder="0" min="0">
         </div>
         <div class="form-field">
-          <label class="form-label">Pending Revenue ($)</label>
+          <label class="form-label">Pending Service Revenue ($)</label>
           <input type="number" class="form-input" id="pulseInputPendingRevenue" placeholder="0" min="0" step="0.01">
         </div>
       </div>
+    </div>
+
+    <!-- Active calculated summary -->
+    <div style="margin-bottom:14px;padding:12px 14px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
+      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Active (Auto-calculated)</div>
+      <div style="display:flex;gap:24px;font-size:13px;">
+        <div>Accounts: <span id="calcActiveAccts" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">0</span></div>
+        <div>Revenue: <span id="calcActiveRev" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">$0</span></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Serviced + Pending — matches "Active" on Vantage Pulse</div>
     </div>
 
     <!-- Inactive -->
@@ -1134,7 +1144,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       </div>
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="savePulse()">Update Pulse</button>
+    <button class="btn btn-primary btn-full" onclick="savePulse()">Save Pulse Snapshot</button>
   </div>
 
   <!-- Current snapshot display -->
@@ -2867,6 +2877,12 @@ function updatePulsePreview() {
   document.getElementById('pfsRetention').style.color = retPct >= 80 ? 'var(--green)' : retPct >= 60 ? 'var(--amber)' : 'var(--red)';
   document.getElementById('pfsRevRetention').textContent = revRetPct + '%';
   document.getElementById('pfsRevRetention').style.color = revRetPct >= 80 ? 'var(--green)' : revRetPct >= 60 ? 'var(--amber)' : 'var(--red)';
+
+  // Update active calculated display
+  const calcAcctsEl = document.getElementById('calcActiveAccts');
+  const calcRevEl = document.getElementById('calcActiveRev');
+  if (calcAcctsEl) calcAcctsEl.textContent = activeAccts;
+  if (calcRevEl) calcRevEl.textContent = '$' + Math.round(activeRev).toLocaleString();
 }
 
 
