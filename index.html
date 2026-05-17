@@ -1008,37 +1008,114 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <div class="card log-form-card">
     <input type="hidden" id="editingId">
-    <div class="form-grid">
-      <div class="form-field">
+
+    <!-- Date -->
+    <div class="form-grid" style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="form-field full">
         <label class="form-label">Date</label>
         <input type="date" class="form-input" id="logDate">
       </div>
-      <div class="form-field">
-        <label class="form-label">Revenue ($)</label>
-        <input type="number" class="form-input" id="logRevenue" placeholder="0" step="0.01" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Knocks</label>
-        <input type="number" class="form-input" id="logKnocks" placeholder="0" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Talks</label>
-        <input type="number" class="form-input" id="logTalks" placeholder="0" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Pest Accts</label>
-        <input type="number" class="form-input" id="logPest" placeholder="0" min="0">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Mosquito Accts</label>
-        <input type="number" class="form-input" id="logMosquito" placeholder="0" min="0">
-      </div>
-      <div class="form-field full">
-        <label class="form-label">Notes</label>
-        <textarea class="form-input" id="logNotes" placeholder="Anything worth remembering..."></textarea>
+    </div>
+
+    <!-- Active (calculated) -->
+    <div style="margin-bottom:14px;padding:12px 14px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
+      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Active (Auto-calculated)</div>
+      <div style="display:flex;gap:24px;font-size:13px;">
+        <div>Accounts: <span id="logCalcActiveAccts" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">0</span></div>
+        <div>Revenue: <span id="logCalcActiveRev" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">$0</span></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:12px;">
+
+    <!-- Serviced -->
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--green);">Serviced</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Serviced Revenue ($)</label>
+          <input type="number" class="form-input" id="logServicedRevenue" placeholder="0" step="0.01" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Serviced Accounts</label>
+          <input type="number" class="form-input" id="logServicedAccounts" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--amber);">Pending Service</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Pending Revenue ($)</label>
+          <input type="number" class="form-input" id="logPendingRevenue" placeholder="0" step="0.01" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Pending Accounts</label>
+          <input type="number" class="form-input" id="logPendingAccounts" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Sold (with pest/mosquito split for advance tracking) -->
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Sold Today</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Sold Revenue ($)</label>
+          <input type="number" class="form-input" id="logRevenue" placeholder="0" step="0.01" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Sold Accounts</label>
+          <input type="number" class="form-input" id="logSoldAccounts" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Pest Accounts ($75 advance)</label>
+          <input type="number" class="form-input" id="logPest" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Mosquito Accounts ($50 advance)</label>
+          <input type="number" class="form-input" id="logMosquito" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Inactive -->
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;color:var(--red);">Inactive / Cancelled</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Inactive Revenue ($)</label>
+          <input type="number" class="form-input" id="logInactiveRevenue" placeholder="0" step="0.01" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Inactive Accounts</label>
+          <input type="number" class="form-input" id="logInactiveAccounts" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Door stats -->
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div class="section-label" style="margin-bottom:8px;">Door Stats</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Knocks</label>
+          <input type="number" class="form-input" id="logKnocks" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Talks</label>
+          <input type="number" class="form-input" id="logTalks" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-field" style="margin-bottom:12px;">
+      <label class="form-label">Notes</label>
+      <textarea class="form-input" id="logNotes" placeholder="Anything worth remembering..."></textarea>
+    </div>
+
+    <div style="display:flex;gap:8px;">
       <button class="btn btn-primary btn-full" onclick="saveLog()">Save Entry</button>
       <button class="btn btn-ghost btn-sm" id="cancelEdit" onclick="cancelEdit()" style="display:none;white-space:nowrap">Cancel</button>
     </div>
@@ -1316,7 +1393,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <label class="form-label">Anon Key</label>
         <input type="text" class="form-input" id="settingSupabaseKey" placeholder="eyJ..." onchange="saveSetting('supabaseKey', this.value); initSupabase();">
       </div>
-      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs columns: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue.</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue. days table needs: sold_accounts, serviced_revenue, serviced_accounts, pending_revenue, pending_accounts, inactive_revenue, inactive_accounts.</div>
       <button class="btn btn-ghost btn-full" style="margin-top:12px;" onclick="testSupabaseConnection()">Test Connection</button>
     </div>
   </div>
@@ -1662,7 +1739,12 @@ function getWorkingDaysRemaining(fromDate) {
 }
 
 function aggregateStats() {
-  const totalAccounts = db.logs.reduce((s, l) => s + (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0), 0);
+  const totalAccounts = db.logs.reduce((s, l) => {
+    // Use sold_accounts if available, else fall back to pest+mosquito
+    const sa = parseInt(l.sold_accounts)||0;
+    const pm = (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0);
+    return s + (sa > 0 ? sa : pm);
+  }, 0);
   const totalRevenue = db.logs.reduce((s, l) => s + (parseFloat(l.revenue)||0), 0);
   const totalKnocks = db.logs.reduce((s, l) => s + (parseInt(l.knocks)||0), 0);
   const totalTalks = db.logs.reduce((s, l) => s + (parseInt(l.talks)||0), 0);
@@ -2305,12 +2387,23 @@ function saveLog() {
     id: editId || generateId(),
     date,
     revenue: parseFloat(document.getElementById('logRevenue').value)||0,
+    sold_accounts: parseInt(document.getElementById('logSoldAccounts').value)||0,
+    serviced_revenue: parseFloat(document.getElementById('logServicedRevenue').value)||0,
+    serviced_accounts: parseInt(document.getElementById('logServicedAccounts').value)||0,
+    pending_revenue: parseFloat(document.getElementById('logPendingRevenue').value)||0,
+    pending_accounts: parseInt(document.getElementById('logPendingAccounts').value)||0,
+    inactive_revenue: parseFloat(document.getElementById('logInactiveRevenue').value)||0,
+    inactive_accounts: parseInt(document.getElementById('logInactiveAccounts').value)||0,
     knocks: parseInt(document.getElementById('logKnocks').value)||0,
     talks: parseInt(document.getElementById('logTalks').value)||0,
     pest: parseInt(document.getElementById('logPest').value)||0,
     mosquito: parseInt(document.getElementById('logMosquito').value)||0,
     notes: document.getElementById('logNotes').value.trim(),
   };
+  // Auto-calc: if sold_accounts not entered but pest+mosquito are, derive it
+  if (!entry.sold_accounts && (entry.pest || entry.mosquito)) {
+    entry.sold_accounts = entry.pest + entry.mosquito;
+  }
   // Warn if talks > knocks (logically impossible)
   if (entry.talks > entry.knocks && entry.knocks > 0) {
     showToast('Warning: talks cannot exceed knocks', 'error'); return;
@@ -2354,15 +2447,23 @@ function editLog(id) {
   if (!entry) return;
   document.getElementById('editingId').value = id;
   document.getElementById('logDate').value = entry.date;
-  document.getElementById('logRevenue').value = entry.revenue;
-  document.getElementById('logKnocks').value = entry.knocks;
-  document.getElementById('logTalks').value = entry.talks;
-  document.getElementById('logPest').value = entry.pest;
-  document.getElementById('logMosquito').value = entry.mosquito;
-  document.getElementById('logNotes').value = entry.notes;
+  document.getElementById('logRevenue').value = entry.revenue || '';
+  document.getElementById('logSoldAccounts').value = entry.sold_accounts || '';
+  document.getElementById('logServicedRevenue').value = entry.serviced_revenue || '';
+  document.getElementById('logServicedAccounts').value = entry.serviced_accounts || '';
+  document.getElementById('logPendingRevenue').value = entry.pending_revenue || '';
+  document.getElementById('logPendingAccounts').value = entry.pending_accounts || '';
+  document.getElementById('logInactiveRevenue').value = entry.inactive_revenue || '';
+  document.getElementById('logInactiveAccounts').value = entry.inactive_accounts || '';
+  document.getElementById('logKnocks').value = entry.knocks || '';
+  document.getElementById('logTalks').value = entry.talks || '';
+  document.getElementById('logPest').value = entry.pest || '';
+  document.getElementById('logMosquito').value = entry.mosquito || '';
+  document.getElementById('logNotes').value = entry.notes || '';
   document.getElementById('cancelEdit').style.display = 'inline-flex';
+  updateLogActiveCalc();
   switchTab('log');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function deleteLog(id) {
@@ -2386,13 +2487,18 @@ function cancelEdit() {
 function resetLogForm() {
   document.getElementById('editingId').value = '';
   document.getElementById('logDate').value = todayStr();
-  document.getElementById('logRevenue').value = '';
-  document.getElementById('logKnocks').value = '';
-  document.getElementById('logTalks').value = '';
-  document.getElementById('logPest').value = '';
-  document.getElementById('logMosquito').value = '';
-  document.getElementById('logNotes').value = '';
+  // Wire log form active calc
+  ['logServicedRevenue','logServicedAccounts','logPendingRevenue','logPendingAccounts']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateLogActiveCalc);
+    });
+  ['logRevenue','logSoldAccounts','logServicedRevenue','logServicedAccounts',
+   'logPendingRevenue','logPendingAccounts','logInactiveRevenue','logInactiveAccounts',
+   'logKnocks','logTalks','logPest','logMosquito','logNotes']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('cancelEdit').style.display = 'none';
+  updateLogActiveCalc();
 }
 
 function renderLogHistory() {
@@ -2414,7 +2520,10 @@ function renderLogHistory() {
           <div class="log-revenue">$${(parseFloat(l.revenue)||0).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         </div>
         <div class="log-stats">
-          <div class="log-stat">🏠 <span>${accounts}</span> accts</div>
+          <div class="log-stat">📊 <span>${accounts}</span> sold</div>
+          ${(l.serviced_accounts||0) > 0 ? `<div class="log-stat">✅ <span>${l.serviced_accounts}</span> serviced</div>` : ''}
+          ${(l.pending_accounts||0) > 0 ? `<div class="log-stat">⏳ <span>${l.pending_accounts}</span> pending</div>` : ''}
+          ${(l.inactive_accounts||0) > 0 ? `<div class="log-stat">❌ <span>${l.inactive_accounts}</span> inactive</div>` : ''}
           ${l.pest ? `<div class="log-stat">🐛 <span>${l.pest}</span> pest</div>` : ''}
           ${l.mosquito ? `<div class="log-stat">🦟 <span>${l.mosquito}</span> mosq</div>` : ''}
           ${l.knocks ? `<div class="log-stat">👊 <span>${l.knocks}</span> knocks</div>` : ''}
@@ -2853,6 +2962,20 @@ function confirmClearData() {
    INIT
    ============================================================ */
 
+
+function updateLogActiveCalc() {
+  const servicedRev = parseFloat(document.getElementById('logServicedRevenue')?.value)||0;
+  const servicedAccts = parseInt(document.getElementById('logServicedAccounts')?.value)||0;
+  const pendingRev = parseFloat(document.getElementById('logPendingRevenue')?.value)||0;
+  const pendingAccts = parseInt(document.getElementById('logPendingAccounts')?.value)||0;
+  const activeAccts = servicedAccts + pendingAccts;
+  const activeRev = servicedRev + pendingRev;
+  const el1 = document.getElementById('logCalcActiveAccts');
+  const el2 = document.getElementById('logCalcActiveRev');
+  if (el1) el1.textContent = activeAccts;
+  if (el2) el2.textContent = '$' + Math.round(activeRev).toLocaleString();
+}
+
 function updatePulsePreview() {
   const serviced = parseInt(document.getElementById('pulseInputServiced').value)||0;
   const servicedRev = parseFloat(document.getElementById('pulseInputServicedRevenue').value)||0;
@@ -2922,6 +3045,12 @@ function init() {
 
   // Set default dates on forms
   document.getElementById('logDate').value = todayStr();
+  // Wire log form active calc
+  ['logServicedRevenue','logServicedAccounts','logPendingRevenue','logPendingAccounts']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateLogActiveCalc);
+    });
   // pulseDate removed — pulse is now a single overwriting record
 
   // Live pulse form preview
