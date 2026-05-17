@@ -1061,19 +1061,14 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   </div>
 
   <div class="card mb-12">
-    <!-- Sold -->
-    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Sold Accounts (Season Total)</div>
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">Sold Accounts</label>
-          <input type="number" class="form-input" id="pulseInputSold" placeholder="0" min="0">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Sold Revenue ($)</label>
-          <input type="number" class="form-input" id="pulseInputSoldRevenue" placeholder="0" min="0" step="0.01">
-        </div>
+    <!-- Active (calculated — shown first to match Vantage order) -->
+    <div style="margin-bottom:14px;padding:12px 14px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
+      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Active (Auto-calculated)</div>
+      <div style="display:flex;gap:24px;font-size:13px;">
+        <div>Accounts: <span id="calcActiveAccts" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">0</span></div>
+        <div>Revenue: <span id="calcActiveRev" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">$0</span></div>
       </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Serviced + Pending — matches "Active" on Vantage Pulse</div>
     </div>
 
     <!-- Serviced -->
@@ -1106,18 +1101,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       </div>
     </div>
 
-    <!-- Active calculated summary -->
-    <div style="margin-bottom:14px;padding:12px 14px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
-      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Active (Auto-calculated)</div>
-      <div style="display:flex;gap:24px;font-size:13px;">
-        <div>Accounts: <span id="calcActiveAccts" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">0</span></div>
-        <div>Revenue: <span id="calcActiveRev" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">$0</span></div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Serviced + Pending — matches "Active" on Vantage Pulse</div>
-    </div>
-
     <!-- Inactive -->
-    <div style="margin-bottom:14px;">
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
       <div class="section-label" style="margin-bottom:8px;color:var(--red);">Inactive / Cancelled</div>
       <div class="form-grid">
         <div class="form-field">
@@ -1127,6 +1112,21 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <div class="form-field">
           <label class="form-label">Inactive Revenue ($)</label>
           <input type="number" class="form-input" id="pulseInputInactiveRevenue" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+    </div>
+
+    <!-- Sold (bottom — last column on Vantage) -->
+    <div style="margin-bottom:14px;">
+      <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Sold (Season Total)</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label">Sold Accounts</label>
+          <input type="number" class="form-input" id="pulseInputSold" placeholder="0" min="0">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Sold Revenue ($)</label>
+          <input type="number" class="form-input" id="pulseInputSoldRevenue" placeholder="0" min="0" step="0.01">
         </div>
       </div>
     </div>
