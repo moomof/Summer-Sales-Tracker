@@ -195,6 +195,7 @@ nav {
 
 /* ============================================================ MOBILE ============================================================ */
 @media (max-width: 600px) {
+  /* ── Nav ── */
   nav {
     position: fixed; top: auto; left: 0; bottom: 0; right: 0; width: 100%;
     height: calc(var(--nav-h) + var(--safe-bottom));
@@ -203,10 +204,122 @@ nav {
   }
   .nav-logo, .nav-footer, .nav-items { display: none; }
   .nav-mobile { display: flex !important; flex: 1; }
+
+  /* ── Layout ── */
   .main-content { margin-left: 0 !important; padding-bottom: 0; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .page { padding: calc(20px + var(--safe-top)) 16px calc(var(--nav-h) + var(--safe-bottom) + 32px); }
-  .page-title { font-size: 17px; }
+  .page { padding: calc(20px + var(--safe-top)) 14px calc(var(--nav-h) + var(--safe-bottom) + 28px); }
+  .page-header { margin-bottom: 16px; padding-bottom: 14px; }
+  .page-title { font-size: 20px; font-weight: 700; }
+
+  /* ── Hero card ── */
+  .hero-card { padding: 18px 16px; margin-bottom: 12px; }
+  .hero-target { font-size: 34px; }
+  .hero-pace-row { gap: 8px; margin-top: 14px; }
+  .hero-pace-item { padding: 10px 12px; }
+  .hero-pace-num { font-size: 18px; }
+  .hero-pace-lbl { font-size: 9px; }
+
+  /* ── KPI grid — 2 cols on mobile ── */
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .kpi-card { padding: 12px 14px; }
+  .kpi-value { font-size: 22px; }
+  .kpi-label { font-size: 10px; }
+
+  /* ── Pulse board — 2x2 on mobile ── */
+  .pulse-board { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .pulse-num { font-size: 26px; }
+
+  /* ── Cards ── */
+  .card { padding: 14px; }
+  .card + .card { margin-top: 8px; }
+
+  /* ── Tier banner ── */
+  .tier-banner { padding: 12px 14px; margin-bottom: 12px; }
+  .tier-rate { font-size: 18px; }
+
+  /* ── Form inputs ── */
+  .form-input { font-size: 16px; padding: 10px 12px; } /* 16px prevents iOS zoom */
+  .form-label { font-size: 10px; }
+  .form-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ── Buttons ── */
+  .btn { padding: 11px 16px; font-size: 14px; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+  /* ── Log entries ── */
+  .log-entry { padding: 12px; }
+  .log-date { font-size: 13px; }
+  .log-revenue { font-size: 13px; }
+  .log-stat { font-size: 11px; padding: 2px 8px; }
+
+  /* ── Section labels ── */
+  .section-label { font-size: 10px; margin-bottom: 8px; }
+
+  /* ── Tier grid ── */
+  .tier-row { padding: 9px 12px; }
+  .tier-pct { font-size: 15px; min-width: 40px; }
+  .tier-range { font-size: 11px; }
+
+  /* ── Pace rows ── */
+  .pace-row { padding: 7px 0; }
+  .pace-key { font-size: 12px; }
+  .pace-val { font-size: 12px; }
+
+  /* ── Week cards ── */
+  .week-focus-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .week-focus-num { font-size: 24px; }
+  .week-focus-label { font-size: 9px; }
+
+  /* ── Timeline ── */
+  .timeline-week { padding: 7px 10px; }
+  .timeline-wk-num { font-size: 10px; min-width: 24px; }
+  .timeline-dates { font-size: 11px; }
+  .timeline-accts { font-size: 12px; }
+
+  /* ── Highlights chips ── */
+  .highlight-chip { padding: 6px 10px; font-size: 11px; }
+
+  /* ── Scorecard ── */
+  .week-scorecard { padding: 12px; }
+  .scorecard-day-dot { width: 24px; height: 24px; font-size: 10px; }
+
+  /* ── Door stats ── */
+  .door-stats { gap: 6px; }
+  .door-stat-card { padding: 10px 8px; }
+  .door-stat-pct { font-size: 18px; }
+  .door-stat-lbl { font-size: 9px; }
+
+  /* ── Bonus rows ── */
+  .bonus-row { padding: 8px 0; }
+  .bonus-name { font-size: 12px; }
+  .bonus-amount { font-size: 12px; }
+
+  /* ── Payout items ── */
+  .payout-item { padding: 10px 12px; }
+  .payout-date { font-size: 12px; }
+  .payout-amount { font-size: 13px; }
+
+  /* ── Settings ── */
+  .settings-row { padding: 11px 12px; }
+  .settings-row-label { font-size: 13px; }
+
+  /* ── Modal ── */
+  .modal-sheet { padding: 20px 16px calc(20px + var(--safe-bottom)); }
+  .modal-title { font-size: 17px; }
+
+  /* ── Retention bar ── */
+  .retention-bar-wrap { padding: 12px 14px; }
+
+  /* ── Progress bars ── */
+  .progress-header { margin-bottom: 4px; }
+  .progress-title { font-size: 12px; }
+  .progress-vals { font-size: 11px; }
+
+  /* ── Aug tracker ── */
+  .aug-tracker { padding: 12px 14px; }
+  .aug-stat-val { font-size: 18px; }
 }
+
 @media (display-mode: standalone) and (max-width: 600px) {
   .page { padding-top: calc(24px + var(--safe-top)); }
 }
@@ -1636,8 +1749,23 @@ function getDaysDiff(a, b) {
 }
 
 function getWeekNumber(date, seasonStart) {
-  const diff = getDaysDiff(seasonStart, date);
+  // Use Sun-Sat calendar weeks
+  // Find the Sunday on or before the season start
+  const startSunday = new Date(seasonStart);
+  startSunday.setDate(startSunday.getDate() - startSunday.getDay()); // back to Sunday
+  const dateSunday = new Date(date);
+  dateSunday.setDate(dateSunday.getDate() - dateSunday.getDay()); // back to Sunday
+  const diff = getDaysDiff(startSunday, dateSunday);
   return Math.floor(diff / 7) + 1;
+}
+
+function getWeekStart(weekNum, seasonStart) {
+  // Get the Sunday that starts week N
+  const startSunday = new Date(seasonStart);
+  startSunday.setDate(startSunday.getDate() - startSunday.getDay());
+  const wkStart = new Date(startSunday);
+  wkStart.setDate(wkStart.getDate() + (weekNum - 1) * 7);
+  return wkStart;
 }
 
 function isSunday(dateStr) {
@@ -2213,7 +2341,9 @@ function calcWeeklyTotals() {
     const d = new Date(l.date + 'T00:00:00');
     const wk = getWeekNumber(d, start);
     if (!weeks[wk]) weeks[wk] = { accounts: 0, revenue: 0, days: [] };
-    weeks[wk].accounts += (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0);
+    const sa = parseInt(l.sold_accounts)||0;
+    const pm = (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0);
+    weeks[wk].accounts += sa > 0 ? sa : pm;
     weeks[wk].revenue += parseFloat(l.revenue)||0;
     weeks[wk].days.push(l.date);
   });
@@ -2263,7 +2393,7 @@ function renderWeekly() {
   const timeline = document.getElementById('seasonTimeline');
   timeline.innerHTML = '';
   for (let wk = 1; wk <= totalWeeks; wk++) {
-    const wkStart = new Date(start); wkStart.setDate(wkStart.getDate() + (wk-1)*7);
+    const wkStart = getWeekStart(wk, start);
     const wkEnd = new Date(wkStart); wkEnd.setDate(wkEnd.getDate() + 6);
     const wkData = weeklyTotals.find(w => w.week === wk);
     const accts = wkData ? wkData.accounts : 0;
@@ -2292,7 +2422,7 @@ function renderWeekly() {
     return;
   }
   [...weeklyTotals].reverse().forEach(wk => {
-    const wkStart = new Date(start); wkStart.setDate(wkStart.getDate() + (wk.week-1)*7);
+    const wkStart = getWeekStart(wk.week, start);
     const div = document.createElement('div');
     div.className = 'week-scorecard';
     // Build day dots using actual dates (not assumed Mon-start)
