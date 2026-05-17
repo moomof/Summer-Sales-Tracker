@@ -1420,7 +1420,7 @@ async function sbFetch(table, opts = {}) {
     'apikey': supabase.key,
     'Authorization': `Bearer ${supabase.key}`,
     'Content-Type': 'application/json',
-    'Prefer': method === 'POST' ? 'return=representation' : '',
+    'Prefer': method === 'POST' ? 'return=representation,resolution=merge-duplicates' : method === 'PATCH' ? 'return=representation' : '',
   };
   try {
     const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
@@ -1451,7 +1451,13 @@ async function syncUp() {
   if (!supabase) return;
   setSyncStatus('syncing');
   try {
-    await sbFetch('settings', { method: 'POST', body: [{ key: 'app_settings', value: JSON.stringify(db.settings) }], params: { on_conflict: 'key' } });
+    // Use PATCH (update) if exists, POST (insert) if not
+    const existing = await sbFetch('settings', { params: { key: 'eq.app_settings' } });
+    if (existing && existing.length > 0) {
+      await sbFetch('settings?key=eq.app_settings', { method: 'PATCH', body: { value: JSON.stringify(db.settings) } });
+    } else {
+      await sbFetch('settings', { method: 'POST', body: [{ key: 'app_settings', value: JSON.stringify(db.settings) }] });
+    }
     setSyncStatus('idle');
   } catch(e) { setSyncStatus('error'); }
 }
