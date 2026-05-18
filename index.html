@@ -179,7 +179,7 @@ nav {
 .main-content { margin-left: 200px; margin-left: var(--sidebar-w); flex: 1; min-height: 100dvh; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* ============================================================ PAGES ============================================================ */
-.page { display: none; padding: 36px 40px 56px; width: 100%; }
+.page { display: none; padding: 36px 40px 56px; width: 100%; overflow-x: hidden; }
 .page.active { display: block; animation: fadeIn 0.15s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -206,8 +206,8 @@ nav {
   .nav-mobile { display: flex !important; flex: 1; }
 
   /* ── Layout ── */
-  .main-content { margin-left: 0 !important; padding-bottom: 0; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .page { padding: calc(20px + var(--safe-top)) 14px calc(var(--nav-h) + var(--safe-bottom) + 28px); }
+  .main-content { margin-left: 0 !important; padding-bottom: 0; height: 100dvh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .page { padding: calc(20px + var(--safe-top)) 12px calc(var(--nav-h) + var(--safe-bottom) + 28px); overflow-x: hidden; }
   .page-header { margin-bottom: 16px; padding-bottom: 14px; }
   .page-title { font-size: 20px; font-weight: 700; }
 
@@ -547,9 +547,9 @@ nav {
 /* ============================================================
    LOG TAB
    ============================================================ */
-.log-form-card { margin-bottom: 16px; }
+.log-form-card { margin-bottom: 16px; overflow: hidden; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .form-field.full { grid-column: 1 / -1; }
 .form-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
 .form-input {
@@ -1327,8 +1327,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="card mb-12">
     <div class="earning-row"><span class="earning-key">Pest accounts × $75</span><span class="earning-val" id="advPest">$0</span></div>
     <div class="earning-row"><span class="earning-key">Mosquito accounts × $50</span><span class="earning-val" id="advMosquito">$0</span></div>
-    <div class="earning-row"><span class="earning-key">Total Advances Eligible</span><span class="earning-val green" id="advTotal">$0</span></div>
-    <div style="margin-top:10px;font-size:12px;color:var(--text3);">Advances paid 10th & 25th of each month. Housing: $250 semi-monthly ($2,000 season total).</div>
+    <div class="earning-row"><span class="earning-key">Total Advances Paid</span><span class="earning-val green" id="advTotal">$0</span></div>
+    <div style="margin-top:10px;font-size:11.5px;color:var(--text3);" id="advNote">Advances paid on 10th & 25th for accounts that received first service. Pending accounts not yet eligible.</div>
   </div>
 
   <!-- Bonuses -->
@@ -1387,7 +1387,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Appearance -->
   <div class="settings-section">
-    <div class="section-label">Appearance</div>
+    <div class="section-label">🎨 Appearance</div>
     <div class="settings-row">
       <div>
         <div class="settings-row-label">Dark Mode</div>
@@ -1399,7 +1399,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Goals & Settings -->
   <div class="settings-section">
-    <div class="section-label">Season Goals</div>
+    <div class="section-label">🎯 Season Goals</div>
     <div class="card">
       <div class="form-grid">
         <div class="form-field">
@@ -1441,7 +1441,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Supabase Config -->
   <div class="settings-section">
-    <div class="section-label">Cloud Sync (Supabase)</div>
+    <div class="section-label">☁️ Cloud Sync</div>
     <div class="card">
       <div class="form-field mb-8">
         <label class="form-label">Supabase URL</label>
@@ -1458,7 +1458,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Days Off -->
   <div class="settings-section">
-    <div class="section-label">Days Off</div>
+    <div class="section-label">📅 Days Off</div>
     <div class="card">
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Sundays are automatically excluded. Add any other days off — removed from knocking day counts and pace.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -1478,7 +1478,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Actions -->
   <div class="settings-section">
-    <div class="section-label">Data</div>
+    <div class="section-label">📦 Data</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="btn btn-ghost btn-full" onclick="exportTSV()">📥 Export to TSV</button>
       <button class="btn btn-ghost btn-full" onclick="syncFromCloud()">☁️ Sync from Cloud</button>
@@ -2158,7 +2158,9 @@ function renderCommission() {
   document.getElementById('ebRevenue').textContent = '$' + commissionBase.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2}) + (hasPulseRevData ? ' (active)' : '');
   document.getElementById('ebRate').textContent = (calcTier(netAccountsComm).pct * 100) + '% on ' + netAccountsComm + ' net accts';
   document.getElementById('ebGross').textContent = '$' + Math.round(gross).toLocaleString();
-  document.getElementById('ebAdvances').textContent = '—$' + Math.round(advances).toLocaleString();
+  // Advances deducted = what's actually been paid (serviced-based)
+  const ebAdvanceAmt = servicedCount > 0 ? totalAdvances : advances;
+  document.getElementById('ebAdvances').textContent = '—$' + Math.round(ebAdvanceAmt).toLocaleString();
   document.getElementById('ebHousing').textContent = '—$' + Math.round(housingPayments).toLocaleString();
   // At-risk: use actual inactive revenue from pulse if available
   const inactiveCount = latestPulseForComm ? parseInt(latestPulseForComm.inactive||0) : 0;
@@ -2181,10 +2183,34 @@ function renderCommission() {
   }
   document.getElementById('ebNet').textContent = '$' + Math.round(net).toLocaleString();
 
-  // Advances
-  document.getElementById('advPest').textContent = '$' + (totalPest * PEST_ADVANCE).toLocaleString();
-  document.getElementById('advMosquito').textContent = '$' + (totalMosquito * MOSQUITO_ADVANCE).toLocaleString();
-  document.getElementById('advTotal').textContent = '$' + advances.toLocaleString();
+  // Advances — based on SERVICED accounts (first service completed)
+  // Use pulse serviced count if available, else fall back to total sold
+  const latestPulseAdv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const servicedCount = latestPulseAdv ? parseInt(latestPulseAdv.serviced||0) : 0;
+  
+  // Split serviced into pest/mosquito proportionally from logged data
+  const totalLoggedAccts = stats.totalPest + stats.totalMosquito;
+  const pestRatio = totalLoggedAccts > 0 ? stats.totalPest / totalLoggedAccts : 1;
+  const mosquitoRatio = totalLoggedAccts > 0 ? stats.totalMosquito / totalLoggedAccts : 0;
+  
+  // Use serviced count from pulse if available, else use logged counts
+  const advancePestCount = servicedCount > 0 ? Math.round(servicedCount * pestRatio) : stats.totalPest;
+  const advanceMosqCount = servicedCount > 0 ? Math.round(servicedCount * mosquitoRatio) : stats.totalMosquito;
+  const advancePestAmt = advancePestCount * PEST_ADVANCE;
+  const advanceMosqAmt = advanceMosqCount * MOSQUITO_ADVANCE;
+  const totalAdvances = advancePestAmt + advanceMosqAmt;
+
+  document.getElementById('advPest').textContent = '$' + advancePestAmt.toLocaleString() + ' (' + advancePestCount + ' accts)';
+  document.getElementById('advMosquito').textContent = '$' + advanceMosqAmt.toLocaleString() + ' (' + advanceMosqCount + ' accts)';
+  document.getElementById('advTotal').textContent = '$' + totalAdvances.toLocaleString();
+  
+  // Add note about basis
+  const advNote = document.getElementById('advNote');
+  if (advNote) {
+    advNote.textContent = servicedCount > 0 
+      ? `Based on ${servicedCount} serviced accounts from pulse. Pending accounts haven't received first service yet.`
+      : 'Enter pulse data with serviced accounts for accurate advance calculation.';
+  }
 
   // Monthly Breakdown
   const months = {};
