@@ -898,6 +898,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       <span>Pulse Board</span>
     </button>
+    <button class="nav-tab" data-tab="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>My Stats</span>
+    </button>
     <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       <span>Commission</span>
@@ -930,6 +934,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <button class="nav-tab" data-tab="pulse" onclick="switchTab('pulse')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       <span>Pulse</span>
+    </button>
+    <button class="nav-tab" data-tab="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Stats</span>
     </button>
     <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -1284,6 +1292,81 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Current snapshot display -->
   <div id="pulseCurrentDisplay"></div>
+</div>
+
+<div id="page-stats" class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">My Stats</div>
+      <div class="page-subtitle">Update weekly from vantagepulse.com → Personal Profile</div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);text-align:right;">Last updated:<br><span id="statsLastUpdated" style="color:var(--text2);font-weight:500;">Never</span></div>
+  </div>
+
+  <!-- Input form -->
+  <div class="card mb-12">
+    <div class="section-label" style="margin-bottom:12px;">Vantage Profile Stats</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-field">
+          <label class="form-label">Serviced Revenue ($)</label>
+          <input type="number" class="form-input" id="statServicedRev" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Avg Contract Value ($)</label>
+          <input type="number" class="form-input" id="statACV" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-field">
+          <label class="form-label">Autopay %</label>
+          <input type="number" class="form-input" id="statAutopay" placeholder="0" min="0" max="100" step="0.1">
+        </div>
+        <div class="form-field">
+          <label class="form-label">24-Month Accounts %</label>
+          <input type="number" class="form-input" id="stat24Month" placeholder="0" min="0" max="100" step="0.1">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-field">
+          <label class="form-label">Serviced Percent %</label>
+          <input type="number" class="form-input" id="statServicedPct" placeholder="0" min="0" max="100" step="0.01">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Season Ranking #</label>
+          <input type="number" class="form-input" id="statRanking" placeholder="0" min="1">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-field">
+          <label class="form-label">Best Day Revenue ($)</label>
+          <input type="number" class="form-input" id="statBestDayRev" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Best Day Date</label>
+          <input type="date" class="form-input" id="statBestDayDate">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-field">
+          <label class="form-label">Best Week Revenue ($)</label>
+          <input type="number" class="form-input" id="statBestWeekRev" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Best Week Start</label>
+          <input type="date" class="form-input" id="statBestWeekDate">
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Best Month Revenue ($)</label>
+        <input type="number" class="form-input" id="statBestMonthRev" placeholder="0" min="0" step="0.01">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="saveStats()">Save Stats</button>
+  </div>
+
+  <!-- Current stats display -->
+  <div id="statsDisplay"></div>
 </div>
 
 <div id="page-commission" class="page">
@@ -1847,6 +1930,7 @@ function renderAll() {
   renderWeekly();
   renderLogHistory();
   renderPulseHistory();
+  renderStats();
 }
 
 /* ============================================================
@@ -2843,6 +2927,89 @@ function updateWizardDaysPreview() {
     cur.setDate(cur.getDate() + 1);
   }
   countEl.textContent = count;
+}
+
+
+function saveStats() {
+  const stats = {
+    date: todayStr(),
+    servicedRev: parseFloat(document.getElementById('statServicedRev').value)||0,
+    acv: parseFloat(document.getElementById('statACV').value)||0,
+    autopay: parseFloat(document.getElementById('statAutopay').value)||0,
+    month24: parseFloat(document.getElementById('stat24Month').value)||0,
+    servicedPct: parseFloat(document.getElementById('statServicedPct').value)||0,
+    ranking: parseInt(document.getElementById('statRanking').value)||0,
+    bestDayRev: parseFloat(document.getElementById('statBestDayRev').value)||0,
+    bestDayDate: document.getElementById('statBestDayDate').value||'',
+    bestWeekRev: parseFloat(document.getElementById('statBestWeekRev').value)||0,
+    bestWeekDate: document.getElementById('statBestWeekDate').value||'',
+    bestMonthRev: parseFloat(document.getElementById('statBestMonthRev').value)||0,
+  };
+  db.settings.vantageStats = stats;
+  saveLocal();
+  scheduleSyncUp();
+  renderStats();
+  showToast('Stats saved ✓', 'success');
+}
+
+function renderStats() {
+  const s = db.settings.vantageStats;
+  const display = document.getElementById('statsDisplay');
+  const lastUpdated = document.getElementById('statsLastUpdated');
+  if (!display) return;
+
+  if (!s) {
+    display.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No stats yet. Enter your Vantage profile stats above.</div></div>';
+    if (lastUpdated) lastUpdated.textContent = 'Never';
+    return;
+  }
+
+  if (lastUpdated && s.date) lastUpdated.textContent = fmtDateFull(s.date);
+
+  // Pre-fill form
+  const fields = {
+    statServicedRev: s.servicedRev, statACV: s.acv,
+    statAutopay: s.autopay, stat24Month: s.month24,
+    statServicedPct: s.servicedPct, statRanking: s.ranking,
+    statBestDayRev: s.bestDayRev, statBestDayDate: s.bestDayDate,
+    statBestWeekRev: s.bestWeekRev, statBestWeekDate: s.bestWeekDate,
+    statBestMonthRev: s.bestMonthRev,
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  });
+
+  const rankBadge = s.ranking > 0 ? `<div style="font-family:var(--font-mono);font-size:48px;font-weight:700;color:var(--accent);text-align:center;padding:16px 0;">#${s.ranking}</div>` : '';
+
+  display.innerHTML = `
+    <div class="section-label">Current Stats</div>
+    <div class="card mb-12">
+      ${rankBadge}
+      <div style="display:flex;flex-direction:column;gap:0;">
+        ${statRow('Serviced Revenue', '$' + (s.servicedRev||0).toLocaleString('en-CA', {minimumFractionDigits:2, maximumFractionDigits:2}), 'var(--green)')}
+        ${statRow('Avg Contract Value', '$' + (s.acv||0).toLocaleString(), 'var(--accent)')}
+        ${statRow('Autopay', (s.autopay||0) + '%', s.autopay >= 90 ? 'var(--green)' : s.autopay >= 70 ? 'var(--amber)' : 'var(--red)')}
+        ${statRow('24-Month Accounts', (s.month24||0) + '%', s.month24 >= 40 ? 'var(--green)' : s.month24 >= 25 ? 'var(--amber)' : 'var(--red)')}
+        ${statRow('Serviced Percent', (s.servicedPct||0) + '%', s.servicedPct >= 70 ? 'var(--green)' : s.servicedPct >= 50 ? 'var(--amber)' : 'var(--red)')}
+      </div>
+    </div>
+    <div class="section-label">Records</div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:0;">
+        ${statRow('Best Day', '$' + (s.bestDayRev||0).toLocaleString() + (s.bestDayDate ? ' · ' + fmtDateFull(s.bestDayDate) : ''), 'var(--amber)')}
+        ${statRow('Best Week', '$' + (s.bestWeekRev||0).toLocaleString() + (s.bestWeekDate ? ' · ' + fmtDateFull(s.bestWeekDate) : ''), 'var(--amber)')}
+        ${statRow('Best Month', '$' + (s.bestMonthRev||0).toLocaleString(), 'var(--amber)')}
+      </div>
+    </div>
+  `;
+}
+
+function statRow(label, value, color) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);">
+    <span style="font-size:13px;color:var(--text2);">${label}</span>
+    <span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:${color};">${value}</span>
+  </div>`;
 }
 
 function openWizard() {
