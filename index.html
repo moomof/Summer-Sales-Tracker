@@ -1460,13 +1460,19 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <div class="settings-section">
     <div class="section-label">Days Off</div>
     <div class="card">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Sundays are automatically excluded from all calculations. Add any other days off below.</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="date" class="form-input" id="daysOffStart" style="flex:1;">
-        <input type="date" class="form-input" id="daysOffEnd" style="flex:1;" placeholder="End (optional)">
-        <button class="btn btn-primary btn-sm" onclick="addDayOff()">Add</button>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Sundays are automatically excluded. Add any other days off — removed from knocking day counts and pace.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="form-field">
+          <label class="form-label">Start Date</label>
+          <input type="date" class="form-input" id="daysOffStart">
+        </div>
+        <div class="form-field">
+          <label class="form-label">End Date (optional)</label>
+          <input type="date" class="form-input" id="daysOffEnd">
+        </div>
       </div>
-      <div id="daysOffList" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      <button class="btn btn-primary btn-full" style="margin-bottom:12px;" onclick="addDayOff()">Add Days Off</button>
+      <div id="daysOffList" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
   </div>
 
