@@ -2206,6 +2206,16 @@ function renderCommission() {
   const latestPulseAdv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
   const servicedCount = latestPulseAdv ? parseInt(latestPulseAdv.serviced||0) : 0;
 
+  // Advances calc — must be before earnings breakdown
+  const totalLoggedAccts = stats.totalPest + stats.totalMosquito;
+  const pestRatio = totalLoggedAccts > 0 ? stats.totalPest / totalLoggedAccts : 1;
+  const mosquitoRatio = totalLoggedAccts > 0 ? stats.totalMosquito / totalLoggedAccts : 0;
+  const advancePestCount = servicedCount > 0 ? Math.round(servicedCount * pestRatio) : stats.totalPest;
+  const advanceMosqCount = servicedCount > 0 ? Math.round(servicedCount * mosquitoRatio) : stats.totalMosquito;
+  const advancePestAmt = advancePestCount * PEST_ADVANCE;
+  const advanceMosqAmt = advanceMosqCount * MOSQUITO_ADVANCE;
+  const totalAdvances = advancePestAmt + advanceMosqAmt;
+
   // Tier Grid — based on net accounts
   const currentTier = calcTier(netAccountsComm);
   const tierGrid = document.getElementById('tierGrid');
@@ -2276,21 +2286,7 @@ function renderCommission() {
   }
   document.getElementById('ebNet').textContent = '$' + Math.round(net).toLocaleString();
 
-  // Advances — based on SERVICED accounts (first service completed)
-  // servicedCount already declared above
-  
-  // Split serviced into pest/mosquito proportionally from logged data
-  const totalLoggedAccts = stats.totalPest + stats.totalMosquito;
-  const pestRatio = totalLoggedAccts > 0 ? stats.totalPest / totalLoggedAccts : 1;
-  const mosquitoRatio = totalLoggedAccts > 0 ? stats.totalMosquito / totalLoggedAccts : 0;
-  
-  // Use serviced count from pulse if available, else use logged counts
-  const advancePestCount = servicedCount > 0 ? Math.round(servicedCount * pestRatio) : stats.totalPest;
-  const advanceMosqCount = servicedCount > 0 ? Math.round(servicedCount * mosquitoRatio) : stats.totalMosquito;
-  const advancePestAmt = advancePestCount * PEST_ADVANCE;
-  const advanceMosqAmt = advanceMosqCount * MOSQUITO_ADVANCE;
-  const totalAdvances = advancePestAmt + advanceMosqAmt;
-
+  // Advances display (values already calculated above)
   document.getElementById('advPest').textContent = '$' + advancePestAmt.toLocaleString() + ' (' + advancePestCount + ' accts)';
   document.getElementById('advMosquito').textContent = '$' + advanceMosqAmt.toLocaleString() + ' (' + advanceMosqCount + ' accts)';
   document.getElementById('advTotal').textContent = '$' + totalAdvances.toLocaleString();
