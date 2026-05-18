@@ -1873,8 +1873,12 @@ function renderDashboard() {
   const accountTarget = parseInt(S('accountTarget'));
   document.getElementById('heroWeekLabel').textContent = `Week ${weekNum} · ${daysLeft} knocking days left`;
   document.getElementById('heroTarget').innerHTML = `${accountTarget} <span style="font-size:18px;opacity:0.7">target</span>`;
+  // Use pulse sold as authoritative count when available
+  const latestPulseHero2 = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseSoldCount = latestPulseHero2 ? parseInt(latestPulseHero2.sold||0) : 0;
+  const displaySold = pulseSoldCount > 0 ? pulseSoldCount : totalAccounts;
   const inactiveLabel = pulseInactiveNet > 0 ? ` · ${pulseInactiveNet} inactive` : '';
-  const heroSubText = `${totalAccounts} sold${inactiveLabel} · ${Math.max(0, accountTarget - netAccounts)} to go`;
+  const heroSubText = `${displaySold} sold${inactiveLabel} · ${Math.max(0, accountTarget - netAccounts)} to go`;
   document.getElementById('heroSub').textContent = heroSubText;
   document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - netAccounts) / daysLeft).toFixed(1) : '—';
   document.getElementById('heroPaceCurrent').textContent = apd.toFixed(1);
@@ -1904,7 +1908,7 @@ function renderDashboard() {
   document.getElementById('kpiAcv').textContent = '$' + Math.round(acv);
 
   // Define currentTier and dailyRevAvg early — used in multiple places below
-  const safeAccounts = isNaN(netAccounts) ? 0 : netAccounts;
+  const safeAccounts = isNaN(authNet) ? 0 : authNet;
   const currentTier = calcTier(safeAccounts);
   const dailyRevAvg = workingDays > 0 ? totalRevenue / workingDays : 0;
 
@@ -1926,7 +1930,7 @@ function renderDashboard() {
   const net = gross - advances - Math.max(0, housingPayments);
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
 
-  const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(netAccounts + apd * daysLeft) : netAccounts;
+  const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(authNet + apd * daysLeft) : authNet;
   const projectedRevenue = daysLeft > 0 && workingDays > 0 ? Math.round(totalRevenue + dailyRevAvg * daysLeft) : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts + ' accts';
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
@@ -1997,9 +2001,9 @@ function renderDashboard() {
   }
 
   // Progress bars
-  const acctPct = Math.min(100, (netAccounts / accountTarget) * 100);
+  const acctPct = Math.min(100, (authNet / accountTarget) * 100);
   const revPct = Math.min(100, (totalRevenue / revTarget) * 100);
-  document.getElementById('progAcctsVal').textContent = netAccounts;
+  document.getElementById('progAcctsVal').textContent = authNet;
   document.getElementById('progAcctsTarget').textContent = accountTarget;
   document.getElementById('progRevVal').textContent = '$' + fmtK(totalRevenue);
   document.getElementById('progRevTarget').textContent = '$' + fmtK(revTarget);
@@ -2029,8 +2033,8 @@ function renderDashboard() {
   document.getElementById('hlZeroDays').textContent = zeroDays;
 
   // Pace
-  const neededPerDay = daysLeft > 0 ? (accountTarget - netAccounts) / daysLeft : 0;
-  const onPaceFor = workingDays > 0 ? Math.round(netAccounts + apd * daysLeft) : netAccounts;
+  const neededPerDay = daysLeft > 0 ? (accountTarget - authNet) / daysLeft : 0;
+  const onPaceFor = workingDays > 0 ? Math.round(authNet + apd * daysLeft) : authNet;
   const surplus = totalAccounts - Math.round(apd > 0 ? workingDays * (accountTarget / S('knockingDays')) : 0);
   // revPace uses dailyRevAvg defined above
   const revPace = workingDays > 0 ? '$' + fmtK(totalRevenue + dailyRevAvg * daysLeft) : '—';
@@ -2041,9 +2045,9 @@ function renderDashboard() {
   setPaceVal('paceWeekTarget', weekTarget + ' net/week needed', '');
   const paceGap = onPaceFor - accountTarget;
   const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
-  setPaceVal('paceOnTrack', onPaceFor + ' net accts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
+  setPaceVal('paceOnTrack', onPaceFor + ' accts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
   const totalSeasonDays = getTotalSeasonWorkingDays();
-  const surplusN = netAccounts - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
+  const surplusN = authNet - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
   setPaceVal('paceSurplus', (surplusN >= 0 ? '+' : '') + surplusN + ' accounts', surplusN >= 0 ? 'good' : 'bad');
   setPaceVal('paceRevenue', revPace, '');
 
