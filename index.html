@@ -2202,6 +2202,10 @@ function renderCommission() {
   const commInactive = latestPulseComm2 ? parseInt(latestPulseComm2.inactive||0) : 0;
   const netAccountsComm = Math.max(0, totalAccounts - commInactive);
 
+  // Serviced count — needed for advance calculations (declare early)
+  const latestPulseAdv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const servicedCount = latestPulseAdv ? parseInt(latestPulseAdv.serviced||0) : 0;
+
   // Tier Grid — based on net accounts
   const currentTier = calcTier(netAccountsComm);
   const tierGrid = document.getElementById('tierGrid');
@@ -2273,9 +2277,7 @@ function renderCommission() {
   document.getElementById('ebNet').textContent = '$' + Math.round(net).toLocaleString();
 
   // Advances — based on SERVICED accounts (first service completed)
-  // Use pulse serviced count if available, else fall back to total sold
-  const latestPulseAdv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
-  const servicedCount = latestPulseAdv ? parseInt(latestPulseAdv.serviced||0) : 0;
+  // servicedCount already declared above
   
   // Split serviced into pest/mosquito proportionally from logged data
   const totalLoggedAccts = stats.totalPest + stats.totalMosquito;
