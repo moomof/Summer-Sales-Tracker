@@ -1965,17 +1965,17 @@ function renderDashboard() {
   const inactiveLabel = pulseInactiveNet > 0 ? ` · ${pulseInactiveNet} inactive` : '';
   const heroSubText = `${displaySold} sold${inactiveLabel} · ${Math.max(0, accountTarget - authNet)} to go`;
   document.getElementById('heroSub').textContent = heroSubText;
-  document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - netAccounts) / daysLeft).toFixed(1) : '—';
+  document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - authNet) / daysLeft).toFixed(1) : '—';
   document.getElementById('heroPaceCurrent').textContent = apd.toFixed(1);
   document.getElementById('heroDaysLeft').textContent = daysLeft;
 
   // KPIs
-  document.getElementById('kpiAccounts').textContent = netAccounts;
+  document.getElementById('kpiAccounts').textContent = authNet;
   document.getElementById('kpiAccountsTarget').textContent = accountTarget;
   const kpiAcctsSub = document.querySelector('#kpiAccounts')?.closest('.kpi-card')?.querySelector('.kpi-sub');
   if (kpiAcctsSub) kpiAcctsSub.textContent = pulseInactiveNet > 0 ? totalAccounts + ' sold · ' + pulseInactiveNet + ' cancelled' : 'of ' + accountTarget + ' target';
   document.getElementById('kpiAcvSub').textContent = hasNetData && pulseInactiveNet > 0
-    ? netAccounts + ' net · ' + pulseInactiveNet + ' inactive'
+    ? authNet + ' net · ' + pulseInactiveNet + ' inactive'
     : 'avg per pest acct';
   document.getElementById('kpiRevenue').textContent = '$' + fmtK(totalRevenue);
   const revTarget = parseInt(S('revenueTarget'));
@@ -1997,8 +1997,8 @@ function renderDashboard() {
   const currentTier = calcTier(safeAccounts);
   const dailyRevAvg = workingDays > 0 ? totalRevenue / workingDays : 0;
 
-  // Commission KPI — use netAccounts (dashboard context)
-  const gross = calcCommission(totalRevenue, netAccounts);
+  // Commission KPI — use authNet (pulse-authoritative)
+  const gross = calcCommission(totalRevenue, authNet);
   const advances = calcAdvances(stats.totalPest, stats.totalMosquito);
   // Count semi-monthly pay periods (10th and 25th) that have passed since season start
   // Housing deductions per contract: $250 on 10th & 25th, May 25 – Sep 10
@@ -2502,7 +2502,7 @@ function renderWeekly() {
   const netAccountsWeekly = Math.max(0, stats.totalAccounts - weeklyInactive);
   const neededWeekly = Math.ceil((accountTarget - netAccountsWeekly) / weeksRemaining);
   const weeklyPaceTarget = neededWeekly;
-  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk · ${netAccountsWeekly} net active`;
+  document.getElementById('wfThisWeekTarget').textContent = `Need ${weeklyPaceTarget}/wk · ${authNet} net active`;
   document.getElementById('wfThisWeek').textContent = thisWeekAccounts;
   document.getElementById('wfThisWeekSub').textContent = 'accounts sold this week';
 
