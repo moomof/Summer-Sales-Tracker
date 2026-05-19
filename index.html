@@ -1950,6 +1950,14 @@ function renderDashboard() {
   const pulseSoldCount = latestPulseNet ? parseInt(latestPulseNet.sold||0) : 0;
   const authSold = pulseSoldCount > 0 ? pulseSoldCount : totalAccounts;
   const authNet = pulseSoldCount > 0 ? Math.max(0, pulseSoldCount - pulseInactiveNet) : netAccounts;
+
+  // Pulse active revenue — serviced + pending (only use if actually entered)
+  const pulseActiveRev = latestPulseNet
+    ? (parseFloat(latestPulseNet.serviced_revenue)||0) + (parseFloat(latestPulseNet.pending_revenue)||0)
+    : 0;
+  // Use pulse revenue only if it's actually been entered — else use log revenue
+  const revenueBase = pulseActiveRev > 0 ? pulseActiveRev : totalRevenue;
+
   // Calculate elapsed knocking days from season start to today
   const elapsedKnockingDays = (() => {
     const { start } = getSeasonDates();
@@ -1985,7 +1993,7 @@ function renderDashboard() {
   document.getElementById('kpiAcvSub').textContent = hasNetData && pulseInactiveNet > 0
     ? authNet + ' net · ' + pulseInactiveNet + ' inactive'
     : 'avg per pest acct';
-  document.getElementById('kpiRevenue').textContent = '$' + fmtK(pulseActiveRev > 0 ? pulseActiveRev : totalRevenue);
+  document.getElementById('kpiRevenue').textContent = '$' + fmtK(revenueBase);
   const revTarget = parseInt(S('revenueTarget'));
   document.getElementById('kpiRevenueTarget').textContent = '$' + fmtK(revTarget);
   document.getElementById('kpiApd').textContent = apdAuth.toFixed(1);
@@ -2003,15 +2011,10 @@ function renderDashboard() {
   // Define currentTier and dailyRevAvg early — used in multiple places below
   const safeAccounts = isNaN(authNet) ? 0 : authNet;
   const currentTier = calcTier(safeAccounts);
-  const dailyRevAvg = (pulseActiveRev > 0 ? pulseActiveRev : totalRevenue) / elapsedKnockingDays;
+  const dailyRevAvg = revenueBase / elapsedKnockingDays;
 
-  // Commission base — use pulse active revenue when available (more accurate than log revenue)
-  const latestPulseComm = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
-  const pulseActiveRev = latestPulseComm
-    ? (parseFloat(latestPulseComm.serviced_revenue||0) + parseFloat(latestPulseComm.pending_revenue||0))
-    : 0;
-  const commissionRevBase = pulseActiveRev > 0 ? pulseActiveRev : totalRevenue;
-  const gross = calcCommission(commissionRevBase, authNet);
+  // Commission base — use revenueBase (already calculated above)
+  const gross = calcCommission(revenueBase, authNet);
   const advances = calcAdvances(stats.totalPest, stats.totalMosquito);
   // Count semi-monthly pay periods (10th and 25th) that have passed since season start
   // Housing deductions per contract: $250 on 10th & 25th, May 25 – Sep 10
@@ -2029,7 +2032,7 @@ function renderDashboard() {
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
 
   const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(authNet + apdAuth * daysLeft) : authNet;
-  const projectedRevenue = daysLeft > 0 && workingDays > 0 ? Math.round(totalRevenue + dailyRevAvg * daysLeft) : totalRevenue;
+  const projectedRevenue = daysLeft > 0 ? Math.round(revenueBase + dailyRevAvg * daysLeft) : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts + ' accts';
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
 
