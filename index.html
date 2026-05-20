@@ -1488,9 +1488,21 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           <input type="number" class="form-input" id="settingRevenueTarget" placeholder="250000" min="1" onchange="saveSetting('revenueTarget', this.value)">
         </div>
         <div class="form-field full">
-          <label class="form-label">Knocking Days (auto-calculated)</label>
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-family:var(--font-mono);font-size:14px;color:var(--text2);" id="settingKnockingDaysDisplay">—</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:4px;">Derived from season dates, excluding Sundays and days off. Updates automatically.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;text-align:center;">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Total Days</div>
+              <div style="font-family:var(--font-mono);font-size:18px;font-weight:600;color:var(--text);" id="settingKnockingDaysDisplay">—</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;text-align:center;">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Elapsed</div>
+              <div style="font-family:var(--font-mono);font-size:18px;font-weight:600;color:var(--accent);" id="settingElapsedDisplay">—</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;text-align:center;">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Remaining</div>
+              <div style="font-family:var(--font-mono);font-size:18px;font-weight:600;color:var(--green);" id="settingRemainingDisplay">—</div>
+            </div>
+          </div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:6px;">Auto-calculated · excludes Sundays and days off</div>
         </div>
         <div class="form-field">
           <label class="form-label">Season Start</label>
@@ -2006,7 +2018,9 @@ function renderDashboard() {
     apdDeltaEl.className = 'kpi-delta ' + (apdDelta >= 0 ? 'pos' : 'neg');
   } else { apdDeltaEl.textContent = ''; }
 
-  document.getElementById('kpiAcv').textContent = '$' + Math.round(acv);
+  // ACV — use pulse active revenue / net accounts when available
+  const acvDisplay = authNet > 0 ? Math.round(revenueBase / authNet) : Math.round(acv);
+  document.getElementById('kpiAcv').textContent = '$' + acvDisplay;
 
   // Define currentTier and dailyRevAvg early — used in multiple places below
   const safeAccounts = isNaN(authNet) ? 0 : authNet;
@@ -2284,7 +2298,11 @@ function renderCommission() {
   // At-risk: use actual inactive revenue from pulse if available
   const inactiveCount = latestPulseForComm ? parseInt(latestPulseForComm.inactive||0) : 0;
   const actualInactiveRev = latestPulseForComm ? parseFloat(latestPulseForComm.inactive_revenue||0) : 0;
-  const pestAcv = stats.totalPest > 0 ? totalRevenue / stats.totalPest : 0;
+  // Use pulse-based ACV for commission tab
+  const latestPulseAcv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseNetAcv = latestPulseAcv ? parseInt(latestPulseAcv.sold||0) - parseInt(latestPulseAcv.inactive||0) : 0;
+  const pulseRevAcv = latestPulseAcv ? (parseFloat(latestPulseAcv.serviced_revenue||0) + parseFloat(latestPulseAcv.pending_revenue||0)) : 0;
+  const pestAcv = pulseNetAcv > 0 && pulseRevAcv > 0 ? pulseRevAcv / pulseNetAcv : (stats.totalPest > 0 ? totalRevenue / stats.totalPest : 0);
   const atRiskRev = actualInactiveRev > 0 ? actualInactiveRev : (inactiveCount * pestAcv);
   const atRiskComm = atRiskRev * calcTier(commissionAccounts).pct;
   const atRiskEl = document.getElementById('ebAtRisk');
