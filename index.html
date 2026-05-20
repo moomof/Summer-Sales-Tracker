@@ -2045,7 +2045,7 @@ function renderDashboard() {
   const net = gross - advances - Math.max(0, housingPayments);
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
 
-  const projectedAccounts = daysLeft > 0 && workingDays > 0 ? Math.round(authNet + apdAuth * daysLeft) : authNet;
+  const projectedAccounts = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * Math.max(0, daysLeft - 1)) : authNet;
   const projectedRevenue = daysLeft > 0 ? Math.round(revenueBase + dailyRevAvg * daysLeft) : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts + ' accts';
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
@@ -2117,10 +2117,10 @@ function renderDashboard() {
 
   // Progress bars
   const acctPct = Math.min(100, (authNet / accountTarget) * 100);
-  const revPct = Math.min(100, (totalRevenue / revTarget) * 100);
+  const revPct = Math.min(100, (revenueBase / revTarget) * 100);
   document.getElementById('progAcctsVal').textContent = authNet;
   document.getElementById('progAcctsTarget').textContent = accountTarget;
-  document.getElementById('progRevVal').textContent = '$' + fmtK(totalRevenue);
+  document.getElementById('progRevVal').textContent = '$' + fmtK(revenueBase);
   document.getElementById('progRevTarget').textContent = '$' + fmtK(revTarget);
   document.getElementById('progAcctsFill').style.width = acctPct + '%';
   document.getElementById('progRevFill').style.width = revPct + '%';
@@ -2138,21 +2138,41 @@ function renderDashboard() {
 
   // Highlights
   const streak = calcStreak();
-  const bestDay = db.logs.reduce((m, l) => Math.max(m, (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0)), 0);
+  // Best day = highest revenue day from logs
+  const bestDayRev = db.logs.reduce((m, l) => Math.max(m, parseFloat(l.revenue)||0), 0);
+  const bestDayAccts = db.logs.reduce((m, l) => {
+    const a = (parseInt(l.sold_accounts)||0) || ((parseInt(l.pest)||0) + (parseInt(l.mosquito)||0));
+    return Math.max(m, a);
+  }, 0);
+  // Use vantage stats best day if available and higher
+  const vStats = db.settings.vantageStats;
+  const bestDayDisplay = vStats && vStats.bestDayRev > bestDayRev
+    ? Math.round(vStats.bestDayRev)
+    : Math.round(bestDayRev);
   const weeklyTotals = calcWeeklyTotals();
-  const bestWeek = weeklyTotals.length > 0 ? Math.max(...weeklyTotals.map(w => w.accounts)) : 0;
-  const zeroDays = db.logs.filter(l => (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0) === 0 && !isDayOff(l.date)).length;
+  const bestWeekRev = weeklyTotals.length > 0 ? Math.max(...weeklyTotals.map(w => w.revenue)) : 0;
+  const bestWeekDisplay = vStats && vStats.bestWeekRev > bestWeekRev
+    ? Math.round(vStats.bestWeekRev)
+    : Math.round(bestWeekRev);
+  const zeroDays = db.logs.filter(l => {
+    const a = (parseInt(l.sold_accounts)||0) || ((parseInt(l.pest)||0) + (parseInt(l.mosquito)||0));
+    return a === 0 && !isDayOff(l.date);
+  }).length;
   document.getElementById('hlStreak').textContent = streak;
-  document.getElementById('hlBestDay').textContent = bestDay;
-  document.getElementById('hlBestWeek').textContent = bestWeek;
+  document.getElementById('hlBestDay').textContent = bestDayDisplay > 0 ? '$' + fmtK(bestDayDisplay) : bestDayAccts;
+  document.getElementById('hlBestWeek').textContent = bestWeekDisplay > 0 ? '$' + fmtK(bestWeekDisplay) : '—';
   document.getElementById('hlZeroDays').textContent = zeroDays;
 
-  // Pace
-  const neededPerDay = daysLeft > 0 ? (accountTarget - authNet) / daysLeft : 0;
-  const onPaceFor = workingDays > 0 ? Math.round(authNet + apdAuth * daysLeft) : authNet;
-  const surplus = totalAccounts - Math.round(apd > 0 ? workingDays * (accountTarget / S('knockingDays')) : 0);
-  // revPace uses dailyRevAvg defined above
-  const revPace = workingDays > 0 ? '$' + fmtK(totalRevenue + dailyRevAvg * daysLeft) : '—';
+  // Pace — all calculations use elapsedKnockingDays and daysLeft correctly
+  const totalSeasonDays = getTotalSeasonWorkingDays();
+  // daysLeft already defined above (remaining days incl today)
+  // Use daysLeft-1 for projections so today isn't double-counted
+  const futureDays = Math.max(0, daysLeft - 1);
+  const neededPerDay = futureDays > 0 ? (accountTarget - authNet) / futureDays : 0;
+  const onPaceFor = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * futureDays) : authNet;
+  const surplusN = authNet - Math.round(elapsedKnockingDays * accountTarget / Math.max(1, totalSeasonDays));
+  const projectedRevFull = revenueBase + dailyRevAvg * futureDays;
+  const revPace = '$' + fmtK(projectedRevFull);
 
   const todayTarget = Math.ceil(neededPerDay);
   const weekTarget = Math.ceil(neededPerDay * 5);
@@ -2161,8 +2181,6 @@ function renderDashboard() {
   const paceGap = onPaceFor - accountTarget;
   const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
   setPaceVal('paceOnTrack', onPaceFor + ' accts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
-  const totalSeasonDays = getTotalSeasonWorkingDays();
-  const surplusN = authNet - Math.round(workingDays * accountTarget / Math.max(1, totalSeasonDays));
   setPaceVal('paceSurplus', (surplusN >= 0 ? '+' : '') + surplusN + ' accounts', surplusN >= 0 ? 'good' : 'bad');
   setPaceVal('paceRevenue', revPace, '');
 
