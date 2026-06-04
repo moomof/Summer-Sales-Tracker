@@ -1644,6 +1644,7 @@ const DEFAULT_SETTINGS = {
   supabaseUrl: '',
   supabaseKey: '',
   darkMode: true,
+  vantageStats: null,
 };
 
 /* ============================================================
@@ -1727,7 +1728,12 @@ async function syncFromCloud() {
     if (settings && Array.isArray(settings) && settings[0]) {
       try {
         const s = JSON.parse(settings[0].value);
-        db.settings = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
+        const merged = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
+        // Preserve vantageStats from cloud if local is null/missing
+        if (!merged.vantageStats && s.vantageStats) {
+          merged.vantageStats = s.vantageStats;
+        }
+        db.settings = merged;
         applySettings();
       } catch(se) { console.warn('Settings parse failed:', se); }
     }
@@ -3036,6 +3042,10 @@ function saveStats() {
   saveLocal();
   scheduleSyncUp();
   renderStats();
+  // Update dashboard highlights immediately
+  requestAnimationFrame(() => {
+    try { renderDashboard(); } catch(e) {}
+  });
   showToast('Stats saved ✓', 'success');
 }
 
