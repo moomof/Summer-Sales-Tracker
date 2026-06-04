@@ -867,25 +867,6 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .pulse-status-card.pending { background: var(--tint-amber); border: 1px solid var(--tint-amber-border); }
 .pulse-status-card.inactive { background: var(--tint-red); border: 1px solid var(--tint-red-border); }
 </style>
-  <script>
-    // Unregister any cached service workers to force fresh loads
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        regs.forEach(r => r.unregister());
-      });
-    }
-    // Force reload if cached version detected
-    if (window.navigator.standalone) {
-      // Running as PWA — check if we need to reload for fresh content
-      const lastLoad = localStorage.getItem('ftp_last_load');
-      const now = Date.now();
-      if (!lastLoad || now - parseInt(lastLoad) > 3600000) { // 1 hour
-        localStorage.setItem('ftp_last_load', now);
-        // Don't reload on first visit, only on subsequent ones
-        if (lastLoad) window.location.reload(true);
-      }
-    }
-  </script>
 </head>
 <body>
 <div class="app-shell">
@@ -1606,15 +1587,20 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 </div>
 
 <script>
-  // Register a service worker that forces network-first fetching
-  if ('serviceWorker' in navigator) {
-    // Unregister any old service workers that might be caching
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      registrations.forEach(reg => reg.unregister());
-    });
+// Unregister cached service workers on load
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => { regs.forEach(r => r.unregister()); });
+}
+// Force PWA to reload fresh every hour
+if (window.navigator.standalone) {
+  const _ll = localStorage.getItem('ftp_last_load');
+  const _now = Date.now();
+  if (!_ll || _now - parseInt(_ll) > 3600000) {
+    localStorage.setItem('ftp_last_load', String(_now));
+    if (_ll) window.location.reload(true);
   }
-</script>
-<script>
+}
+
 /* ============================================================
    CONSTANTS & CONFIG
    ============================================================ */
@@ -1735,22 +1721,24 @@ async function syncFromCloud() {
       sbFetch('days_off', {}).catch(() => null),
       sbFetch('settings', { params: { key: 'eq.app_settings' } }).catch(() => null),
     ]);
-    if (logs) db.logs = logs;
-    if (pulses) db.pulses = pulses;
-    if (daysOff) db.daysOff = daysOff;
-    if (settings && settings[0]) {
-      const s = JSON.parse(settings[0].value);
-      // Merge: cloud settings as base, local settings take priority
-      db.settings = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
-      applySettings();
+    if (logs && Array.isArray(logs)) db.logs = logs;
+    if (pulses && Array.isArray(pulses)) db.pulses = pulses;
+    if (daysOff && Array.isArray(daysOff)) db.daysOff = daysOff;
+    if (settings && Array.isArray(settings) && settings[0]) {
+      try {
+        const s = JSON.parse(settings[0].value);
+        db.settings = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
+        applySettings();
+      } catch(se) { console.warn('Settings parse failed:', se); }
     }
     saveLocal();
-    renderAll();
+    try { renderAll(); } catch(re) { console.error('renderAll failed:', re); }
     setSyncStatus('idle');
-    showToast('Synced from cloud ✓', 'success');
+    showToast('Synced ✓ — ' + (db.logs.length) + ' logs, ' + (db.pulses.length) + ' pulses', 'success');
   } catch(e) {
+    console.error('Sync error:', e);
     setSyncStatus('error');
-    showToast('Sync failed. Check connection.', 'error');
+    showToast('Sync failed: ' + e.message, 'error');
   }
 }
 
