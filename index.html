@@ -2161,48 +2161,76 @@ function renderDashboard() {
   const progRevMarkerLabel = document.getElementById('progRevMarkerLabel');
   if (progRevMarkerLabel) progRevMarkerLabel.textContent = 'LY: $' + fmtK(S('lyRevenue'));
 
-  // Highlights
+  // Highlights — all auto-calculated from logs
   const streak = calcStreak();
-  // Best day = highest revenue day from logs
-  const bestDayRev = db.logs.reduce((m, l) => Math.max(m, parseFloat(l.revenue)||0), 0);
+
+  // Best day by revenue from logs
+  const bestDayLog = db.logs.reduce((best, l) => {
+    const rev = parseFloat(l.revenue)||0;
+    return rev > (best ? parseFloat(best.revenue)||0 : 0) ? l : best;
+  }, null);
+  const bestDayRev = bestDayLog ? parseFloat(bestDayLog.revenue)||0 : 0;
+  const bestDayDate = bestDayLog ? bestDayLog.date : null;
+
+  // Best week by revenue
+  const weeklyTotals = calcWeeklyTotals();
+  const bestWeek = weeklyTotals.length > 0
+    ? weeklyTotals.reduce((best, w) => w.revenue > best.revenue ? w : best, weeklyTotals[0])
+    : null;
+  const bestWeekRev = bestWeek ? bestWeek.revenue : 0;
+
+  // Best month by revenue
+  const monthlyRevs = {};
+  db.logs.forEach(l => {
+    const m = l.date.slice(0, 7); // YYYY-MM
+    monthlyRevs[m] = (monthlyRevs[m]||0) + (parseFloat(l.revenue)||0);
+  });
+  const bestMonthRev = Object.values(monthlyRevs).length > 0
+    ? Math.max(...Object.values(monthlyRevs)) : 0;
+  const bestMonthKey = Object.entries(monthlyRevs).reduce((best, [m, r]) =>
+    r > (monthlyRevs[best]||0) ? m : best, '');
+
+  // Best day accounts (fallback if no revenue logged)
   const bestDayAccts = db.logs.reduce((m, l) => {
     const a = (parseInt(l.sold_accounts)||0) || ((parseInt(l.pest)||0) + (parseInt(l.mosquito)||0));
     return Math.max(m, a);
   }, 0);
-  // Use vantage stats best day if available and higher
-  const vStats = db.settings.vantageStats;
-  const bestDayDisplay = vStats && vStats.bestDayRev > bestDayRev
-    ? Math.round(vStats.bestDayRev)
-    : Math.round(bestDayRev);
-  const weeklyTotals = calcWeeklyTotals();
-  const bestWeekRev = weeklyTotals.length > 0 ? Math.max(...weeklyTotals.map(w => w.revenue)) : 0;
-  const bestWeekDisplay = vStats && vStats.bestWeekRev > bestWeekRev
-    ? Math.round(vStats.bestWeekRev)
-    : Math.round(bestWeekRev);
+
   const zeroDays = db.logs.filter(l => {
     const a = (parseInt(l.sold_accounts)||0) || ((parseInt(l.pest)||0) + (parseInt(l.mosquito)||0));
     return a === 0 && !isDayOff(l.date);
   }).length;
+
   document.getElementById('hlStreak').textContent = streak;
-  // Best day: prefer vantage stats revenue, then log revenue, then account count
-  let bestDayText, bestWeekText;
-  if (vStats && vStats.bestDayRev > 0) {
-    bestDayText = '$' + fmtK(vStats.bestDayRev);
-  } else if (bestDayRev > 0) {
-    bestDayText = '$' + fmtK(bestDayRev);
+
+  // Best day display
+  if (bestDayRev > 0) {
+    document.getElementById('hlBestDay').textContent = '$' + fmtK(bestDayRev);
+    document.getElementById('hlBestDay').title = bestDayDate ? fmtDateFull(bestDayDate) : '';
   } else {
-    bestDayText = bestDayAccts > 0 ? bestDayAccts + ' accts' : '—';
+    document.getElementById('hlBestDay').textContent = bestDayAccts > 0 ? bestDayAccts + ' accts' : '—';
   }
-  if (vStats && vStats.bestWeekRev > 0) {
-    bestWeekText = '$' + fmtK(vStats.bestWeekRev);
-  } else if (bestWeekRev > 0) {
-    bestWeekText = '$' + fmtK(bestWeekRev);
-  } else {
-    bestWeekText = '—';
-  }
-  document.getElementById('hlBestDay').textContent = bestDayText;
-  document.getElementById('hlBestWeek').textContent = bestWeekText;
+
+  // Best week display
+  document.getElementById('hlBestWeek').textContent = bestWeekRev > 0 ? '$' + fmtK(bestWeekRev) : '—';
+
   document.getElementById('hlZeroDays').textContent = zeroDays;
+
+  // Also auto-update My Stats records from logs (so they stay current)
+  if (bestDayRev > 0 || bestWeekRev > 0 || bestMonthRev > 0) {
+    const existing = db.settings.vantageStats || {};
+    const autoUpdated = {
+      ...existing,
+      bestDayRev: Math.max(bestDayRev, existing.bestDayRev||0),
+      bestDayDate: bestDayRev >= (existing.bestDayRev||0) ? (bestDayDate||existing.bestDayDate) : existing.bestDayDate,
+      bestWeekRev: Math.max(bestWeekRev, existing.bestWeekRev||0),
+      bestMonthRev: Math.max(bestMonthRev, existing.bestMonthRev||0),
+    };
+    if (JSON.stringify(autoUpdated) !== JSON.stringify(existing)) {
+      db.settings.vantageStats = autoUpdated;
+      saveLocal();
+    }
+  }
 
   // Pace — all calculations use elapsedKnockingDays and daysLeft correctly
   const totalSeasonDays = getTotalSeasonWorkingDays();
