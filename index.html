@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Field Tracker">
 <meta name="theme-color" content="#0a0a0f">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <title>Field Tracker Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -864,6 +867,25 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .pulse-status-card.pending { background: var(--tint-amber); border: 1px solid var(--tint-amber-border); }
 .pulse-status-card.inactive { background: var(--tint-red); border: 1px solid var(--tint-red-border); }
 </style>
+  <script>
+    // Unregister any cached service workers to force fresh loads
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      });
+    }
+    // Force reload if cached version detected
+    if (window.navigator.standalone) {
+      // Running as PWA — check if we need to reload for fresh content
+      const lastLoad = localStorage.getItem('ftp_last_load');
+      const now = Date.now();
+      if (!lastLoad || now - parseInt(lastLoad) > 3600000) { // 1 hour
+        localStorage.setItem('ftp_last_load', now);
+        // Don't reload on first visit, only on subsequent ones
+        if (lastLoad) window.location.reload(true);
+      }
+    }
+  </script>
 </head>
 <body>
 <div class="app-shell">
@@ -1584,6 +1606,15 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 </div>
 
 <script>
+  // Register a service worker that forces network-first fetching
+  if ('serviceWorker' in navigator) {
+    // Unregister any old service workers that might be caching
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(reg => reg.unregister());
+    });
+  }
+</script>
+<script>
 /* ============================================================
    CONSTANTS & CONFIG
    ============================================================ */
@@ -2159,8 +2190,24 @@ function renderDashboard() {
     return a === 0 && !isDayOff(l.date);
   }).length;
   document.getElementById('hlStreak').textContent = streak;
-  document.getElementById('hlBestDay').textContent = bestDayDisplay > 0 ? '$' + fmtK(bestDayDisplay) : bestDayAccts;
-  document.getElementById('hlBestWeek').textContent = bestWeekDisplay > 0 ? '$' + fmtK(bestWeekDisplay) : '—';
+  // Best day: prefer vantage stats revenue, then log revenue, then account count
+  let bestDayText, bestWeekText;
+  if (vStats && vStats.bestDayRev > 0) {
+    bestDayText = '$' + fmtK(vStats.bestDayRev);
+  } else if (bestDayRev > 0) {
+    bestDayText = '$' + fmtK(bestDayRev);
+  } else {
+    bestDayText = bestDayAccts > 0 ? bestDayAccts + ' accts' : '—';
+  }
+  if (vStats && vStats.bestWeekRev > 0) {
+    bestWeekText = '$' + fmtK(vStats.bestWeekRev);
+  } else if (bestWeekRev > 0) {
+    bestWeekText = '$' + fmtK(bestWeekRev);
+  } else {
+    bestWeekText = '—';
+  }
+  document.getElementById('hlBestDay').textContent = bestDayText;
+  document.getElementById('hlBestWeek').textContent = bestWeekText;
   document.getElementById('hlZeroDays').textContent = zeroDays;
 
   // Pace — all calculations use elapsedKnockingDays and daysLeft correctly
