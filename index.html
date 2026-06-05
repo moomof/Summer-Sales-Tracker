@@ -2030,6 +2030,237 @@ function aggregateStats() {
 /* ============================================================
    RENDER ALL
    ============================================================ */
+
+function scenCard(label, value, color, sub) {
+  return `<div style="padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">${label}</div>
+    <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:${color};">${value}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px;">${sub}</div>
+  </div>`;
+}
+
+function updateScenario() {
+  const slider = document.getElementById('scenarioSlider');
+  if (!slider) return;
+  const val = parseFloat(slider.value);
+  const valEl = document.getElementById('scenarioVal');
+  if (valEl) valEl.textContent = val.toFixed(1);
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const daysLeft = Math.max(0, getWorkingDaysRemaining(today) - 1);
+  const totalSeasonDays = getTotalSeasonWorkingDays();
+  const pulse = db.pulses.length > 0 ? db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0] : null;
+  const pulseSold = pulse ? parseInt(pulse.sold||0) : 0;
+  const pulseInactive = pulse ? parseInt(pulse.inactive||0) : 0;
+  const authNet = Math.max(0, pulseSold - pulseInactive);
+  const authSold = pulseSold || 0;
+  const pulseActiveRev = pulse ? (parseFloat(pulse.serviced_revenue||0) + parseFloat(pulse.pending_revenue||0)) : 0;
+  const acv = authNet > 0 && pulseActiveRev > 0 ? pulseActiveRev / authNet : 867;
+  const accountTarget = parseInt(S('accountTarget'));
+  const revTarget = parseInt(S('revenueTarget'));
+  const vStats24 = db.settings.vantageStats;
+  const month24Pct = vStats24 ? parseFloat(vStats24.month24||0) : 100;
+  const penalty = month24Pct > 0 && month24Pct < 20 ? 0.02 : 0;
+  const cancelRate = pulseSold > 0 ? pulseInactive / pulseSold : 0.15;
+
+  const newSold = Math.round(val * daysLeft);
+  const projSold = authSold + newSold;
+  const projInactive = Math.round(projSold * cancelRate);
+  const projNet = projSold - projInactive;
+  const projRev = pulseActiveRev + Math.round(newSold * (1 - cancelRate) * acv);
+  const tier = calcTier(projNet);
+  const projComm = Math.round(projRev * (tier.pct - penalty));
+  const advancesEst = Math.round(projNet * 75 * 0.85 + projNet * 50 * 0.15);
+  const netComm = projComm - advancesEst - 2000;
+
+  const bonuses = [];
+  if (projNet >= 175) bonuses.push('🏠 $2K housing');
+  if (projNet >= 100) bonuses.push('🎓 Tuition eligible');
+  if (projNet >= 200) bonuses.push('✈️ Trip eligible');
+  if (projRev >= 150000) bonuses.push('🚢 Cruise');
+  if (projRev >= 100000) bonuses.push('🔨 Sledge');
+
+  const results = document.getElementById('scenarioResults');
+  if (!results) return;
+  results.innerHTML = [
+    scenCard('Projected Accounts', projNet + ' net', projNet >= accountTarget ? 'var(--green)' : projNet > accountTarget * 0.8 ? 'var(--amber)' : 'var(--red)', projSold + ' sold · ' + projInactive + ' est. inactive'),
+    scenCard('Projected Revenue', '$' + fmtK(projRev), projRev >= revTarget ? 'var(--green)' : 'var(--amber)', 'at $' + Math.round(acv) + ' ACV'),
+    scenCard('Commission Tier', (tier.pct*100).toFixed(0) + '%' + (penalty > 0 ? ' (-2%)' : ''), 'var(--accent)', tier.min + '–' + (tier.max === Infinity ? '∞' : tier.max) + ' net accts'),
+    scenCard('Net Commission Est.', '~$' + Math.round(netComm).toLocaleString(), netComm > 30000 ? 'var(--green)' : 'var(--amber)', 'gross $' + Math.round(projComm).toLocaleString()),
+    bonuses.length > 0 ? `<div style="grid-column:1/-1;padding:10px 12px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);font-size:12px;"><div style="font-weight:600;margin-bottom:4px;color:var(--green);">Bonuses unlocked at this pace:</div><div style="color:var(--text2);">${bonuses.join(' · ')}</div></div>` : '',
+  ].join('');
+}
+
+function renderForecast() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const { start } = getSeasonDates();
+  const totalSeasonDays = getTotalSeasonWorkingDays();
+  const daysLeft = Math.max(0, getWorkingDaysRemaining(today) - 1);
+  const elapsedDays = Math.max(1, totalSeasonDays - daysLeft);
+  const accountTarget = parseInt(S('accountTarget'));
+  const revTarget = parseInt(S('revenueTarget'));
+  const lyAccounts = parseInt(S('lyAccounts'));
+  const pulse = db.pulses.length > 0 ? db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0] : null;
+  const pulseSold = pulse ? parseInt(pulse.sold||0) : 0;
+  const pulseInactive = pulse ? parseInt(pulse.inactive||0) : 0;
+  const pulseServiced = pulse ? parseInt(pulse.serviced||0) : 0;
+  const authNet = Math.max(0, pulseSold - pulseInactive);
+  const pulseActiveRev = pulse ? (parseFloat(pulse.serviced_revenue||0) + parseFloat(pulse.pending_revenue||0)) : 0;
+  const acv = authNet > 0 && pulseActiveRev > 0 ? pulseActiveRev / authNet : 867;
+  const apdAuth = pulseSold / elapsedDays;
+  const cancelRate = pulseSold > 0 ? pulseInactive / pulseSold : 0.15;
+  const vStats24 = db.settings.vantageStats;
+  const month24Pct = vStats24 ? parseFloat(vStats24.month24||0) : 100;
+  const penalty = month24Pct > 0 && month24Pct < 20 ? 0.02 : 0;
+
+  // ── Trajectory ──
+  const trajCard = document.getElementById('trajectoryCard');
+  if (trajCard) {
+    try {
+      const projNet = Math.round(authNet + apdAuth * (1 - cancelRate) * daysLeft);
+      const projRev = Math.round(pulseActiveRev + apdAuth * (1-cancelRate) * acv * daysLeft);
+      const needPerDay = daysLeft > 0 ? ((accountTarget - authNet) / daysLeft).toFixed(1) : '--';
+      const tierProjections = TIERS.map(t => {
+        const needed = Math.max(0, t.min - authNet);
+        const daysNeeded = needed === 0 ? 0 : apdAuth > 0 ? Math.ceil(needed / (apdAuth * (1-cancelRate))) : 999;
+        return { tier: t, needed, daysNeeded, reachable: needed === 0 || daysNeeded <= daysLeft };
+      }).filter(t => t.needed > 0).slice(0, 3);
+
+      trajCard.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          ${scenCard('At Current Pace', projNet + ' net accts', projNet >= accountTarget ? 'var(--green)' : 'var(--amber)', '$' + fmtK(projRev) + ' revenue')}
+          ${scenCard('Target Pace Needed', needPerDay + '/day', parseFloat(needPerDay) <= 3 ? 'var(--green)' : parseFloat(needPerDay) <= 5 ? 'var(--amber)' : 'var(--red)', 'to hit ' + accountTarget + ' accounts')}
+          ${scenCard('vs Last Year', (apdAuth - lyAccounts/totalSeasonDays >= 0 ? '+' : '') + (apdAuth - lyAccounts/totalSeasonDays).toFixed(2) + '/day', apdAuth >= lyAccounts/totalSeasonDays ? 'var(--green)' : 'var(--red)', 'LY: ' + lyAccounts + ' total')}
+          ${scenCard('Cancel Rate Impact', '-' + Math.round(pulseSold * cancelRate) + ' accounts', cancelRate <= 0.15 ? 'var(--green)' : cancelRate <= 0.25 ? 'var(--amber)' : 'var(--red)', (cancelRate*100).toFixed(0) + '% going inactive')}
+        </div>
+        ${tierProjections.length > 0 ? `<div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Tier Projections at Current Pace</div>
+          ${tierProjections.map(t => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+            <div><span style="font-size:13px;font-weight:600;color:${t.reachable ? 'var(--green)' : 'var(--red)'};">${t.tier.pct*100}% tier</span>
+            <span style="font-size:11.5px;color:var(--text3);margin-left:8px;">${t.tier.min}+ net accts</span></div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:500;color:${t.reachable ? 'var(--text)' : 'var(--red)'};">${t.reachable ? t.daysNeeded + ' days away' : 'Out of reach'}</div>
+            <div style="font-size:11px;color:var(--text3);">${t.needed} more needed</div></div>
+          </div>`).join('')}
+        </div>` : ''}`;
+    } catch(e) { trajCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('traj:', e); }
+  }
+
+  // ── Bonus Probability ──
+  const bonusCard = document.getElementById('bonusProbCard');
+  if (bonusCard) {
+    try {
+      const bonuses = [
+        { name: 'Housing Bonus', value: '$2,000', current: authNet, total: 175, metric: 'active accounts', deadline: 'Oct 1' },
+        { name: 'Tuition Bonus', value: '$1,500', current: authNet, total: 100, metric: 'accounts + Aug best month', deadline: 'End of season' },
+        { name: 'Top Producer Trip', value: '✈️ Trip', current: pulseServiced, total: 200, metric: 'serviced accounts', deadline: 'Sep 15' },
+        { name: 'Vantage Cruise', value: '🚢 Cruise', current: pulseActiveRev, total: 150000, metric: 'active revenue', deadline: 'End of season', isRev: true },
+        { name: '6 Digits Sledge', value: '🔨 Swag', current: pulseActiveRev, total: 100000, metric: 'active revenue', deadline: 'End of season', isRev: true },
+      ];
+      bonusCard.innerHTML = bonuses.map(b => {
+        const needed = Math.max(0, b.total - b.current);
+        const pct = Math.min(100, Math.round((b.current / b.total) * 100));
+        const daysNeeded = needed === 0 ? 0 : b.isRev
+          ? (pulseActiveRev > 0 ? Math.ceil(needed / (pulseActiveRev/elapsedDays)) : 999)
+          : (apdAuth > 0 ? Math.ceil(needed / (apdAuth*(1-cancelRate))) : 999);
+        const reachable = needed === 0 || daysNeeded <= daysLeft;
+        const barColor = needed === 0 ? 'var(--green)' : reachable ? 'var(--amber)' : 'var(--red)';
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <div><span style="font-size:13px;font-weight:600;">${b.name}</span>
+            <span style="font-size:12px;color:var(--accent);margin-left:8px;">${b.value}</span></div>
+            <span style="font-size:12px;font-weight:600;color:${barColor};">${needed === 0 ? '✓ Earned' : pct + '%'}</span>
+          </div>
+          <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:4px;">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);">${needed === 0 ? 'Qualified · deadline ' + b.deadline : (b.isRev ? '$'+Math.round(needed).toLocaleString() : needed) + ' more ' + b.metric + ' · ' + (reachable ? daysNeeded + ' days at current pace' : 'needs faster pace') + ' · ' + b.deadline}</div>
+        </div>`;
+      }).join('');
+    } catch(e) { bonusCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('bonus:', e); }
+  }
+
+  // ── Retention Analysis ──
+  const retCard = document.getElementById('retentionAnalysisCard');
+  if (retCard) {
+    try {
+      if (pulseSold > 0) {
+        const inactiveRev = pulse ? parseFloat(pulse.inactive_revenue||0) : 0;
+        const lostComm = Math.round(inactiveRev * calcTier(authNet).pct);
+        const retAcct = Math.round((1 - cancelRate) * 100);
+        retCard.innerHTML = `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            ${scenCard('Account Retention', retAcct + '%', retAcct >= 85 ? 'var(--green)' : retAcct >= 75 ? 'var(--amber)' : 'var(--red)', pulseInactive + ' of ' + pulseSold + ' went inactive')}
+            ${scenCard('Commission Lost', '~$' + lostComm.toLocaleString(), 'var(--red)', '$' + fmtK(inactiveRev) + ' revenue lost')}
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:10px;">
+            <div style="font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">What if you improved retention?</div>
+            ${[0.90, 0.85].map(r => `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--border);">
+              <span style="color:var(--text2);">At ${Math.round(r*100)}% retention</span>
+              <span style="color:${r >= 0.9 ? 'var(--green)' : 'var(--amber)'};font-weight:600;">${Math.round(pulseSold * r)} net accts</span>
+            </div>`).join('')}
+          </div>`;
+      } else {
+        retCard.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0;">Update pulse with sold/inactive data to see retention analysis.</div>';
+      }
+    } catch(e) { retCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('ret:', e); }
+  }
+
+  // ── Day of Week Analysis ──
+  const dowCard = document.getElementById('dowAnalysisCard');
+  if (dowCard) {
+    try {
+      if (db.logs.length > 0) {
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const dowData = days.map((d,i) => {
+          const dayLogs = db.logs.filter(l => new Date(l.date+'T00:00:00').getDay() === i);
+          const accts = dayLogs.reduce((s,l) => s+((parseInt(l.sold_accounts)||0)||(parseInt(l.pest)||0)+(parseInt(l.mosquito)||0)),0);
+          return { day: d, count: dayLogs.length, accts, apd: dayLogs.length > 0 ? accts/dayLogs.length : 0 };
+        }).filter(d => d.count > 0 && d.day !== 'Sun');
+        const maxApd = Math.max(...dowData.map(d => d.apd), 0.1);
+        dowCard.innerHTML = dowData.map(d => `
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
+            <div style="width:32px;font-size:12px;font-weight:600;color:var(--text2);">${d.day}</div>
+            <div style="flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;">
+              <div style="height:100%;width:${Math.round(d.apd/maxApd*100)}%;background:var(--accent);border-radius:4px;"></div>
+            </div>
+            <div style="width:70px;text-align:right;font-size:12px;font-family:var(--font-mono);">${d.apd.toFixed(1)}/day</div>
+            <div style="width:50px;text-align:right;font-size:11px;color:var(--text3);">${d.count} days</div>
+          </div>`).join('') + '<div style="font-size:11px;color:var(--text3);margin-top:8px;">Accounts sold per day knocked, by day of week</div>';
+      } else {
+        dowCard.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0;">Log more days to see day-of-week patterns.</div>';
+      }
+    } catch(e) { dowCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('dow:', e); }
+  }
+
+  // ── Monthly Breakdown ──
+  const monthCard = document.getElementById('monthlyBreakdownCard');
+  if (monthCard) {
+    try {
+      const months = ['2026-05','2026-06','2026-07','2026-08'];
+      const rows = months.map(m => {
+        const mLogs = db.logs.filter(l => l.date.startsWith(m));
+        const accts = mLogs.reduce((s,l) => s+((parseInt(l.sold_accounts)||0)||(parseInt(l.pest)||0)+(parseInt(l.mosquito)||0)),0);
+        const rev = mLogs.reduce((s,l) => s+(parseFloat(l.revenue)||0),0);
+        const name = {'2026-05':'May','2026-06':'Jun','2026-07':'Jul','2026-08':'Aug'}[m];
+        const isCurrent = today.toISOString().slice(0,7) === m;
+        return { name, accts, rev, days: mLogs.length, isCurrent };
+      });
+      monthCard.innerHTML = `
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;margin-bottom:6px;">
+          ${['Month','Accts','Revenue','/Day'].map(h => `<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;${h!=='Month'?'text-align:right;':''}">${h}</div>`).join('')}
+        </div>
+        ${rows.map(r => `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;padding:8px 0;border-top:1px solid var(--border);${r.isCurrent?'color:var(--accent);font-weight:600;':''}">
+          <div style="font-size:13px;">${r.name}${r.isCurrent?' ←':''}</div>
+          <div style="font-size:13px;font-family:var(--font-mono);text-align:right;">${r.accts||'—'}</div>
+          <div style="font-size:13px;font-family:var(--font-mono);text-align:right;">${r.rev>0?'$'+fmtK(r.rev):'—'}</div>
+          <div style="font-size:13px;font-family:var(--font-mono);text-align:right;color:var(--text3);">${r.days>0?(r.accts/r.days).toFixed(1):'—'}</div>
+        </div>`).join('')}`;
+    } catch(e) { monthCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('monthly:', e); }
+  }
+
+  try { updateScenario(); } catch(e) { console.error('scenario:', e); }
+}
+
 function renderAll() {
   renderDashboard();
   renderCommission();
