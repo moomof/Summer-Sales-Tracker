@@ -513,6 +513,19 @@ nav {
    PACE SECTION
    ============================================================ */
 .pace-card { margin-bottom: 12px; }
+.insight-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px; border-radius: var(--radius-sm);
+  border: 1px solid; font-size: 13px; line-height: 1.4;
+}
+.insight-item.red { background: var(--tint-red); border-color: var(--tint-red-border); }
+.insight-item.amber { background: var(--tint-amber); border-color: var(--tint-amber-border); }
+.insight-item.green { background: var(--tint-green); border-color: var(--tint-green-border); }
+.insight-item.blue { background: var(--tint-accent); border-color: var(--tint-accent-border); }
+.insight-icon { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+.insight-text { flex: 1; }
+.insight-title { font-weight: 600; color: var(--text); }
+.insight-sub { font-size: 11.5px; color: var(--text2); margin-top: 2px; }
 .pace-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .pace-row:last-child { border-bottom: none; padding-bottom: 0; }
 .pace-row:first-child { padding-top: 0; }
@@ -1098,6 +1111,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="pace-row"><span class="pace-key">Surplus / Deficit</span><span class="pace-val" id="paceSurplus">—</span></div>
     <div class="pace-row"><span class="pace-key">Revenue pace</span><span class="pace-val" id="paceRevenue">—</span></div>
   </div>
+
+  <!-- Insights -->
+  <div class="section-label">Insights</div>
+  <div id="insightsCard" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
 
   <!-- Door Stats -->
   <div class="section-label">Door Stats (Season)</div>
@@ -1962,11 +1979,177 @@ function renderAll() {
   renderLogHistory();
   renderPulseHistory();
   renderStats();
+  // renderInsights called from renderDashboard
 }
 
 /* ============================================================
    RENDER DASHBOARD
    ============================================================ */
+
+function renderInsights() {
+  const container = document.getElementById('insightsCard');
+  if (!container) return;
+
+  const { start } = getSeasonDates();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().slice(0,10);
+
+  // Pull latest pulse data
+  const pulse = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseSold = pulse ? parseInt(pulse.sold||0) : 0;
+  const pulseInactive = pulse ? parseInt(pulse.inactive||0) : 0;
+  const pulseServiced = pulse ? parseInt(pulse.serviced||0) : 0;
+  const pulsePending = pulse ? parseInt(pulse.pending||0) : 0;
+  const authNet = pulseSold > 0 ? Math.max(0, pulseSold - pulseInactive) : 0;
+  const pulseActiveRev = pulse ? (parseFloat(pulse.serviced_revenue||0) + parseFloat(pulse.pending_revenue||0)) : 0;
+
+  const accountTarget = parseInt(S('accountTarget'));
+  const daysLeft = getWorkingDaysRemaining(today);
+  const totalSeasonDays = getTotalSeasonWorkingDays();
+  const elapsedDays = totalSeasonDays - daysLeft;
+
+  const insights = [];
+
+  function insight(color, icon, title, sub) {
+    insights.push(`<div class="insight-item ${color}">
+      <span class="insight-icon">${icon}</span>
+      <div class="insight-text">
+        <div class="insight-title">${title}</div>
+        ${sub ? `<div class="insight-sub">${sub}</div>` : ''}
+      </div>
+    </div>`);
+  }
+
+  // ── 1. 6+ Serviced/week (contract clause, June 1+) ──
+  const junFirst = new Date('2026-06-01T00:00:00');
+  if (today >= junFirst) {
+    // Count serviced accounts in current calendar week from logs
+    const weekStart = getWeekStart(getWeekNumber(today, start), start);
+    const weekStartStr = weekStart.toISOString().slice(0,10);
+    // Use pulse serviced vs what it was last week — we don't have weekly history
+    // Instead: warn if overall serviced pace < 6/week
+    const weeksElapsed = Math.max(1, Math.ceil(elapsedDays / 5));
+    const servicedPerWeek = pulseServiced / weeksElapsed;
+    if (servicedPerWeek < 6) {
+      const deficit = Math.ceil(6 - servicedPerWeek);
+      insight('red', '⚠️', '6+ Serviced/Week Required',
+        `Contract clause (Jun 1+): need 6 serviced accounts/wk or you drop to flat rate. Currently averaging ${servicedPerWeek.toFixed(1)}/wk — need +${deficit}/wk more.`);
+    } else {
+      insight('green', '✅', '6+ Serviced/Week — On Track',
+        `Averaging ${servicedPerWeek.toFixed(1)} serviced accounts/week. Keep it up.`);
+    }
+  }
+
+  // ── 2. Housing Bonus (175 active by Oct 1) ──
+  const oct1 = new Date('2026-10-01T00:00:00');
+  const daysToOct1 = Math.max(0, Math.ceil((oct1 - today) / 86400000));
+  const workDaysToOct1 = Array.from({length: daysToOct1}, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() + i);
+    return isDayOff(d.toISOString().slice(0,10)) ? 0 : 1;
+  }).reduce((a,b) => a+b, 0);
+  const housingNeeded = Math.max(0, 175 - authNet);
+  if (housingNeeded === 0) {
+    insight('green', '🏠', 'Housing Bonus Secured — $2,000',
+      `You have ${authNet} active accounts. Housing bonus locked in for Oct 25.`);
+  } else if (workDaysToOct1 > 0) {
+    const pace = (housingNeeded / workDaysToOct1).toFixed(1);
+    const color = parseFloat(pace) <= 3 ? 'amber' : 'red';
+    insight(color, '🏠', `Housing Bonus: ${housingNeeded} accounts to go`,
+      `Need ${housingNeeded} more active accounts by Oct 1 for $2,000 bonus. That's ${pace}/day on ${workDaysToOct1} remaining work days.`);
+  }
+
+  // ── 3. Top Producer Trip (200 serviced + re-sign by Sep 15) ──
+  const sep15 = new Date('2026-09-15T00:00:00');
+  const daysToSep15 = Math.max(0, Math.ceil((sep15 - today) / 86400000));
+  const tripAcctsNeeded = Math.max(0, 200 - pulseServiced);
+  if (tripAcctsNeeded === 0) {
+    insight('green', '✈️', 'Trip Qualifier — Accounts Hit!',
+      `${pulseServiced} serviced accounts. Re-sign by Sep 15 to lock in the trip.`);
+  } else {
+    const workDaysToSep15 = Array.from({length: daysToSep15}, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      return isDayOff(d.toISOString().slice(0,10)) ? 0 : 1;
+    }).reduce((a,b) => a+b, 0);
+    const pace = workDaysToSep15 > 0 ? (tripAcctsNeeded / workDaysToSep15).toFixed(1) : '—';
+    const color = parseFloat(pace) <= 3 ? 'amber' : 'red';
+    insight(color, '✈️', `Top Producer Trip: ${tripAcctsNeeded} serviced needed`,
+      `Need ${200 - pulseServiced} more serviced accounts + re-sign by Sep 15. ${pace}/day needed on ${workDaysToSep15} work days.`);
+  }
+
+  // ── 4. August Best Month ──
+  const augLogs = db.logs.filter(l => l.date.startsWith('2026-08'));
+  const augAccts = augLogs.reduce((s,l) => s + ((parseInt(l.sold_accounts)||0) || (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0)), 0);
+  const augRev = augLogs.reduce((s,l) => s + (parseFloat(l.revenue)||0), 0);
+  const otherMonths = ['2026-05','2026-06','2026-07'];
+  const bestOtherAccts = Math.max(...otherMonths.map(m =>
+    db.logs.filter(l => l.date.startsWith(m)).reduce((s,l) =>
+      s + ((parseInt(l.sold_accounts)||0) || (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0)), 0)
+  ), 0);
+  const augNeeded = Math.max(0, bestOtherAccts + 1 - augAccts);
+  const isTuitionEligible = authNet >= 100;
+  if (today < new Date('2026-08-01')) {
+    const color = isTuitionEligible ? 'blue' : 'amber';
+    insight(color, '🎓', `Tuition Bonus: Beat ${bestOtherAccts} accounts in August`,
+      `Current best month is ${bestOtherAccts} accounts. ${isTuitionEligible ? 'Need 100+ total ✓ — just make August your best month.' : `Also need 100+ total accounts (currently ${authNet}).`}`);
+  } else if (augNeeded > 0) {
+    insight('amber', '🎓', `Tuition Bonus: ${augNeeded} more in August needed`,
+      `August at ${augAccts} accounts, need to beat ${bestOtherAccts}. $1,500 bonus on the line.`);
+  } else {
+    insight('green', '🎓', 'Tuition Bonus — August Leading!',
+      `August (${augAccts} accounts) is your best month. Hit 100+ total and you earn $1,500.`);
+  }
+
+  // ── 5. Tier upgrade ──
+  const currentTierI = TIERS.findIndex(t => authNet >= t.min && authNet <= t.max);
+  const nextTier = TIERS[currentTierI + 1];
+  if (nextTier) {
+    const toNext = nextTier.min - authNet;
+    const revGain = pulseActiveRev > 0 ? Math.round(pulseActiveRev * (nextTier.pct - TIERS[currentTierI].pct)) : 0;
+    const color = toNext <= 15 ? 'amber' : 'blue';
+    insight(color, '💰', `${toNext} accounts to ${nextTier.pct*100}% tier (+${nextTier.pct*100 - TIERS[currentTierI].pct*100}%)`,
+      `Jump from ${TIERS[currentTierI].pct*100}% → ${nextTier.pct*100}%${revGain > 0 ? ` worth ~$${revGain.toLocaleString()} more commission on current revenue` : ''}.`);
+  }
+
+  // ── 6. Cancellation rate ──
+  if (pulseSold > 0) {
+    const cancelRate = Math.round(pulseInactive / pulseSold * 100);
+    const color = cancelRate <= 15 ? 'green' : cancelRate <= 25 ? 'amber' : 'red';
+    insight(color, '❌', `${cancelRate}% cancellation rate (${pulseInactive} of ${pulseSold} sold)`,
+      cancelRate <= 15 ? 'Great retention — keep building trust at the door.' :
+      cancelRate <= 25 ? 'Moderate cancellations — focus on account quality over quantity.' :
+      'High cancellation rate — prioritize quality closes and follow-up.');
+  }
+
+  // ── 7. vs Last Year ──
+  const lyAccounts = parseInt(S('lyAccounts'));
+  const lyPace = lyAccounts / totalSeasonDays;
+  const myPace = pulseSold / Math.max(1, elapsedDays);
+  const delta = myPace - lyPace;
+  const lyProjected = Math.round(lyPace * totalSeasonDays);
+  const color7 = delta >= 0 ? 'green' : 'amber';
+  insight(color7, delta >= 0 ? '📈' : '📉',
+    `${delta >= 0 ? '+' : ''}${delta.toFixed(2)} accts/day vs last year`,
+    `Last year: ${lyAccounts} accounts (${lyPace.toFixed(1)}/day). This year pace: ${myPace.toFixed(1)}/day → projects to ${Math.round(myPace * totalSeasonDays)} accounts.`);
+
+  // ── 8. Best week comparison ──
+  const weeklyTotals = calcWeeklyTotals();
+  if (weeklyTotals.length > 1) {
+    const thisWeekNum = getWeekNumber(today, start);
+    const thisWeek = weeklyTotals.find(w => w.week === thisWeekNum);
+    const bestPastWeek = weeklyTotals.filter(w => w.week < thisWeekNum)
+      .reduce((best, w) => w.accounts > best.accounts ? w : best, {accounts: 0, week: 0});
+    if (thisWeek && bestPastWeek.accounts > 0) {
+      const diff = thisWeek.accounts - bestPastWeek.accounts;
+      const color8 = diff >= 0 ? 'green' : 'amber';
+      insight(color8, '📅',
+        `This week: ${thisWeek.accounts} accounts (best: ${bestPastWeek.accounts} in W${bestPastWeek.week})`,
+        diff >= 0 ? `You're matching or beating your best week!` : `${Math.abs(diff)} accounts behind your best week (W${bestPastWeek.week}).`);
+    }
+  }
+
+  container.innerHTML = insights.join('') || '<div class="insight-item blue"><span class="insight-icon">💡</span><div class="insight-text"><div class="insight-title">Add a pulse snapshot to unlock insights</div></div></div>';
+}
+
 function renderDashboard() {
   const stats = aggregateStats();
   const { totalAccounts, totalRevenue, totalKnocks, totalTalks, workingDays, apd, acv } = stats;
@@ -2263,6 +2446,7 @@ function renderDashboard() {
 
   // Best Day of Week
   renderDOWChart();
+  renderInsights();
 }
 
 function setPaceVal(id, text, cls) {
