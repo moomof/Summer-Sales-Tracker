@@ -3568,6 +3568,9 @@ function switchTab(tab) {
   document.getElementById('page-' + tab).classList.add('active');
   document.querySelectorAll(`[data-tab="${tab}"]`).forEach(el => el.classList.add('active'));
   document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
+  // Render tab-specific content on demand
+  if (tab === 'forecast') setTimeout(() => { try { renderForecast(); } catch(e) { console.error('renderForecast:', e); } }, 50);
+  if (tab === 'commission') setTimeout(() => { try { renderCommission(); } catch(e) { console.error('renderCommission:', e); } }, 50);
 }
 
 /* ============================================================
