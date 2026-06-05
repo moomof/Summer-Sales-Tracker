@@ -918,6 +918,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span>My Stats</span>
     </button>
+    <button class="nav-tab" data-tab="forecast" onclick="switchTab('forecast')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span>Forecast</span>
+    </button>
     <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       <span>Commission</span>
@@ -954,6 +958,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <button class="nav-tab" data-tab="stats" onclick="switchTab('stats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span>Stats</span>
+    </button>
+    <button class="nav-tab" data-tab="forecast" onclick="switchTab('forecast')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span>Forecast</span>
     </button>
     <button class="nav-tab" data-tab="commission" onclick="switchTab('commission')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -1381,6 +1389,52 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Current stats display -->
   <div id="statsDisplay"></div>
+</div>
+
+<div id="page-forecast" class="page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">Forecast</div>
+      <div class="page-subtitle">Season trajectory, scenarios &amp; analysis</div>
+    </div>
+  </div>
+
+  <!-- What-If Scenario Tool -->
+  <div class="section-label">🎯 What-If Scenario</div>
+  <div class="card mb-12">
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label style="font-size:13px;color:var(--text2);font-weight:500;">If I average <span id="scenarioVal" style="color:var(--accent);font-weight:700;">3.0</span> accounts/day</label>
+        <span style="font-size:11px;color:var(--text3);" id="scenarioLabel">on remaining days</span>
+      </div>
+      <input type="range" id="scenarioSlider" min="1" max="8" step="0.5" value="3"
+        style="width:100%;accent-color:var(--accent);" oninput="updateScenario()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:2px;">
+        <span>1/day</span><span>4/day</span><span>8/day</span>
+      </div>
+    </div>
+    <div id="scenarioResults" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+  </div>
+
+  <!-- Trajectory -->
+  <div class="section-label">📈 Season Trajectory</div>
+  <div class="card mb-12" id="trajectoryCard"></div>
+
+  <!-- Bonus Probability -->
+  <div class="section-label">🎯 Bonus Probability</div>
+  <div class="card mb-12" id="bonusProbCard"></div>
+
+  <!-- Retention Analysis -->
+  <div class="section-label">🔄 Retention Analysis</div>
+  <div class="card mb-12" id="retentionAnalysisCard"></div>
+
+  <!-- Day of Week Analysis -->
+  <div class="section-label">📅 Best Days to Knock</div>
+  <div class="card mb-12" id="dowAnalysisCard"></div>
+
+  <!-- Monthly Breakdown -->
+  <div class="section-label">📆 Monthly Breakdown</div>
+  <div class="card" id="monthlyBreakdownCard"></div>
 </div>
 
 <div id="page-commission" class="page">
@@ -1870,7 +1924,11 @@ function calcTier(accounts) {
 
 function calcCommission(revenue, accounts) {
   const tier = calcTier(accounts);
-  return revenue * tier.pct;
+  // Apply 24-month penalty if below 20%
+  const vStats24 = db.settings.vantageStats;
+  const month24Pct = vStats24 ? parseFloat(vStats24.month24||0) : 100;
+  const penalty = month24Pct > 0 && month24Pct < 20 ? 0.02 : 0;
+  return revenue * Math.max(0, tier.pct - penalty);
 }
 
 function calcAdvances(pest, mosquito) {
@@ -1979,6 +2037,7 @@ function renderAll() {
   renderLogHistory();
   renderPulseHistory();
   renderStats();
+  renderForecast();
   // renderInsights called from renderDashboard
 }
 
@@ -2110,7 +2169,26 @@ function renderInsights() {
       `Jump from ${TIERS[currentTierI].pct*100}% → ${nextTier.pct*100}%${revGain > 0 ? ` worth ~$${revGain.toLocaleString()} more commission on current revenue` : ''}.`);
   }
 
-  // ── 6. Cancellation rate ──
+  // ── 6. 24-Month Contract Rate ──
+  const vStats24 = db.settings.vantageStats;
+  const month24Pct = vStats24 ? parseFloat(vStats24.month24||0) : 0;
+  if (month24Pct > 0) {
+    if (month24Pct < 20) {
+      insight('red', '🚨', `24-Month Rate Critical: ${month24Pct}% (minimum 20%)`,
+        `Your pay scale is docked 2% while below 20%. Current tier effectively ${Math.max(0, TIERS[Math.max(0,currentTierI)].pct*100 - 2)}% instead of ${TIERS[Math.max(0,currentTierI)].pct*100}%. Focus on selling 24-month contracts.`);
+    } else if (month24Pct < 25) {
+      insight('amber', '⚠️', `24-Month Rate Low: ${month24Pct}% (target 25%+)`,
+        `Getting close to the 20% threshold where your pay scale drops 2%. Push 24-month contracts at every door.`);
+    } else {
+      insight('green', '✅', `24-Month Rate: ${month24Pct}% — Safe`,
+        `Above the 20% minimum. Keep emphasizing 24-month agreements.`);
+    }
+  } else {
+    insight('blue', '📋', '24-Month Rate: Not entered',
+      'Enter your 24-month % in My Stats. If it drops below 20%, your commission rate gets docked 2%.');
+  }
+
+  // ── 7. Cancellation rate ──
   if (pulseSold > 0) {
     const cancelRate = Math.round(pulseInactive / pulseSold * 100);
     const color = cancelRate <= 15 ? 'green' : cancelRate <= 25 ? 'amber' : 'red';
