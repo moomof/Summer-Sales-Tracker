@@ -2654,13 +2654,13 @@ function renderDashboard() {
   document.getElementById('progAcctsMarker').style.left = lyAcctPct + '%';
   // Update LY accounts marker label dynamically
   const progAcctsMarkerLabel = document.querySelector('#progAcctsMarker .progress-marker-label');
-  if (progAcctsMarkerLabel) progAcctsMarkerLabel.textContent = 'LY: ' + S('lyAccounts');
+  if (progAcctsMarkerLabel) progAcctsMarkerLabel.textContent = 'LY: ' + (S('lyActiveAccounts') || S('lyAccounts'));
   // Update LY revenue marker dynamically
   const lyRevPct = Math.min(100, (S('lyRevenue') / revTarget) * 100);
   const progRevMarker = document.getElementById('progRevMarker');
   if (progRevMarker) progRevMarker.style.left = lyRevPct + '%';
   const progRevMarkerLabel = document.getElementById('progRevMarkerLabel');
-  if (progRevMarkerLabel) progRevMarkerLabel.textContent = 'LY: $' + fmtK(S('lyRevenue'));
+  if (progRevMarkerLabel) progRevMarkerLabel.textContent = 'LY: $' + fmtK(S('lyActiveRevenue') || S('lyRevenue'));
 
   // Highlights — all auto-calculated from logs
   const streak = calcStreak();
@@ -2744,10 +2744,10 @@ function renderDashboard() {
   const projectedRevFull = revenueBase + dailyRevAvg * futureDays;
   const revPace = '$' + fmtK(projectedRevFull);
 
-  const todayTarget = Math.ceil(neededPerDay);
-  const weekTarget = Math.ceil(neededPerDay * 5);
-  setPaceVal('paceTodayTarget', todayTarget + ' net/day needed', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
-  setPaceVal('paceWeekTarget', weekTarget + ' net/week needed', '');
+  const todayTarget = neededPerDay;
+  const weekTarget = neededPerDay * 5;
+  setPaceVal('paceTodayTarget', todayTarget.toFixed(1) + ' net/day needed', todayTarget <= 3 ? 'good' : todayTarget <= 5 ? 'warn' : 'bad');
+  setPaceVal('paceWeekTarget', weekTarget.toFixed(1) + ' net/week needed', '');
   const paceGap = onPaceFor - accountTarget;
   const paceGapStr = paceGap >= 0 ? ` (+${paceGap})` : ` (${paceGap})`;
   setPaceVal('paceOnTrack', onPaceFor + ' accts' + paceGapStr, onPaceFor >= accountTarget ? 'good' : onPaceFor >= accountTarget * 0.85 ? 'warn' : 'bad');
