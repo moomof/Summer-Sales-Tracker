@@ -124,11 +124,13 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
+  min-height: -webkit-fill-available;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.25s, color 0.25s;
   overscroll-behavior: none;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 button { font-family: var(--font-body); cursor: pointer; border: none; background: none; color: inherit; }
 input, select, textarea { font-family: var(--font-body); }
@@ -210,7 +212,7 @@ nav {
 
   /* ── Layout ── */
   .main-content { margin-left: 0 !important; padding-bottom: 0; height: 100dvh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-  .page { padding: calc(20px + var(--safe-top)) 12px calc(var(--nav-h) + var(--safe-bottom) + 28px); overflow-x: hidden; }
+  .page { padding: calc(20px + env(safe-area-inset-top, 0px)) 12px calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 28px); overflow-x: hidden; }
   .page-header { margin-bottom: 16px; padding-bottom: 14px; }
   .page-title { font-size: 20px; font-weight: 700; }
 
@@ -1711,6 +1713,13 @@ const DEFAULT_SETTINGS = {
   seasonEnd: '2026-08-29',
   lyAccounts: 131,
   lyRevenue: 116940,
+  lyActiveAccounts: 110,
+  lyActiveRevenue: 98478,
+  lyServicedAccounts: 111,
+  lyServicedRevenue: 99278,
+  lyInactiveAccounts: 20,
+  lyInactiveRevenue: 17661,
+  lyCancelRate: 0.153,
   housingPerPeriod: 250,
   supabaseUrl: '',
   supabaseKey: '',
@@ -2099,7 +2108,7 @@ function renderForecast() {
   const elapsedDays = Math.max(1, totalSeasonDays - daysLeft);
   const accountTarget = parseInt(S('accountTarget'));
   const revTarget = parseInt(S('revenueTarget'));
-  const lyAccounts = parseInt(S('lyAccounts'));
+  const lyAccounts = parseInt(S('lyActiveAccounts')) || parseInt(S('lyAccounts'));
   const pulse = db.pulses.length > 0 ? db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0] : null;
   const pulseSold = pulse ? parseInt(pulse.sold||0) : 0;
   const pulseInactive = pulse ? parseInt(pulse.inactive||0) : 0;
@@ -2430,7 +2439,7 @@ function renderInsights() {
   }
 
   // ── 7. vs Last Year ──
-  const lyAccounts = parseInt(S('lyAccounts'));
+  const lyAccounts = parseInt(S('lyActiveAccounts')) || parseInt(S('lyAccounts'));
   const lyPace = lyAccounts / totalSeasonDays;
   const myPace = pulseSold / Math.max(1, elapsedDays);
   const delta = myPace - lyPace;
@@ -3970,6 +3979,14 @@ function init() {
       await syncUp();
     }, 1500);
   }
+
+  // Force iOS safe area recalculation on first render
+  setTimeout(() => {
+    window.scrollTo(0, 1);
+    window.scrollTo(0, 0);
+    document.querySelector('.main-content')?.scrollTo(0, 1);
+    document.querySelector('.main-content')?.scrollTo(0, 0);
+  }, 150);
 }
 
 
