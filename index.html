@@ -2241,15 +2241,26 @@ function renderForecast() {
           return { day: d, count: dayLogs.length, accts, apd: dayLogs.length > 0 ? accts/dayLogs.length : 0 };
         }).filter(d => d.count > 0 && d.day !== 'Sun');
         const maxApd = Math.max(...dowData.map(d => d.apd), 0.1);
-        dowCard.innerHTML = dowData.map(d => `
+        // Add average KES per day of week
+        const dowKES = days.map((d,i) => {
+          const dayLogs = db.logs.filter(l => new Date(l.date+'T00:00:00').getDay() === i);
+          const kesScores = dayLogs.map(l => calcKES(l, db.logs)).filter(k => k !== null);
+          return { day: d, avgKES: kesScores.length > 0 ? kesScores.reduce((s,k) => s+k.kes,0)/kesScores.length : null };
+        });
+
+        dowCard.innerHTML = dowData.map(d => {
+          const kesInfo = dowKES.find(k => k.day === d.day);
+          const kesDisplay = kesInfo && kesInfo.avgKES !== null ? ` · KES ${kesInfo.avgKES.toFixed(1)}` : '';
+          return `
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
             <div style="width:32px;font-size:12px;font-weight:600;color:var(--text2);">${d.day}</div>
             <div style="flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;">
               <div style="height:100%;width:${Math.round(d.apd/maxApd*100)}%;background:var(--accent);border-radius:4px;"></div>
             </div>
             <div style="width:70px;text-align:right;font-size:12px;font-family:var(--font-mono);">${d.apd.toFixed(1)}/day</div>
-            <div style="width:50px;text-align:right;font-size:11px;color:var(--text3);">${d.count} days</div>
-          </div>`).join('') + '<div style="font-size:11px;color:var(--text3);margin-top:8px;">Accounts sold per day knocked, by day of week</div>';
+            <div style="width:60px;text-align:right;font-size:11px;color:var(--text3);">${kesDisplay || d.count + ' days'}</div>
+          </div>`;
+        }).join('') + '<div style="font-size:11px;color:var(--text3);margin-top:8px;">Accounts/day and avg Knock Efficiency Score by day of week</div>';
       } else {
         dowCard.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0;">Log more days to see day-of-week patterns.</div>';
       }
@@ -3327,6 +3338,60 @@ function resetLogForm() {
   updateLogActiveCalc();
 }
 
+
+function calcKES(log, allLogs) {
+  const knocks = parseInt(log.knocks)||0;
+  const talks = parseInt(log.talks)||0;
+  const accounts = (parseInt(log.sold_accounts)||0) || ((parseInt(log.pest)||0) + (parseInt(log.mosquito)||0));
+
+  // Need at least knocks to calculate
+  if (knocks === 0) return null;
+
+  // Season averages (only from days with knocks)
+  const knockDays = allLogs.filter(l => parseInt(l.knocks) > 0);
+  if (knockDays.length < 2) return null; // need some history
+
+  const avgKnocks = knockDays.reduce((s,l) => s + (parseInt(l.knocks)||0), 0) / knockDays.length;
+  const avgDA = knockDays.reduce((s,l) => {
+    const a = (parseInt(l.sold_accounts)||0) || ((parseInt(l.pest)||0)+(parseInt(l.mosquito)||0));
+    return s + (a / Math.max(1, parseInt(l.knocks)||1));
+  }, 0) / knockDays.length;
+
+  // This day's metrics
+  const dayDA = accounts / knocks;
+
+  // Volume score: 0-10 based on knocks vs average (capped at 2x)
+  const volScore = Math.min(10, (knocks / avgKnocks) * 5);
+  // Conversion score: 0-10 based on DA% vs average (capped at 2x)
+  const convScore = avgDA > 0 ? Math.min(10, (dayDA / avgDA) * 5) : 5;
+
+  // Combined KES: weighted average
+  const kes = Math.round((volScore * 0.4 + convScore * 0.6) * 10) / 10;
+
+  // Diagnose
+  const volAbove = knocks >= avgKnocks * 0.9;
+  const convAbove = dayDA >= avgDA * 0.9;
+
+  let label, cls;
+  if (volAbove && convAbove) {
+    if (kes >= 7) { label = '🔥 On fire'; cls = 'great'; }
+    else { label = '✅ Solid day'; cls = 'good'; }
+  } else if (!volAbove && convAbove) {
+    label = '⚡ Sharp but short'; cls = 'warn';
+  } else if (volAbove && !convAbove) {
+    label = '💪 Grind day'; cls = 'warn';
+  } else {
+    label = '😤 Rough day'; cls = 'bad';
+  }
+
+  // Special: zero accounts but knocked a lot
+  if (accounts === 0 && knocks > avgKnocks * 0.8) {
+    label = '🚪 Grinding — no closes'; cls = 'bad';
+  }
+
+  return { kes, label, cls, volScore, convScore, avgKnocks: Math.round(avgKnocks), avgDA: (avgDA*100).toFixed(1) };
+}
+
 function renderLogHistory() {
   const container = document.getElementById('logHistory');
   const scrollY = document.querySelector('.main-content')?.scrollTop || 0;
@@ -3338,7 +3403,13 @@ function renderLogHistory() {
   }
   const prevScrollY = scrollY;
   container.innerHTML = sorted.map(l => {
-    const accounts = (parseInt(l.pest)||0) + (parseInt(l.mosquito)||0);
+    const accounts = (parseInt(l.sold_accounts)||0) || ((parseInt(l.pest)||0) + (parseInt(l.mosquito)||0));
+    const kes = calcKES(l, db.logs);
+    const kesBadge = kes ? `
+      <div class="kes-badge ${kes.cls}">
+        ${kes.label} · KES ${kes.kes}/10
+        <span style="font-weight:400;opacity:0.8;margin-left:2px;">(vol ${kes.volScore.toFixed(1)} · conv ${kes.convScore.toFixed(1)})</span>
+      </div>` : '';
     return `
       <div class="log-entry fade-in">
         <div class="log-entry-header">
@@ -3355,6 +3426,7 @@ function renderLogHistory() {
           ${l.knocks ? `<div class="log-stat">👊 <span>${l.knocks}</span> knocks</div>` : ''}
           ${l.talks ? `<div class="log-stat">💬 <span>${l.talks}</span> talks</div>` : ''}
         </div>
+        ${kesBadge}
         ${l.notes ? `<div class="log-notes">${escHtml(l.notes)}</div>` : ''}
         <div class="log-actions">
           <button class="btn btn-ghost btn-sm" onclick="editLog('${l.id}')">Edit</button>
