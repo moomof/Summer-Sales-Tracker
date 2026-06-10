@@ -1820,8 +1820,14 @@ async function syncFromCloud() {
           }
         });
         // Always preserve vantageStats from whichever source has it
-        if (!merged.vantageStats && s.vantageStats) merged.vantageStats = s.vantageStats;
-        if (!merged.vantageStats && db.settings.vantageStats) merged.vantageStats = db.settings.vantageStats;
+        // vantageStats: use whichever has a more recent date
+        const cloudStats = s.vantageStats;
+        const localStats = db.settings.vantageStats;
+        if (cloudStats && localStats) {
+          merged.vantageStats = (cloudStats.date || '') >= (localStats.date || '') ? cloudStats : localStats;
+        } else {
+          merged.vantageStats = cloudStats || localStats || null;
+        }
         db.settings = merged;
         applySettings();
       } catch(se) { console.warn('Settings parse failed:', se); }
