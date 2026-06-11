@@ -3852,7 +3852,11 @@ function calcStreak() {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0,10);
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function prevDate(dateStr) {
@@ -4021,11 +4025,28 @@ async function syncSilent() {
     if (pulses) db.pulses = pulses;
     if (daysOff) db.daysOff = daysOff;
     if (settings && settings[0]) {
-      const s = JSON.parse(settings[0].value);
-      // Merge carefully — don't overwrite local settings that user has changed
-      // Only pull in settings keys that aren't already set locally
-      db.settings = { ...DEFAULT_SETTINGS, ...s, ...db.settings };
-      applySettings();
+      try {
+        const s = JSON.parse(settings[0].value);
+        // Smart merge: same as syncFromCloud
+        const merged = { ...DEFAULT_SETTINGS, ...s };
+        Object.keys(db.settings).forEach(key => {
+          const localVal = db.settings[key];
+          const defaultVal = DEFAULT_SETTINGS[key];
+          if (JSON.stringify(localVal) !== JSON.stringify(defaultVal)) {
+            merged[key] = localVal;
+          }
+        });
+        // vantageStats: use whichever has more recent date
+        const _cs = s.vantageStats;
+        const _ls = db.settings.vantageStats;
+        if (_cs && _ls) {
+          merged.vantageStats = (_cs.date || '') >= (_ls.date || '') ? _cs : _ls;
+        } else {
+          merged.vantageStats = _cs || _ls || null;
+        }
+        db.settings = merged;
+        applySettings();
+      } catch(e) { console.warn('syncSilent settings parse:', e); }
     }
     saveLocal();
     renderAll();
