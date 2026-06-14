@@ -2929,9 +2929,9 @@ function renderCommission() {
       fillPct = 100;
     }
 
-    // Revenue impact label
-    const commBase = commissionBase || 0;
-    const tierComm = commBase > 0 ? Math.round(commBase * t.pct) : 0;
+    // Revenue impact label — commissionBase declared later, use pulseActiveRevenue or totalRevenue directly
+    const _commBase = (pulseActiveRevenue > 0 ? pulseActiveRevenue : totalRevenue) || 0;
+    const tierComm = _commBase > 0 ? Math.round(_commBase * t.pct) : 0;
     const sublabel = tierComm > 0
       ? `~$${tierComm.toLocaleString()} commission at this tier`
       : `${t.min}–${t.max === Infinity ? '∞' : t.max} net accounts`;
