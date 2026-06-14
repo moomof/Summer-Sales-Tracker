@@ -1883,7 +1883,12 @@ async function syncFromCloud() {
       } catch(se) { console.warn('Settings parse failed:', se); }
     }
     saveLocal();
-    try { renderAll(); } catch(re) { console.error('renderAll failed:', re); }
+    // Only render if DOM is ready
+    if (document.getElementById('kpiAccounts')) {
+      try { renderAll(); } catch(re) { console.error('renderAll failed:', re); }
+    } else {
+      setTimeout(() => { try { renderAll(); } catch(e) {} }, 200);
+    }
     setSyncStatus('idle');
     showToast('Synced ✓ — ' + (db.logs.length) + ' logs, ' + (db.pulses.length) + ' pulses', 'success');
   } catch(e) {
@@ -2600,8 +2605,10 @@ function renderDashboard() {
   document.getElementById('heroDaysLeft').textContent = daysLeft;
 
   // KPIs
-  document.getElementById('kpiAccounts').textContent = authNet;
-  document.getElementById('kpiAccountsTarget').textContent = accountTarget;
+  const _kpiAccts = document.getElementById('kpiAccounts');
+  const _kpiAcctsTarget = document.getElementById('kpiAccountsTarget');
+  if (_kpiAccts) _kpiAccts.textContent = authNet;
+  if (_kpiAcctsTarget) _kpiAcctsTarget.textContent = accountTarget;
   const kpiAcctsSub = document.querySelector('#kpiAccounts')?.closest('.kpi-card')?.querySelector('.kpi-sub');
   if (kpiAcctsSub) kpiAcctsSub.textContent = pulseInactiveNet > 0 ? totalAccounts + ' sold · ' + pulseInactiveNet + ' cancelled' : 'of ' + accountTarget + ' target';
   document.getElementById('kpiAcvSub').textContent = hasNetData && pulseInactiveNet > 0
@@ -2901,6 +2908,12 @@ function renderCommission() {
   const latestPulseAdv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
   const servicedCount = latestPulseAdv ? parseInt(latestPulseAdv.serviced||0) : 0;
 
+  // Declare pulseActiveRevenue early so tier grid can use it
+  const latestPulseForCommEarly = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const pulseActiveRevenueEarly = latestPulseForCommEarly
+    ? (parseFloat(latestPulseForCommEarly.serviced_revenue||0) + parseFloat(latestPulseForCommEarly.pending_revenue||0))
+    : 0;
+
   // Advances calc — must be before earnings breakdown
   const totalLoggedAccts = stats.totalPest + stats.totalMosquito;
   const pestRatio = totalLoggedAccts > 0 ? stats.totalPest / totalLoggedAccts : 1;
@@ -2930,7 +2943,7 @@ function renderCommission() {
     }
 
     // Revenue impact label — commissionBase declared later, use pulseActiveRevenue or totalRevenue directly
-    const _commBase = (pulseActiveRevenue > 0 ? pulseActiveRevenue : totalRevenue) || 0;
+    const _commBase = (pulseActiveRevenueEarly > 0 ? pulseActiveRevenueEarly : totalRevenue) || 0;
     const tierComm = _commBase > 0 ? Math.round(_commBase * t.pct) : 0;
     const sublabel = tierComm > 0
       ? `~$${tierComm.toLocaleString()} commission at this tier`
