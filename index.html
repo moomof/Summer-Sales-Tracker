@@ -239,7 +239,34 @@ nav {
   .card + .card { margin-top: 8px; }
 
   /* ── Tier banner ── */
-  .tier-banner { padding: 12px 14px; margin-bottom: 12px; }
+  .tier-row {
+  padding: 13px 16px; border-radius: var(--radius-sm);
+  margin-bottom: 6px; border: 1px solid var(--border);
+  transition: all 0.2s; position: relative; overflow: hidden;
+  cursor: default;
+}
+.tier-row.active-tier { border-color: var(--accent); }
+.tier-row.unlocked-tier { opacity: 0.8; }
+.tier-row-bg {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+  pointer-events: none; border-radius: var(--radius-sm);
+}
+.tier-row.active-tier .tier-row-bg { background: var(--tint-accent); }
+.tier-row.unlocked-tier .tier-row-bg { background: var(--tint-green); opacity: 0.6; }
+.tier-row-content { position: relative; display: flex; align-items: center; gap: 14px; }
+.tier-pct { font-family: var(--font-mono); font-size: 20px; font-weight: 700; min-width: 56px; }
+.tier-row.active-tier .tier-pct { color: var(--accent); }
+.tier-row.unlocked-tier .tier-pct { color: var(--green); }
+.tier-info { flex: 1; min-width: 0; }
+.tier-range { font-size: 12.5px; color: var(--text2); font-weight: 500; }
+.tier-sublabel { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.tier-badge { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+.tier-badge.active { background: var(--accent); color: white; }
+.tier-badge.unlocked { background: var(--tint-green); color: var(--green); border: 1px solid var(--tint-green-border); }
+.tier-badge.locked { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
+.tier-banner { padding: 12px 14px; margin-bottom: 12px; }
   .tier-rate { font-size: 18px; }
 
   /* ── Form inputs ── */
@@ -266,6 +293,7 @@ nav {
   .tier-row { padding: 9px 12px; }
   .tier-pct { font-size: 15px; min-width: 40px; }
   .tier-range { font-size: 11px; }
+  .tier-sublabel { font-size: 10px; }
 
   /* ── Pace rows ── */
   .pace-row { padding: 7px 0; }
@@ -443,6 +471,33 @@ nav {
 /* ============================================================
    TIER BANNER
    ============================================================ */
+.tier-row {
+  padding: 13px 16px; border-radius: var(--radius-sm);
+  margin-bottom: 6px; border: 1px solid var(--border);
+  transition: all 0.2s; position: relative; overflow: hidden;
+  cursor: default;
+}
+.tier-row.active-tier { border-color: var(--accent); }
+.tier-row.unlocked-tier { opacity: 0.8; }
+.tier-row-bg {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+  pointer-events: none; border-radius: var(--radius-sm);
+}
+.tier-row.active-tier .tier-row-bg { background: var(--tint-accent); }
+.tier-row.unlocked-tier .tier-row-bg { background: var(--tint-green); opacity: 0.6; }
+.tier-row-content { position: relative; display: flex; align-items: center; gap: 14px; }
+.tier-pct { font-family: var(--font-mono); font-size: 20px; font-weight: 700; min-width: 56px; }
+.tier-row.active-tier .tier-pct { color: var(--accent); }
+.tier-row.unlocked-tier .tier-pct { color: var(--green); }
+.tier-info { flex: 1; min-width: 0; }
+.tier-range { font-size: 12.5px; color: var(--text2); font-weight: 500; }
+.tier-sublabel { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.tier-badge { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+.tier-badge.active { background: var(--accent); color: white; }
+.tier-badge.unlocked { background: var(--tint-green); color: var(--green); border: 1px solid var(--tint-green-border); }
+.tier-badge.locked { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+
 .tier-banner {
   background: linear-gradient(90deg, var(--tint-purple), var(--tint-accent));
   border: 1px solid var(--tint-purple-border);
@@ -1500,11 +1555,6 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <div id="page-weekly" class="page">
   <div class="page-header"><div class="page-title">Weekly</div></div>
 
-  <div id="sixServicedWarning" style="display:none;" class="warning-banner">
-    <div class="warning-icon">⚠️</div>
-    <div class="warning-text"><strong>6+ Serviced Warning:</strong> You need <span id="warningServiced">0</span> serviced accounts per week from June 1. Currently at <span id="warningCurrentServiced">0</span>.</div>
-  </div>
-
   <!-- This week / Next week -->
   <div class="section-label">Focus Cards</div>
   <div class="week-focus-cards">
@@ -2178,7 +2228,7 @@ function renderForecast() {
         { name: 'Tuition Bonus', value: '$1,500', current: authNet, total: 100, metric: 'accounts + Aug best month', deadline: 'End of season' },
         { name: 'Top Producer Trip', value: '✈️ Trip', current: pulseServiced, total: 200, metric: 'serviced accounts', deadline: 'Sep 15' },
         { name: 'Vantage Cruise', value: '🚢 Cruise', current: pulseActiveRev, total: 150000, metric: 'active revenue', deadline: 'End of season', isRev: true },
-        { name: '6 Digits Sledge', value: '🔨 Swag', current: pulseActiveRev, total: 100000, metric: 'active revenue', deadline: 'End of season', isRev: true },
+        { name: '6 Digits Sledge', value: '🔨 Swag', current: pulseActiveRev, total: 100000, metric: 'serviced revenue in one month', deadline: 'Any month', isRev: true },
       ];
       bonusCard.innerHTML = bonuses.map(b => {
         const needed = Math.max(0, b.total - b.current);
@@ -2865,14 +2915,47 @@ function renderCommission() {
   const currentTier = calcTier(netAccountsComm);
   const tierGrid = document.getElementById('tierGrid');
   tierGrid.innerHTML = '';
-  TIERS.forEach((t, i) => {
+  TIERS.forEach((t, idx) => {
     const isActive = t === currentTier;
-    const isUnlocked = netAccountsComm > t.min && t !== currentTier;
+    const isUnlocked = netAccountsComm >= t.min && !isActive;
+    const cls = isActive ? 'active-tier' : isUnlocked ? 'unlocked-tier' : '';
+
+    // Progress bar fill
+    let fillPct = 0;
+    if (isActive) {
+      const range = t.max === Infinity ? 50 : (t.max - t.min + 1);
+      fillPct = Math.min(100, Math.round(((netAccountsComm - t.min) / range) * 100));
+    } else if (isUnlocked) {
+      fillPct = 100;
+    }
+
+    // Revenue impact label
+    const commBase = commissionBase || 0;
+    const tierComm = commBase > 0 ? Math.round(commBase * t.pct) : 0;
+    const sublabel = tierComm > 0
+      ? `~$${tierComm.toLocaleString()} commission at this tier`
+      : `${t.min}–${t.max === Infinity ? '∞' : t.max} net accounts`;
+
+    const badge = isActive
+      ? '<span class="tier-badge active">CURRENT</span>'
+      : isUnlocked
+        ? '<span class="tier-badge unlocked">✓</span>'
+        : `<span class="tier-badge locked">${t.min - netAccountsComm} to go</span>`;
+
+    const rangeStr = t.max === Infinity ? `${t.min}+ accounts` : `${t.min}–${t.max} accounts`;
+
     const div = document.createElement('div');
-    div.className = 'tier-row' + (isActive ? ' active-tier' : isUnlocked ? ' unlocked-tier' : '');
-    const rangeStr = t.max === Infinity ? `${t.min}+` : `${t.min}–${t.max}`;
-    const badge = isActive ? '<span class="tier-badge active">CURRENT</span>' : isUnlocked ? '<span class="tier-badge unlocked">✓</span>' : `<span class="tier-badge locked">${t.min > netAccountsComm ? t.min - netAccountsComm + ' away' : ''}</span>`;
-    div.innerHTML = `<div class="tier-pct">${t.pct*100}%</div><div class="tier-range">${rangeStr} accounts</div>${badge}`;
+    div.className = `tier-row ${cls}`;
+    div.innerHTML = `
+      <div class="tier-row-bg" style="width:${fillPct}%"></div>
+      <div class="tier-row-content">
+        <div class="tier-pct">${t.pct*100}%</div>
+        <div class="tier-info">
+          <div class="tier-range">${rangeStr}</div>
+          <div class="tier-sublabel">${sublabel}</div>
+        </div>
+        ${badge}
+      </div>`;
     tierGrid.appendChild(div);
   });
 
@@ -3001,7 +3084,15 @@ function renderCommission() {
     : 0;
   // Use serviced revenue if pulse data exists, otherwise fall back to total logged revenue
   const milestoneRev = servicedRev > 0 ? servicedRev : totalRevenue;
-  const rev100k = milestoneRev >= 100000;
+  // Sledge: $100K serviced in a SINGLE MONTH (not cumulative)
+  // Use current month pulse serviced revenue as proxy
+  const currentMonthStr = today.toISOString().slice(0,7);
+  const latestPulseSledge = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+  const sledgeMonthRev = latestPulseSledge && latestPulseSledge.date && latestPulseSledge.date.startsWith(currentMonthStr)
+    ? (parseFloat(latestPulseSledge.serviced_revenue||0))
+    : 0;
+  // Fall back to milestone rev if no current-month pulse
+  const rev100k = (sledgeMonthRev > 0 ? sledgeMonthRev : milestoneRev) >= 100000;
   const rev150k = milestoneRev >= 150000;
   const rev250k = milestoneRev >= 250000;
   const rev300k = milestoneRev >= 300000;
@@ -3053,9 +3144,9 @@ function renderCommission() {
       'Swag', (100 - netAccountsComm) + ' to go'
     ),
     bonusRow(
-      rev100k ? 'earned' : totalRevenue >= 80000 ? 'close' : 'far',
-      '6 Digits Club — Sledge Hammer 🔨', '$100K serviced revenue',
-      'Swag', '$' + Math.round(100000 - milestoneRev).toLocaleString() + ' to go'
+      rev100k ? 'earned' : milestoneRev >= 80000 ? 'close' : 'far',
+      '6 Digits Club — Sledge Hammer 🔨', '$100K serviced in a single month',
+      'Swag', '$' + Math.round(Math.max(0, 100000 - milestoneRev)).toLocaleString() + ' to go this month'
     ),
     bonusRow(
       rev150k ? 'earned' : totalRevenue >= 120000 ? 'close' : 'far',
@@ -3133,11 +3224,7 @@ function renderWeekly() {
   if (today >= juneFirst) {
     const latestPulse = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
     const serviced = latestPulse ? parseInt(latestPulse.serviced||0) : 0;
-    document.getElementById('sixServicedWarning').style.display = 'flex';
-    document.getElementById('warningServiced').textContent = '6+';
-    document.getElementById('warningCurrentServiced').textContent = serviced;
   } else {
-    document.getElementById('sixServicedWarning').style.display = 'none';
   }
 
   // Focus cards
