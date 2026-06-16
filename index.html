@@ -1388,60 +1388,29 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div style="font-size:11px;color:var(--text3);text-align:right;">Last updated:<br><span id="statsLastUpdated" style="color:var(--text2);font-weight:500;">Never</span></div>
   </div>
 
-  <!-- Input form -->
+  <!-- Manual input — only fields Pulse/logs can't derive -->
   <div class="card mb-12">
-    <div class="section-label" style="margin-bottom:12px;">Vantage Profile Stats</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="form-field">
-          <label class="form-label">Serviced Revenue ($)</label>
-          <input type="number" class="form-input" id="statServicedRev" placeholder="0" min="0" step="0.01">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Avg Contract Value ($)</label>
-          <input type="number" class="form-input" id="statACV" placeholder="0" min="0" step="0.01">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="form-field">
-          <label class="form-label">Autopay %</label>
-          <input type="number" class="form-input" id="statAutopay" placeholder="0" min="0" max="100" step="0.1">
-        </div>
-        <div class="form-field">
-          <label class="form-label">24-Month Accounts %</label>
-          <input type="number" class="form-input" id="stat24Month" placeholder="0" min="0" max="100" step="0.1">
-        </div>
+    <div class="section-label" style="margin-bottom:4px;">Manual Entry</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:12px;">Only these two fields need manual entry — everything else is auto-calculated from Pulse and your logs.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="form-field">
+        <label class="form-label">Autopay %</label>
+        <input type="number" class="form-input" id="statAutopay" placeholder="0" min="0" max="100" step="0.1">
       </div>
       <div class="form-field">
-        <label class="form-label">Serviced Percent %</label>
-        <input type="number" class="form-input" id="statServicedPct" placeholder="0" min="0" max="100" step="0.01">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="form-field">
-          <label class="form-label">Best Day Revenue ($)</label>
-          <input type="number" class="form-input" id="statBestDayRev" placeholder="0" min="0" step="0.01">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Best Day Date</label>
-          <input type="date" class="form-input" id="statBestDayDate" max="2026-08-29">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="form-field">
-          <label class="form-label">Best Week Revenue ($)</label>
-          <input type="number" class="form-input" id="statBestWeekRev" placeholder="0" min="0" step="0.01">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Best Week Start</label>
-          <input type="date" class="form-input" id="statBestWeekDate" max="2026-08-29">
-        </div>
-      </div>
-      <div class="form-field">
-        <label class="form-label">Best Month Revenue ($)</label>
-        <input type="number" class="form-input" id="statBestMonthRev" placeholder="0" min="0" step="0.01">
+        <label class="form-label">24-Month Accounts %</label>
+        <input type="number" class="form-input" id="stat24Month" placeholder="0" min="0" max="100" step="0.1">
       </div>
     </div>
     <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="saveStats()">Save Stats</button>
+  </div>
+
+  <!-- Hidden fields still needed for saveStats compatibility -->
+  <div style="display:none;">
+    <input id="statServicedRev"><input id="statACV"><input id="statServicedPct">
+    <input id="statBestDayRev"><input id="statBestDayDate">
+    <input id="statBestWeekRev"><input id="statBestWeekDate">
+    <input id="statBestMonthRev">
   </div>
 
   <!-- Current stats display -->
@@ -3790,15 +3759,60 @@ function renderStats() {
 
   if (lastUpdated && s.date) lastUpdated.textContent = fmtDateFull(s.date);
 
-  // Pre-fill form
-  const fields = {
-    statServicedRev: s.servicedRev, statACV: s.acv,
-    statAutopay: s.autopay, stat24Month: s.month24,
-    statServicedPct: s.servicedPct, statRanking: s.ranking,
-    statBestDayRev: s.bestDayRev, statBestDayDate: s.bestDayDate,
-    statBestWeekRev: s.bestWeekRev, statBestWeekDate: s.bestWeekDate,
-    statBestMonthRev: s.bestMonthRev,
-  };
+  // ── Auto-derive everything from Pulse + logs ──
+  const latestPulseStats = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
+
+  // Serviced revenue — from pulse
+  const pulseServicedRev = latestPulseStats ? parseFloat(latestPulseStats.serviced_revenue||0) : 0;
+  if (pulseServicedRev > 0) s.servicedRev = pulseServicedRev;
+
+  // ACV — pulse active revenue / net accounts
+  const pulseNet = latestPulseStats
+    ? parseInt(latestPulseStats.sold||0) - parseInt(latestPulseStats.inactive||0) : 0;
+  const pulseActiveRevStats = latestPulseStats
+    ? (parseFloat(latestPulseStats.serviced_revenue||0) + parseFloat(latestPulseStats.pending_revenue||0)) : 0;
+  if (pulseNet > 0 && pulseActiveRevStats > 0) s.acv = Math.round(pulseActiveRevStats / pulseNet);
+
+  // Serviced percent — pulse serviced / pulse sold
+  const pulseSoldStats = latestPulseStats ? parseInt(latestPulseStats.sold||0) : 0;
+  const pulseServicedStats = latestPulseStats ? parseInt(latestPulseStats.serviced||0) : 0;
+  if (pulseSoldStats > 0) s.servicedPct = parseFloat(((pulseServicedStats / pulseSoldStats) * 100).toFixed(2));
+
+  // Best day, week, month — from logs
+  const bestDayLog = db.logs.reduce((best, l) => {
+    const rev = parseFloat(l.revenue)||0;
+    return rev > (parseFloat(best?.revenue)||0) ? l : best;
+  }, null);
+  if (bestDayLog && (parseFloat(bestDayLog.revenue)||0) > (s.bestDayRev||0)) {
+    s.bestDayRev = parseFloat(bestDayLog.revenue)||0;
+    s.bestDayDate = bestDayLog.date;
+  }
+
+  const weeklyTotalsStats = calcWeeklyTotals();
+  const bestWeekStats = weeklyTotalsStats.length > 0
+    ? weeklyTotalsStats.reduce((best, w) => w.revenue > best.revenue ? w : best, weeklyTotalsStats[0])
+    : null;
+  if (bestWeekStats && bestWeekStats.revenue > (s.bestWeekRev||0)) {
+    s.bestWeekRev = bestWeekStats.revenue;
+    s.bestWeekDate = bestWeekStats.startDate || '';
+  }
+
+  const monthRevs = {};
+  db.logs.forEach(l => {
+    const m = l.date.slice(0,7);
+    monthRevs[m] = (monthRevs[m]||0) + (parseFloat(l.revenue)||0);
+  });
+  if (Object.keys(monthRevs).length > 0) {
+    const bestMonthRev = Math.max(...Object.values(monthRevs));
+    if (bestMonthRev > (s.bestMonthRev||0)) s.bestMonthRev = bestMonthRev;
+  }
+
+  // Save auto-derived values back silently
+  db.settings.vantageStats = s;
+  saveLocal();
+
+  // Pre-fill only the manual fields
+  const fields = { statAutopay: s.autopay, stat24Month: s.month24 };
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
     if (el && val) el.value = val;
