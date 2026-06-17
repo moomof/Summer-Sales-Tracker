@@ -1288,15 +1288,20 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div style="font-size:11px;color:var(--text3);text-align:right;">Last updated:<br><span id="pulseLastUpdated" style="color:var(--text2);font-weight:500;">Never</span></div>
   </div>
 
+  <!-- Current snapshot display — shown first -->
+  <div id="pulseCurrentDisplay"></div>
+
+  <!-- Update form — below snapshot -->
+  <div class="section-label" style="margin-top:4px;">Update Snapshot</div>
   <div class="card mb-12">
-    <!-- Active (calculated — shown first to match Vantage order) -->
-    <div style="margin-bottom:14px;padding:12px 14px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
-      <div class="section-label" style="margin-bottom:6px;color:var(--green);">Active (Auto-calculated)</div>
-      <div style="display:flex;gap:24px;font-size:13px;">
+    <!-- Active (calculated) -->
+    <div style="margin-bottom:14px;padding:10px 12px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);">
+      <div style="font-size:10.5px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Active (Auto-calculated)</div>
+      <div style="display:flex;gap:20px;font-size:13px;">
         <div>Accounts: <span id="calcActiveAccts" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">0</span></div>
         <div>Revenue: <span id="calcActiveRev" style="font-family:var(--font-mono);font-weight:600;color:var(--green);">$0</span></div>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">Serviced + Pending — matches "Active" on Vantage Pulse</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;">Serviced + Pending — matches "Active" on Vantage Pulse</div>
     </div>
 
     <!-- Serviced -->
@@ -1344,7 +1349,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       </div>
     </div>
 
-    <!-- Sold (bottom — last column on Vantage) -->
+    <!-- Sold -->
     <div style="margin-bottom:14px;">
       <div class="section-label" style="margin-bottom:8px;color:var(--accent);">Sold (Season Total)</div>
       <div class="form-grid">
@@ -1374,9 +1379,6 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
     <button class="btn btn-primary btn-full" onclick="savePulse()">Save Pulse Snapshot</button>
   </div>
-
-  <!-- Current snapshot display -->
-  <div id="pulseCurrentDisplay"></div>
 </div>
 
 <div id="page-stats" class="page">
@@ -1859,9 +1861,7 @@ async function syncFromCloud() {
       setTimeout(() => { try { renderAll(); } catch(e) {} }, 200);
     }
     setSyncStatus('idle');
-    const _hasStats = db.settings.vantageStats && db.settings.vantageStats.date;
-    const _statsStr = _hasStats ? ' · stats ' + db.settings.vantageStats.date : ' · no stats';
-    showToast('Synced ✓ — ' + db.logs.length + ' logs · ' + db.pulses.length + ' pulses' + _statsStr, 'success');
+    showToast('Synced ✓', 'success');
   } catch(e) {
     console.error('Sync error:', e);
     setSyncStatus('error');
