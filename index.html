@@ -3048,8 +3048,8 @@ function renderCommission() {
     const _svcComm = Math.round(_svcRev * _rate);
     const _pendComm = Math.round(_pendRev * _rate);
     const _inactComm = Math.round(_inactRev * _rate);
-    const _todayNet = Math.max(0, Math.round(_svcComm - totalAdvances - totalHousing));
-    const _fullNet = Math.max(0, Math.round((_svcComm + _pendComm) - totalAdvances - totalHousing));
+    const _todayNet = Math.max(0, Math.round(_svcComm - totalAdvances - housingPayments));
+    const _fullNet = Math.max(0, Math.round((_svcComm + _pendComm) - totalAdvances - housingPayments));
     const _sc = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     _sc('scServiced', '~$' + _svcComm.toLocaleString());
     _sc('scPending', '~$' + _pendComm.toLocaleString());
