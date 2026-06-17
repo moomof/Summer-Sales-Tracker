@@ -1859,7 +1859,9 @@ async function syncFromCloud() {
       setTimeout(() => { try { renderAll(); } catch(e) {} }, 200);
     }
     setSyncStatus('idle');
-    showToast('Synced ✓ — ' + (db.logs.length) + ' logs, ' + (db.pulses.length) + ' pulses', 'success');
+    const _hasStats = db.settings.vantageStats && db.settings.vantageStats.date;
+    const _statsStr = _hasStats ? ' · stats ' + db.settings.vantageStats.date : ' · no stats';
+    showToast('Synced ✓ — ' + db.logs.length + ' logs · ' + db.pulses.length + ' pulses' + _statsStr, 'success');
   } catch(e) {
     console.error('Sync error:', e);
     setSyncStatus('error');
@@ -3736,7 +3738,7 @@ function saveStats() {
   };
   db.settings.vantageStats = stats;
   saveLocal();
-  scheduleSyncUp();
+  syncUp(); // Immediate push — don't debounce stats saves
   renderStats();
   // Update dashboard highlights immediately
   requestAnimationFrame(() => {
@@ -3807,9 +3809,10 @@ function renderStats() {
     if (bestMonthRev > (s.bestMonthRev||0)) s.bestMonthRev = bestMonthRev;
   }
 
-  // Save auto-derived values back silently
+  // Save auto-derived values back silently and push to cloud
   db.settings.vantageStats = s;
   saveLocal();
+  scheduleSyncUp();
 
   // Pre-fill only the manual fields
   const fields = { statAutopay: s.autopay, stat24Month: s.month24 };
