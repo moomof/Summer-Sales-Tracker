@@ -1484,6 +1484,42 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="earning-row total-row"><span class="earning-key" style="font-weight:600;color:var(--text);">Net Est. Commission</span><span class="earning-val bold" id="ebNet">$0</span></div>
   </div>
 
+  <!-- Serviced Commission Breakdown -->
+  <div class="section-label">Commission by Status</div>
+  <div class="card mb-12" id="servicedCommCard">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="padding:12px 10px;background:var(--tint-green);border:1px solid var(--tint-green-border);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Locked In</div>
+        <div style="font-family:var(--font-mono);font-size:17px;font-weight:700;color:var(--green);" id="scServiced">$0</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">serviced rev</div>
+      </div>
+      <div style="padding:12px 10px;background:var(--tint-amber);border:1px solid var(--tint-amber-border);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">At Risk</div>
+        <div style="font-family:var(--font-mono);font-size:17px;font-weight:700;color:var(--amber);" id="scPending">$0</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">pending rev</div>
+      </div>
+      <div style="padding:12px 10px;background:var(--tint-red);border:1px solid var(--tint-red-border);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Lost</div>
+        <div style="font-family:var(--font-mono);font-size:17px;font-weight:700;color:var(--red);" id="scInactive">$0</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">inactive rev</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:6px;">
+      <div class="earning-row">
+        <span class="earning-key">If season ended today <span style="font-size:10px;color:var(--text3);">(serviced only)</span></span>
+        <span class="earning-val green" id="scTodayNet">$0</span>
+      </div>
+      <div class="earning-row">
+        <span class="earning-key">If all pending stick <span style="font-size:10px;color:var(--text3);">(full active)</span></span>
+        <span class="earning-val" id="scFullNet">$0</span>
+      </div>
+      <div class="earning-row">
+        <span class="earning-key" style="color:var(--amber);">Commission at risk <span style="font-size:10px;color:var(--text3);">(pending × rate)</span></span>
+        <span class="earning-val" style="color:var(--amber);" id="scAtRisk">$0</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Monthly Breakdown -->
   <div class="section-label">Monthly Breakdown</div>
   <div class="card mb-12">
