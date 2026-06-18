@@ -1098,9 +1098,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   </div>
 
   <!-- Tier Countdown Banner -->
-  <div class="tier-banner" id="tierBanner" style="position:relative;overflow:hidden;">
-    <div id="tierProgressBg" style="position:absolute;left:0;top:0;bottom:0;width:0%;background:rgba(255,255,255,0.06);border-radius:var(--radius-sm);transition:width 0.8s cubic-bezier(0.4,0,0.2,1);pointer-events:none;"></div>
-    <div style="position:relative;display:flex;justify-content:space-between;align-items:center;width:100%;">
+  <div class="tier-banner" id="tierBanner">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <div class="tier-banner-left">
         <div class="tier-current" id="tierCurrentLabel">Current Tier</div>
         <div class="tier-rate" id="tierCurrentRate">—%</div>
@@ -1110,12 +1109,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <div class="tier-next-val" id="tierNextVal">— accts</div>
       </div>
     </div>
-    <div style="position:relative;margin-top:10px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
-      <div id="tierProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);"></div>
+    <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
+      <div id="tierProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.8s ease;"></div>
     </div>
-    <div style="position:relative;display:flex;justify-content:space-between;margin-top:4px;">
+    <div style="display:flex;justify-content:space-between;margin-top:5px;">
       <span style="font-size:10px;color:var(--text3);" id="tierProgressMin">—</span>
-      <span style="font-size:10px;color:var(--text3);" id="tierProgressPct">—% through tier</span>
+      <span style="font-size:10px;color:var(--text3);" id="tierProgressPct"></span>
       <span style="font-size:10px;color:var(--text3);" id="tierProgressMax">—</span>
     </div>
   </div>
