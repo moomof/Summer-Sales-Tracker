@@ -1994,7 +1994,22 @@ function applySettings() {
   const totalKnockingDays = getTotalSeasonWorkingDays();
   db.settings.knockingDays = totalKnockingDays;
   const kdDisplay = document.getElementById('settingKnockingDaysDisplay');
-  if (kdDisplay) kdDisplay.textContent = totalKnockingDays + ' days';
+  if (kdDisplay) kdDisplay.textContent = totalKnockingDays;
+
+  // Elapsed and remaining
+  const todayForKD = new Date(); todayForKD.setHours(0,0,0,0);
+  const { start: kdStart } = getSeasonDates();
+  let kdElapsed = 0;
+  const kdCur = new Date(kdStart);
+  while (kdCur <= todayForKD) {
+    if (!isDayOff(kdCur.toISOString().slice(0,10))) kdElapsed++;
+    kdCur.setDate(kdCur.getDate() + 1);
+  }
+  const kdRemaining = Math.max(0, totalKnockingDays - kdElapsed);
+  const elEl = document.getElementById('settingElapsedDisplay');
+  const remEl = document.getElementById('settingRemainingDisplay');
+  if (elEl) elEl.textContent = kdElapsed;
+  if (remEl) remEl.textContent = kdRemaining;
   renderDaysOff();
 }
 
