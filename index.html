@@ -1100,14 +1100,14 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <!-- Tier Countdown Banner -->
   <div id="tierBanner" class="tier-row active-tier" style="margin-bottom:0;">
     <div id="tierProgressBar" class="tier-row-bg" style="width:0%;"></div>
-    <div class="tier-row-content">
+    <div style="position:relative;display:flex;align-items:center;gap:12px;width:100%;">
       <div class="tier-pct" id="tierCurrentRate">30%</div>
-      <div class="tier-info">
+      <div style="flex:1;min-width:0;">
         <div class="tier-range" id="tierCurrentLabel">Tier 1 · 1–149 accounts</div>
         <div class="tier-sublabel" id="tierProgressPct">0% through tier</div>
       </div>
-      <div style="text-align:right;">
-        <div style="font-size:10px;color:var(--text3);">NEXT TIER IN</div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;">Next Tier In</div>
         <div class="tier-next-val" id="tierNextVal">— accts</div>
       </div>
     </div>
