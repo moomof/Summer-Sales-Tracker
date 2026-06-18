@@ -1098,24 +1098,18 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   </div>
 
   <!-- Tier Countdown Banner -->
-  <div class="tier-banner" id="tierBanner">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div class="tier-banner-left">
-        <div class="tier-current" id="tierCurrentLabel">Current Tier</div>
-        <div class="tier-rate" id="tierCurrentRate">—%</div>
+  <div id="tierBanner" class="tier-row active-tier" style="margin-bottom:0;">
+    <div id="tierProgressBar" class="tier-row-bg" style="width:0%;"></div>
+    <div class="tier-row-content">
+      <div class="tier-pct" id="tierCurrentRate">30%</div>
+      <div class="tier-info">
+        <div class="tier-range" id="tierCurrentLabel">Tier 1 · 1–149 accounts</div>
+        <div class="tier-sublabel" id="tierProgressPct">0% through tier</div>
       </div>
-      <div class="tier-banner-right" style="text-align:right;">
-        <div class="tier-next-label">Next tier in</div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--text3);">NEXT TIER IN</div>
         <div class="tier-next-val" id="tierNextVal">— accts</div>
       </div>
-    </div>
-    <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
-      <div id="tierProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.8s ease;"></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-top:5px;">
-      <span style="font-size:10px;color:var(--text3);" id="tierProgressMin">—</span>
-      <span style="font-size:10px;color:var(--text3);" id="tierProgressPct"></span>
-      <span style="font-size:10px;color:var(--text3);" id="tierProgressMax">—</span>
     </div>
   </div>
 
@@ -2707,13 +2701,9 @@ function renderDashboard() {
   const _tierRange = currentTierForBanner.max === Infinity ? 50 : (currentTierForBanner.max - currentTierForBanner.min + 1);
   const _tierFill = Math.min(100, Math.max(0, Math.round(((safeAccounts - currentTierForBanner.min) / _tierRange) * 100)));
   const _tpBar = document.getElementById('tierProgressBar');
-  const _tpMin = document.getElementById('tierProgressMin');
-  const _tpMax = document.getElementById('tierProgressMax');
   const _tpPct = document.getElementById('tierProgressPct');
   if (_tpBar) _tpBar.style.width = _tierFill + '%';
-  if (_tpMin) _tpMin.textContent = currentTierForBanner.min;
-  if (_tpMax) _tpMax.textContent = currentTierForBanner.max === Infinity ? '∞' : currentTierForBanner.max;
-  if (_tpPct) _tpPct.textContent = _tierFill + '% through tier';
+  if (_tpPct) _tpPct.textContent = _tierFill + '% through tier · ' + safeAccounts + ' of ' + (currentTierForBanner.max === Infinity ? '∞' : currentTierForBanner.max);
 
   // Pulse Board
   const latestPulse = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
