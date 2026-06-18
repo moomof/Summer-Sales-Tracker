@@ -2447,39 +2447,27 @@ function renderInsights() {
   }
 
   // ── 2. Housing Bonus (175 active by Oct 1) ──
-  const oct1 = new Date('2026-10-01T00:00:00');
-  const daysToOct1 = Math.max(0, Math.ceil((oct1 - today) / 86400000));
-  const workDaysToOct1 = Array.from({length: daysToOct1}, (_, i) => {
-    const d = new Date(today); d.setDate(d.getDate() + i);
-    return isDayOff(d.toISOString().slice(0,10)) ? 0 : 1;
-  }).reduce((a,b) => a+b, 0);
   const housingNeeded = Math.max(0, 175 - authNet);
   if (housingNeeded === 0) {
     insight('green', '🏠', 'Housing Bonus Secured — $2,000',
       `You have ${authNet} active accounts. Housing bonus locked in for Oct 25.`);
-  } else if (workDaysToOct1 > 0) {
-    const pace = (housingNeeded / workDaysToOct1).toFixed(1);
+  } else if (daysLeft > 0) {
+    const pace = (housingNeeded / daysLeft).toFixed(1);
     const color = parseFloat(pace) <= 3 ? 'amber' : 'red';
     insight(color, '🏠', `Housing Bonus: ${housingNeeded} accounts to go`,
-      `Need ${housingNeeded} more active accounts by Oct 1 for $2,000 bonus. That's ${pace}/day on ${workDaysToOct1} remaining work days.`);
+      `Need ${housingNeeded} more active accounts by Oct 1 for $2,000 bonus. That's ${pace}/day on ${daysLeft} days left.`);
   }
 
   // ── 3. Top Producer Trip (200 serviced + re-sign by Sep 15) ──
-  const sep15 = new Date('2026-09-15T00:00:00');
-  const daysToSep15 = Math.max(0, Math.ceil((sep15 - today) / 86400000));
   const tripAcctsNeeded = Math.max(0, 200 - pulseServiced);
   if (tripAcctsNeeded === 0) {
     insight('green', '✈️', 'Trip Qualifier — Accounts Hit!',
       `${pulseServiced} serviced accounts. Re-sign by Sep 15 to lock in the trip.`);
   } else {
-    const workDaysToSep15 = Array.from({length: daysToSep15}, (_, i) => {
-      const d = new Date(today); d.setDate(d.getDate() + i);
-      return isDayOff(d.toISOString().slice(0,10)) ? 0 : 1;
-    }).reduce((a,b) => a+b, 0);
-    const pace = workDaysToSep15 > 0 ? (tripAcctsNeeded / workDaysToSep15).toFixed(1) : '—';
+    const pace = daysLeft > 0 ? (tripAcctsNeeded / daysLeft).toFixed(1) : '—';
     const color = parseFloat(pace) <= 3 ? 'amber' : 'red';
     insight(color, '✈️', `Top Producer Trip: ${tripAcctsNeeded} serviced needed`,
-      `Need ${200 - pulseServiced} more serviced accounts + re-sign by Sep 15. ${pace}/day needed on ${workDaysToSep15} work days.`);
+      `Need ${tripAcctsNeeded} more serviced accounts + re-sign by Sep 15. ${pace}/day on ${daysLeft} days left.`);
   }
 
   // ── 4. August Best Month ──
