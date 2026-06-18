@@ -2451,11 +2451,11 @@ function renderInsights() {
   if (housingNeeded === 0) {
     insight('green', '🏠', 'Housing Bonus Secured — $2,000',
       `You have ${authNet} active accounts. Housing bonus locked in for Oct 25.`);
-  } else if (daysLeft > 0) {
-    const pace = (housingNeeded / daysLeft).toFixed(1);
-    const color = parseFloat(pace) <= 3 ? 'amber' : 'red';
+  } else {
+    const pace = daysLeft > 0 ? (housingNeeded / daysLeft).toFixed(1) : '—';
+    const color = parseFloat(pace) <= 2 ? 'amber' : 'red';
     insight(color, '🏠', `Housing Bonus: ${housingNeeded} accounts to go`,
-      `Need ${housingNeeded} more active accounts by Oct 1 for $2,000 bonus. That's ${pace}/day on ${daysLeft} days left.`);
+      `Need ${housingNeeded} more active accounts by Oct 1. That's ${pace}/day on ${daysLeft} days left in the field.`);
   }
 
   // ── 3. Top Producer Trip (200 serviced + re-sign by Sep 15) ──
