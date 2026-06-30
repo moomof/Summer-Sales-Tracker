@@ -1177,7 +1177,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="pace-row"><span class="pace-key">Today's target</span><span class="pace-val" id="paceTodayTarget">—</span></div>
     <div class="pace-row"><span class="pace-key">This week target</span><span class="pace-val" id="paceWeekTarget">—</span></div>
     <div class="pace-row"><span class="pace-key">On pace for</span><span class="pace-val" id="paceOnTrack">—</span></div>
-    <div class="pace-row"><span class="pace-key">Surplus / Deficit</span><span class="pace-val" id="paceSurplus">—</span></div>
+    <div class="pace-row"><span class="pace-key">Surplus / Deficit <span style="font-size:10px;color:var(--text3);">(vs pace to-date)</span></span><span class="pace-val" id="paceSurplus">—</span></div>
     <div class="pace-row"><span class="pace-key">Revenue pace</span><span class="pace-val" id="paceRevenue">—</span></div>
   </div>
 
@@ -1484,8 +1484,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="earning-row"><span class="earning-key">Gross Commission</span><span class="earning-val green" id="ebGross">$0</span></div>
     <div class="earning-row"><span class="earning-key">Advances Taken</span><span class="earning-val red" id="ebAdvances">—$0</span></div>
     <div class="earning-row"><span class="earning-key">Housing (Semi-monthly)</span><span class="earning-val red" id="ebHousing">—$0</span></div>
-    <div class="earning-row"><span class="earning-key" style="color:var(--red);">Inactive Revenue Lost</span><span class="earning-val red" id="ebAtRisk">$0</span></div>
     <div class="earning-row total-row"><span class="earning-key" style="font-weight:600;color:var(--text);">Net Est. Commission</span><span class="earning-val bold" id="ebNet">$0</span></div>
+    <div class="earning-row"><span class="earning-key" style="color:var(--text3);">Inactive Revenue <span style="font-size:10px;">(already excluded from gross)</span></span><span class="earning-val red" id="ebAtRisk">$0</span></div>
   </div>
 
   <!-- Serviced Commission Breakdown -->
@@ -2176,7 +2176,9 @@ function updateScenario() {
   const tier = calcTier(projNet);
   const projComm = Math.round(projRev * (tier.pct - penalty));
   const advancesEst = Math.round(projNet * 75 * 0.85 + projNet * 50 * 0.15);
-  const netComm = projComm - advancesEst - 2000;
+  // Housing = 8 semi-monthly periods (May 25–Sep 10) × per-period rate from settings.
+  const housingEst = 8 * parseFloat(S('housingPerPeriod'));
+  const netComm = projComm - advancesEst - housingEst;
 
   const bonuses = [];
   if (projNet >= 175) bonuses.push('🏠 $2K housing');
@@ -2223,7 +2225,10 @@ function renderForecast() {
   if (trajCard) {
     try {
       const projNet = Math.round(authNet + apdAuth * (1 - cancelRate) * daysLeft);
-      const projRev = Math.round(pulseActiveRev + apdAuth * (1-cancelRate) * acv * daysLeft);
+      // Match the Dashboard "Revenue pace" definition so the two screens agree:
+      // current active revenue + (avg active revenue per elapsed day) × remaining days.
+      const dailyRevAvgFC = elapsedDays > 0 ? pulseActiveRev / elapsedDays : 0;
+      const projRev = Math.round(pulseActiveRev + dailyRevAvgFC * daysLeft);
       const needPerDay = daysLeft > 0 ? ((accountTarget - authNet) / daysLeft).toFixed(1) : '--';
       const tierProjections = TIERS.map(t => {
         const needed = Math.max(0, t.min - authNet);
@@ -2256,29 +2261,48 @@ function renderForecast() {
     try {
       const bonuses = [
         { name: 'Housing Bonus', value: '$2,000', current: authNet, total: 175, metric: 'active accounts', deadline: 'Oct 1' },
-        { name: 'Tuition Bonus', value: '$1,500', current: authNet, total: 100, metric: 'accounts + Aug best month', deadline: 'End of season' },
+        { name: 'Tuition Bonus', value: '$1,500', current: authNet, total: 100, metric: 'accounts + Aug best month', deadline: 'End of season', requiresAugBest: true },
         { name: 'Top Producer Trip', value: '✈️ Trip', current: pulseServiced, total: 200, metric: 'serviced accounts', deadline: 'Sep 15' },
         { name: 'Vantage Cruise', value: '🚢 Cruise', current: pulseActiveRev, total: 150000, metric: 'active revenue', deadline: 'End of season', isRev: true },
         { name: '6 Digits Sledge', value: '🔨 Swag', current: pulseActiveRev, total: 100000, metric: 'serviced revenue in one month', deadline: 'Any month', isRev: true },
       ];
       bonusCard.innerHTML = bonuses.map(b => {
         const needed = Math.max(0, b.total - b.current);
-        const pct = Math.min(100, Math.round((b.current / b.total) * 100));
+        let pct = Math.min(100, Math.round((b.current / b.total) * 100));
+        // Tuition also requires August to be the BEST month — gate the % on that
+        // so it can't read "earned"/99% while August trails another month.
+        let augBlocked = false;
+        if (b.requiresAugBest) {
+          const augAcctsBP = db.logs.filter(l => l.date.startsWith('2026-08'))
+            .reduce((s,l) => s + ((parseInt(l.sold_accounts)||0) || (parseInt(l.pest)||0)+(parseInt(l.mosquito)||0)), 0);
+          const bestOtherBP = Math.max(0, ...['2026-05','2026-06','2026-07'].map(m =>
+            db.logs.filter(l => l.date.startsWith(m))
+              .reduce((s,l) => s + ((parseInt(l.sold_accounts)||0) || (parseInt(l.pest)||0)+(parseInt(l.mosquito)||0)), 0)));
+          augBlocked = !(augAcctsBP > bestOtherBP);
+          if (augBlocked) pct = Math.min(pct, 50);
+        }
         const daysNeeded = needed === 0 ? 0 : b.isRev
           ? (pulseActiveRev > 0 ? Math.ceil(needed / (pulseActiveRev/elapsedDays)) : 999)
           : (apdAuth > 0 ? Math.ceil(needed / (apdAuth*(1-cancelRate))) : 999);
-        const reachable = needed === 0 || daysNeeded <= daysLeft;
-        const barColor = needed === 0 ? 'var(--green)' : reachable ? 'var(--amber)' : 'var(--red)';
+        // augBlocked means the account gate may be met but Aug-best isn't → not earned/reachable yet
+        const earned = needed === 0 && !augBlocked;
+        const reachable = !augBlocked && (needed === 0 || daysNeeded <= daysLeft);
+        const barColor = earned ? 'var(--green)' : reachable ? 'var(--amber)' : 'var(--red)';
+        const subText = earned
+          ? 'Qualified · deadline ' + b.deadline
+          : augBlocked
+            ? (needed > 0 ? needed + ' more ' + b.metric : 'Account gate met') + ' · August must be best month · ' + b.deadline
+            : (b.isRev ? '$'+Math.round(needed).toLocaleString() : needed) + ' more ' + b.metric + ' · ' + (reachable ? daysNeeded + ' days at current pace' : 'needs faster pace') + ' · ' + b.deadline;
         return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
             <div><span style="font-size:13px;font-weight:600;">${b.name}</span>
             <span style="font-size:12px;color:var(--accent);margin-left:8px;">${b.value}</span></div>
-            <span style="font-size:12px;font-weight:600;color:${barColor};">${needed === 0 ? '✓ Earned' : pct + '%'}</span>
+            <span style="font-size:12px;font-weight:600;color:${barColor};">${earned ? '✓ Earned' : pct + '%'}</span>
           </div>
           <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:4px;">
             <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
           </div>
-          <div style="font-size:11px;color:var(--text3);">${needed === 0 ? 'Qualified · deadline ' + b.deadline : (b.isRev ? '$'+Math.round(needed).toLocaleString() : needed) + ' more ' + b.metric + ' · ' + (reachable ? daysNeeded + ' days at current pace' : 'needs faster pace') + ' · ' + b.deadline}</div>
+          <div style="font-size:11px;color:var(--text3);">${subText}</div>
         </div>`;
       }).join('');
     } catch(e) { bonusCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('bonus:', e); }
@@ -2370,7 +2394,8 @@ function renderForecast() {
           <div style="font-size:13px;font-family:var(--font-mono);text-align:right;">${r.accts||'—'}</div>
           <div style="font-size:13px;font-family:var(--font-mono);text-align:right;">${r.rev>0?'$'+fmtK(r.rev):'—'}</div>
           <div style="font-size:13px;font-family:var(--font-mono);text-align:right;color:var(--text3);">${r.days>0?(r.accts/r.days).toFixed(1):'—'}</div>
-        </div>`).join('')}`;
+        </div>`).join('')}
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;">Totals reflect logged days — the current open week may be incomplete.</div>`;
     } catch(e) { monthCard.innerHTML = '<div style="color:var(--red);padding:8px;">Error: ' + e.message + '</div>'; console.error('monthly:', e); }
   }
 
@@ -2615,7 +2640,7 @@ function renderDashboard() {
   const heroSubText = `${displaySold} sold${inactiveLabel} · ${Math.max(0, accountTarget - authNet)} to go`;
   document.getElementById('heroSub').textContent = heroSubText;
   document.getElementById('heroPaceNeeded').textContent = daysLeft > 0 ? ((accountTarget - authNet) / daysLeft).toFixed(1) : '—';
-  document.getElementById('heroPaceCurrent').textContent = apd.toFixed(1);
+  document.getElementById('heroPaceCurrent').textContent = apdAuth.toFixed(1);
   document.getElementById('heroDaysLeft').textContent = daysLeft;
 
   // KPIs
@@ -2924,7 +2949,13 @@ function renderCommission() {
   // Net accounts for commission (inactive subtracted)
   const latestPulseComm2 = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
   const commInactive = latestPulseComm2 ? parseInt(latestPulseComm2.inactive||0) : 0;
-  const netAccountsComm = Math.max(0, totalAccounts - commInactive);
+  // Use PULSE sold as the authoritative base so this matches the dashboard's
+  // authNet (sold - inactive). Falls back to logged totalAccounts only when no
+  // pulse exists. Prevents the 95-vs-99 split across tabs.
+  const commSold = latestPulseComm2 ? parseInt(latestPulseComm2.sold||0) : 0;
+  const netAccountsComm = commSold > 0
+    ? Math.max(0, commSold - commInactive)
+    : Math.max(0, totalAccounts - commInactive);
 
   // Serviced count — needed for advance calculations (declare early)
   const latestPulseAdv = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
@@ -4101,6 +4132,13 @@ function switchTab(tab) {
   // Render tab-specific content on demand
   if (tab === 'forecast') setTimeout(() => { try { renderForecast(); } catch(e) { console.error('renderForecast:', e); } }, 50);
   if (tab === 'commission') setTimeout(() => { try { renderCommission(); } catch(e) { console.error('renderCommission:', e); } }, 50);
+  // Refresh pulse from cloud when tab opened
+  if (tab === 'pulse') setTimeout(async () => {
+    if (supabase) {
+      const fresh = await sbFetch('pulse_snapshots', { params: { order: 'date.desc' } }).catch(() => null);
+      if (fresh && fresh.length > 0) { db.pulses = fresh; saveLocal(); renderPulseTab(); renderDashboard(); }
+    }
+  }, 100);
 }
 
 /* ============================================================
