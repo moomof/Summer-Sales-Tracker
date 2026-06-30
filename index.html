@@ -2185,7 +2185,7 @@ function updateScenario() {
   if (projNet >= 100) bonuses.push('🎓 Tuition eligible');
   if (projNet >= 200) bonuses.push('✈️ Trip eligible');
   if (projRev >= 150000) bonuses.push('🚢 Cruise');
-  if (projRev >= 100000) bonuses.push('🔨 Sledge');
+  if (bestMonthRevenue().rev >= 100000) bonuses.push('🔨 Sledge');
 
   const results = document.getElementById('scenarioResults');
   if (!results) return;
@@ -2264,7 +2264,7 @@ function renderForecast() {
         { name: 'Tuition Bonus', value: '$1,500', current: authNet, total: 100, metric: 'accounts + Aug best month', deadline: 'End of season', requiresAugBest: true },
         { name: 'Top Producer Trip', value: '✈️ Trip', current: pulseServiced, total: 200, metric: 'serviced accounts', deadline: 'Sep 15' },
         { name: 'Vantage Cruise', value: '🚢 Cruise', current: pulseActiveRev, total: 150000, metric: 'active revenue', deadline: 'End of season', isRev: true },
-        { name: '6 Digits Sledge', value: '🔨 Swag', current: pulseActiveRev, total: 100000, metric: 'serviced revenue in one month', deadline: 'Any month', isRev: true },
+        { name: '6 Digits Sledge', value: '🔨 Swag', current: bestMonthRevenue().rev, total: 100000, metric: 'serviced revenue in one month', deadline: 'Any month', isRev: true, singleMonth: true },
       ];
       bonusCard.innerHTML = bonuses.map(b => {
         const needed = Math.max(0, b.total - b.current);
@@ -2286,13 +2286,31 @@ function renderForecast() {
           : (apdAuth > 0 ? Math.ceil(needed / (apdAuth*(1-cancelRate))) : 999);
         // augBlocked means the account gate may be met but Aug-best isn't → not earned/reachable yet
         const earned = needed === 0 && !augBlocked;
-        const reachable = !augBlocked && (needed === 0 || daysNeeded <= daysLeft);
+        // Single-month milestones (Sledge $100K in ONE month) must be judged against a
+        // single month of pace, not the whole remaining season.
+        let smReachable = null, smDaysNeeded = null, smBestMonthRev = null;
+        if (b.singleMonth) {
+          const bm = bestMonthRevenue();
+          smBestMonthRev = bm.rev;
+          // Best observed daily revenue rate within the strongest month so far.
+          let bestMonthDays = 0;
+          if (bm.month) bestMonthDays = db.logs.filter(l => (l.date||'').slice(0,7) === bm.month && (parseFloat(l.revenue)||0) > 0).length;
+          const bestMonthRate = bestMonthDays > 0 ? bm.rev / bestMonthDays : 0;
+          // ~22 knockable days in a typical month (excl Sundays).
+          smDaysNeeded = needed === 0 ? 0 : bestMonthRate > 0 ? Math.ceil(needed / bestMonthRate) : 999;
+          smReachable = needed === 0 || smDaysNeeded <= 22;
+        }
+        const reachable = b.singleMonth
+          ? smReachable
+          : (!augBlocked && (needed === 0 || daysNeeded <= daysLeft));
         const barColor = earned ? 'var(--green)' : reachable ? 'var(--amber)' : 'var(--red)';
         const subText = earned
           ? 'Qualified · deadline ' + b.deadline
-          : augBlocked
-            ? (needed > 0 ? needed + ' more ' + b.metric : 'Account gate met') + ' · August must be best month · ' + b.deadline
-            : (b.isRev ? '$'+Math.round(needed).toLocaleString() : needed) + ' more ' + b.metric + ' · ' + (reachable ? daysNeeded + ' days at current pace' : 'needs faster pace') + ' · ' + b.deadline;
+          : b.singleMonth
+            ? '$' + Math.round(needed).toLocaleString() + ' more in a single month · best month so far $' + fmtK(smBestMonthRev) + ' · ' + (smReachable ? '~' + smDaysNeeded + ' days at best-month pace' : 'needs a stronger month') + ' · ' + b.deadline
+            : augBlocked
+              ? (needed > 0 ? needed + ' more ' + b.metric : 'Account gate met') + ' · August must be best month · ' + b.deadline
+              : (b.isRev ? '$'+Math.round(needed).toLocaleString() : needed) + ' more ' + b.metric + ' · ' + (reachable ? daysNeeded + ' days at current pace' : 'needs faster pace') + ' · ' + b.deadline;
         return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
             <div><span style="font-size:13px;font-weight:600;">${b.name}</span>
@@ -3171,15 +3189,11 @@ function renderCommission() {
     : 0;
   // Use serviced revenue if pulse data exists, otherwise fall back to total logged revenue
   const milestoneRev = servicedRev > 0 ? servicedRev : totalRevenue;
-  // Sledge: $100K serviced in a SINGLE MONTH (not cumulative)
-  // Use current month pulse serviced revenue as proxy
-  const currentMonthStr = today.toISOString().slice(0,7);
-  const latestPulseSledge = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
-  const sledgeMonthRev = latestPulseSledge && latestPulseSledge.date && latestPulseSledge.date.startsWith(currentMonthStr)
-    ? (parseFloat(latestPulseSledge.serviced_revenue||0))
-    : 0;
-  // Fall back to milestone rev if no current-month pulse
-  const rev100k = (sledgeMonthRev > 0 ? sledgeMonthRev : milestoneRev) >= 100000;
+  // Sledge: $100K serviced in a SINGLE MONTH (not cumulative).
+  // Use the best single calendar month of revenue from logs.
+  const sledgeBest = bestMonthRevenue();
+  const sledgeMonthRev = sledgeBest.rev;
+  const rev100k = sledgeMonthRev >= 100000;
   const rev150k = milestoneRev >= 150000;
   const rev250k = milestoneRev >= 250000;
   const rev300k = milestoneRev >= 300000;
@@ -3231,9 +3245,9 @@ function renderCommission() {
       'Swag', (100 - netAccountsComm) + ' to go'
     ),
     bonusRow(
-      rev100k ? 'earned' : milestoneRev >= 80000 ? 'close' : 'far',
+      rev100k ? 'earned' : sledgeMonthRev >= 80000 ? 'close' : 'far',
       '6 Digits Club — Sledge Hammer 🔨', '$100K serviced in a single month',
-      'Swag', '$' + Math.round(Math.max(0, 100000 - milestoneRev)).toLocaleString() + ' to go this month'
+      'Swag', '$' + Math.round(Math.max(0, 100000 - sledgeMonthRev)).toLocaleString() + ' to go in a month (best: $' + fmtK(sledgeMonthRev) + ')'
     ),
     bonusRow(
       rev150k ? 'earned' : totalRevenue >= 120000 ? 'close' : 'far',
@@ -4087,6 +4101,21 @@ function prevDate(dateStr) {
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+// Best single CALENDAR MONTH of revenue from logs (for the Sledge $100K/month rule).
+// Returns { rev, month } where month is 'YYYY-MM'. The Sledge milestone is
+// $100K serviced in ONE month — never cumulative — so we take the max month.
+function bestMonthRevenue() {
+  const byMonth = {};
+  db.logs.forEach(l => {
+    const m = (l.date || '').slice(0, 7);
+    if (!m) return;
+    byMonth[m] = (byMonth[m] || 0) + (parseFloat(l.revenue) || 0);
+  });
+  let best = 0, month = null;
+  Object.entries(byMonth).forEach(([m, r]) => { if (r > best) { best = r; month = m; } });
+  return { rev: best, month };
 }
 
 function fmtK(n) {
