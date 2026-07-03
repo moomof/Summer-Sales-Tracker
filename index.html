@@ -1919,6 +1919,16 @@ async function deleteLogCloud(id) {
   await sbFetch(`days?id=eq.${id}`, { method: 'DELETE' });
 }
 
+async function upsertDayOff(record) {
+  if (!supabase) return;
+  await sbFetch('days_off', { method: 'POST', body: [record], params: { on_conflict: 'id' } });
+}
+
+async function deleteDayOffCloud(id) {
+  if (!supabase) return;
+  await sbFetch(`days_off?id=eq.${id}`, { method: 'DELETE' });
+}
+
 async function upsertPulse(p) {
   if (!supabase) return;
   await sbFetch('pulse_snapshots', { method: 'POST', body: [p], params: { on_conflict: 'id' } });
@@ -1970,6 +1980,15 @@ function saveSetting(key, value) {
   // Coerce numbers
   if (!isNaN(value) && value !== '') value = parseFloat(value);
   db.settings[key] = value;
+  // If a season date changed, recompute the stored knocking-day count from the
+  // single source of truth (excludes Sundays + days-off) so every consumer agrees.
+  if (key === 'seasonStart' || key === 'seasonEnd') {
+    if (db.settings.seasonStart && db.settings.seasonEnd) {
+      db.settings.knockingDays = getTotalSeasonWorkingDays();
+      const kdDisplay = document.getElementById('settingKnockingDaysDisplay');
+      if (kdDisplay) kdDisplay.textContent = db.settings.knockingDays;
+    }
+  }
   saveLocal();
   scheduleSyncUp();
   renderAll();
@@ -3772,8 +3791,13 @@ function addDayOff() {
   if (!start) { showToast('Select a date', 'error'); return; }
   const end = document.getElementById('daysOffEnd').value || start;
   const id = generateId();
-  db.daysOff.push({ id, start_date: start, end_date: end });
+  const record = { id, start_date: start, end_date: end };
+  db.daysOff.push(record);
+  // A new day-off changes the working-day count — refresh the stored value.
+  db.settings.knockingDays = getTotalSeasonWorkingDays();
   saveLocal();
+  upsertDayOff(record);
+  scheduleSyncUp();
   renderDaysOff();
   renderAll();
   document.getElementById('daysOffStart').value = '';
@@ -3783,7 +3807,10 @@ function addDayOff() {
 
 function removeDayOff(id) {
   db.daysOff = db.daysOff.filter(d => d.id !== id);
+  db.settings.knockingDays = getTotalSeasonWorkingDays();
   saveLocal();
+  deleteDayOffCloud(id);
+  scheduleSyncUp();
   renderDaysOff();
   renderAll();
 }
@@ -3837,11 +3864,12 @@ function updateWizardDaysPreview() {
   const start = new Date(startVal + 'T00:00:00');
   const end = new Date(endVal + 'T00:00:00');
   if (end <= start) { countEl.textContent = '—'; return; }
-  // Count knocking days: exclude Sundays only (days off not set up yet)
+  // Count knocking days from the (unsaved) form range, excluding Sundays AND any
+  // days-off already set — same isDayOff() logic used everywhere else.
   let count = 0;
   const cur = new Date(start);
   while (cur <= end) {
-    if (cur.getDay() !== 0) count++; // 0 = Sunday
+    if (!isDayOff(localDateStr(cur))) count++;
     cur.setDate(cur.getDate() + 1);
   }
   countEl.textContent = count;
@@ -4037,17 +4065,11 @@ function wizardNext() {
       db.settings[f.key] = f.type === 'number' ? parseFloat(val) : val;
     }
   });
-  // Auto-calculate knockingDays from season dates whenever dates are set
+  // Auto-calculate knockingDays from season dates whenever dates are set.
+  // Use the same helper as everywhere else so the count always excludes both
+  // Sundays AND days-off — one source of truth.
   if (db.settings.seasonStart && db.settings.seasonEnd) {
-    const s = new Date(db.settings.seasonStart + 'T00:00:00');
-    const e = new Date(db.settings.seasonEnd + 'T00:00:00');
-    let count = 0;
-    const cur = new Date(s);
-    while (cur <= e) {
-      if (cur.getDay() !== 0) count++;
-      cur.setDate(cur.getDate() + 1);
-    }
-    db.settings.knockingDays = count;
+    db.settings.knockingDays = getTotalSeasonWorkingDays();
   }
   saveLocal();
   initSupabase();
