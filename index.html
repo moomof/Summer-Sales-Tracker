@@ -2704,7 +2704,12 @@ function renderDashboard() {
 
   // Hero
   const accountTarget = parseInt(S('accountTarget'));
-  document.getElementById('heroWeekLabel').textContent = `Week ${weekNum} · ${daysLeft} knocking days left`;
+  // Season progress: elapsed knocking days ÷ total knocking days.
+  // Uses the same day-count logic as everything else (excludes Sundays + days-off).
+  const totalKnockDays = getTotalSeasonWorkingDays();
+  const elapsedKnockDays = Math.max(0, totalKnockDays - getWorkingDaysRemaining(today));
+  const seasonPct = totalKnockDays > 0 ? Math.round((elapsedKnockDays / totalKnockDays) * 100) : 0;
+  document.getElementById('heroWeekLabel').textContent = `Week ${weekNum} · ${daysLeft} knocking days left · ${seasonPct}% of season`;
   document.getElementById('heroTarget').innerHTML = `${accountTarget} <span style="font-size:18px;opacity:0.7">target</span>`;
   const displaySold = authSold;
   const inactiveLabel = pulseInactiveNet > 0 ? ` · ${pulseInactiveNet} inactive` : '';
