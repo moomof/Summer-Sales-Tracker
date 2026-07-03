@@ -1707,7 +1707,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="section-label">📦 Data</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="btn btn-ghost btn-full" onclick="exportTSV()">📥 Export to TSV</button>
-      <button class="btn btn-ghost btn-full" onclick="syncFromCloud()">☁️ Sync from Cloud</button>
+      <button class="btn btn-ghost btn-full" onclick="syncNow()">🔄 Sync</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center;">Backs up your data to the cloud and pulls in changes from other devices. Your data also auto-backs-up every time you save.</div>
       <button class="btn btn-ghost btn-full" onclick="openWizard()">🪄 Re-run Setup Wizard</button>
       <button class="btn btn-danger btn-full" onclick="confirmClearData()">🗑 Clear All Data</button>
     </div>
@@ -1849,6 +1850,32 @@ async function syncUp() {
     }
     setSyncStatus('idle');
   } catch(e) { setSyncStatus('error'); }
+}
+
+// Push EVERYTHING local up to the cloud (logs, pulses, days-off, settings).
+// Used by the two-way Sync button so nothing local is ever lost on a pull.
+async function pushAllUp() {
+  if (!supabase) return;
+  if (db.logs.length)   await sbFetch('days',            { method: 'POST', body: db.logs,    params: { on_conflict: 'id' } });
+  if (db.pulses.length) await sbFetch('pulse_snapshots', { method: 'POST', body: db.pulses,  params: { on_conflict: 'id' } });
+  if (db.daysOff.length)await sbFetch('days_off',        { method: 'POST', body: db.daysOff, params: { on_conflict: 'id' } });
+  await syncUp(); // settings
+}
+
+// True two-way sync: back up everything local first, then pull the merged cloud
+// state back down. This is what the "Sync" button runs.
+async function syncNow() {
+  if (!supabase) { showToast('No cloud configured. Add Supabase URL & Key in settings.', 'error'); return; }
+  setSyncStatus('syncing');
+  showToast('Syncing…', 'info');
+  try {
+    await pushAllUp();      // 1. back up local → cloud (no local data lost)
+    await syncFromCloud();  // 2. pull cloud → local (picks up other-device changes)
+  } catch(e) {
+    console.error('Sync error:', e);
+    setSyncStatus('error');
+    showToast('Sync failed: ' + e.message, 'error');
+  }
 }
 
 async function syncFromCloud() {
