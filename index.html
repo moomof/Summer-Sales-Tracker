@@ -2006,7 +2006,7 @@ function applySettings() {
   let kdElapsed = 0;
   const kdCur = new Date(kdStart);
   while (kdCur <= todayForKD) {
-    if (!isDayOff(kdCur.toISOString().slice(0,10))) kdElapsed++;
+    if (!isDayOff(localDateStr(kdCur))) kdElapsed++;
     kdCur.setDate(kdCur.getDate() + 1);
   }
   const kdRemaining = Math.max(0, totalKnockingDays - kdElapsed);
@@ -2089,7 +2089,7 @@ function getTotalSeasonWorkingDays() {
   let count = 0;
   const cur = new Date(start);
   while (cur <= end) {
-    const ds = cur.toISOString().slice(0,10);
+    const ds = localDateStr(cur);
     if (!isDayOff(ds)) count++;
     cur.setDate(cur.getDate() + 1);
   }
@@ -2104,7 +2104,7 @@ function getWorkingDaysRemaining(fromDate) {
   // If today is already logged, start counting from tomorrow
   if (todayLogged) cur.setDate(cur.getDate() + 1);
   while (cur <= end) {
-    const ds = cur.toISOString().slice(0,10);
+    const ds = localDateStr(cur);
     if (!isDayOff(ds)) count++;
     cur.setDate(cur.getDate() + 1);
   }
@@ -2172,9 +2172,16 @@ function updateScenario() {
   const projSold = authSold + newSold;
   const projInactive = Math.round(projSold * cancelRate);
   const projNet = projSold - projInactive;
-  const projRev = pulseActiveRev + Math.round(newSold * (1 - cancelRate) * acv);
+  const elapsedForRate = Math.max(1, totalSeasonDays - daysLeft);
+  // Projected active revenue. At the current-pace slider position this matches the
+  // Forecast trajectory's avg-revenue-per-day method; for other slider values it
+  // scales that daily revenue rate by how the chosen pace compares to current pace.
+  const apdAuthSc = elapsedForRate > 0 ? pulseSold / elapsedForRate : 0;
+  const baseRevRate = elapsedForRate > 0 ? pulseActiveRev / elapsedForRate : 0;
+  const paceRatio = apdAuthSc > 0 ? val / apdAuthSc : 1;
+  const projRev = Math.round(pulseActiveRev + baseRevRate * paceRatio * daysLeft);
   const tier = calcTier(projNet);
-  const projComm = Math.round(projRev * (tier.pct - penalty));
+  const projComm = Math.round(projRev * Math.max(0, tier.pct - penalty));
   const advancesEst = Math.round(projNet * 75 * 0.85 + projNet * 50 * 0.15);
   // Housing = 8 semi-monthly periods (May 25–Sep 10) × per-period rate from settings.
   const housingEst = 8 * parseFloat(S('housingPerPeriod'));
@@ -2441,7 +2448,7 @@ function renderInsights() {
 
   const { start } = getSeasonDates();
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayStr = today.toISOString().slice(0,10);
+  const todayStr = localDateStr(today);
 
   // Pull latest pulse data
   const pulse = db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0];
@@ -2474,7 +2481,7 @@ function renderInsights() {
   if (today >= junFirst) {
     // Count serviced accounts in current calendar week from logs
     const weekStart = getWeekStart(getWeekNumber(today, start), start);
-    const weekStartStr = weekStart.toISOString().slice(0,10);
+    const weekStartStr = localDateStr(weekStart);
     // Use pulse serviced vs what it was last week — we don't have weekly history
     // Instead: warn if overall serviced pace < 6/week
     const weeksElapsed = Math.max(1, Math.ceil(elapsedDays / 5));
@@ -2641,7 +2648,7 @@ function renderDashboard() {
     let count = 0;
     const cur = new Date(start);
     while (cur <= todayD) {
-      if (!isDayOff(cur.toISOString().slice(0,10))) count++;
+      if (!isDayOff(localDateStr(cur))) count++;
       cur.setDate(cur.getDate() + 1);
     }
     return Math.max(1, count);
@@ -2703,7 +2710,7 @@ function renderDashboard() {
       '2026-05-25','2026-06-10','2026-06-25','2026-07-10',
       '2026-07-25','2026-08-10','2026-08-25','2026-09-10'
     ];
-    const todayStr = asOfDate.toISOString().slice(0,10);
+    const todayStr = localDateStr(asOfDate);
     return schedule.filter(d => d <= todayStr).length;
   }
   const housingDeductionCount = countHousingDeductions(today);
@@ -2711,7 +2718,10 @@ function renderDashboard() {
   const net = gross - advances - Math.max(0, housingPayments);
   document.getElementById('kpiCommission').textContent = '$' + Math.round(gross).toLocaleString();
 
-  const projectedAccounts = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * Math.max(0, daysLeft - 1)) : authNet;
+  // Projected accounts — cancel-adjusted so this matches the Forecast tab's
+  // "at current pace" figure. Future accounts are discounted by the cancel rate.
+  const dashCancelRate = authSold > 0 ? pulseInactiveNet / authSold : 0.15;
+  const projectedAccounts = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * (1 - dashCancelRate) * Math.max(0, daysLeft - 1)) : authNet;
   const projectedRevenue = daysLeft > 0 ? Math.round(revenueBase + dailyRevAvg * daysLeft) : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts + ' accts';
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
@@ -3064,7 +3074,7 @@ function renderCommission() {
       '2026-05-25','2026-06-10','2026-06-25','2026-07-10',
       '2026-07-25','2026-08-10','2026-08-25','2026-09-10'
     ];
-    const ds = asOfDate.toISOString().slice(0,10);
+    const ds = localDateStr(asOfDate);
     return schedule.filter(d => d <= ds).length;
   }
   const housingDeductionCount = countHousingDeductionsComm(today);
@@ -3275,7 +3285,7 @@ function renderCommission() {
   // May 25 2027: 100% for accounts with 1st service after Sep 30
   // For simplicity, assume all accounts serviced before Oct 1 (typical for season)
   const payoutBase = Math.max(0, net);
-  const todayDate = today.toISOString().slice(0,10);
+  const todayDate = localDateStr(today);
   const payouts = [
     { date: 'Oct 25, 2026', desc: '75% of net (accts serviced before Oct 1)', amt: Math.round(payoutBase * 0.75), status: todayDate > '2026-10-25' ? 'past' : todayDate === '2026-10-25' ? 'next' : 'future' },
     { date: 'Mar 25, 2027', desc: 'Remaining 25% of net (same accts)', amt: Math.round(payoutBase * 0.25), status: todayDate > '2027-03-25' ? 'past' : 'future' },
@@ -3388,7 +3398,7 @@ function renderWeekly() {
     const DAY_ABBR = ['Su','M','T','W','T','F','Sa'];
     const dayDots = Array.from({length: 7}, (_, i) => {
       const dayDate = new Date(wkStart); dayDate.setDate(dayDate.getDate() + i);
-      const dayStr = dayDate.toISOString().slice(0,10);
+      const dayStr = localDateStr(dayDate);
       const dow = dayDate.getDay(); // 0=Sun
       const logEntry = db.logs.find(l => l.date === dayStr);
       const hasData = logEntry && ((parseInt(logEntry.pest)||0) + (parseInt(logEntry.mosquito)||0)) > 0;
@@ -4071,7 +4081,7 @@ function calcStreak() {
   const { start } = getSeasonDates();
   // Walk backwards; days off don't break streak, just skip
   for (let i = 0; i < 200; i++) {
-    if (cur < start.toISOString().slice(0,10)) break;
+    if (cur < localDateStr(start)) break;
     if (isDayOff(cur)) {
       // skip day off, don't break streak, don't count
     } else if (activeDates.has(cur)) {
@@ -4096,7 +4106,17 @@ function todayStr() {
 function prevDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0,10);
+  return localDateStr(d);
+}
+
+// Local (not UTC) YYYY-MM-DD for a Date. Using toISOString() would convert to UTC,
+// which rolls a Toronto evening (after ~8pm) to the next day and misfires date
+// comparisons; this returns the user's actual local calendar date.
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function generateId() {
