@@ -1895,28 +1895,32 @@ async function syncFromCloud() {
     if (daysOff && Array.isArray(daysOff)) db.daysOff = daysOff;
     if (settings && Array.isArray(settings) && settings[0]) {
       try {
-        const s = JSON.parse(settings[0].value);
-        // Smart merge: cloud wins over defaults, local wins over cloud
-        // But only if local value actually differs from default
-        const merged = { ...DEFAULT_SETTINGS, ...s };
-        Object.keys(db.settings).forEach(key => {
-          const localVal = db.settings[key];
-          const defaultVal = DEFAULT_SETTINGS[key];
-          // Only let local override cloud if it's been customized (differs from default)
-          if (JSON.stringify(localVal) !== JSON.stringify(defaultVal)) {
-            merged[key] = localVal;
-          }
-        });
-        // Always preserve vantageStats from whichever source has it
-        // vantageStats: use whichever has a more recent date
-        const cloudStats = s.vantageStats;
-        const localStats = db.settings.vantageStats;
+        const cloud = JSON.parse(settings[0].value);
+        const localStamp = db.settings._updatedAt || 0;
+        const cloudStamp = cloud._updatedAt || 0;
+        // Whichever device edited settings most recently wins as a whole. This
+        // avoids the old per-key "local beats default" rule that could keep a stale
+        // season date on one device even after the other device changed it.
+        let merged;
+        if (cloudStamp >= localStamp) {
+          merged = { ...DEFAULT_SETTINGS, ...cloud };
+        } else {
+          merged = { ...DEFAULT_SETTINGS, ...cloud, ...db.settings };
+        }
+        // vantageStats: keep whichever is more recent regardless of the above.
+        const cloudStats = cloud.vantageStats, localStats = db.settings.vantageStats;
         if (cloudStats && localStats) {
           merged.vantageStats = (cloudStats.date || '') >= (localStats.date || '') ? cloudStats : localStats;
         } else {
           merged.vantageStats = cloudStats || localStats || null;
         }
+        // Never trust a stored knocking-day count from either device — recompute it
+        // fresh from the merged dates + the days-off we just pulled, so both devices
+        // always converge on the same number.
         db.settings = merged;
+        if (merged.seasonStart && merged.seasonEnd) {
+          db.settings.knockingDays = getTotalSeasonWorkingDays();
+        }
         applySettings();
       } catch(se) { console.warn('Settings parse failed:', se); }
     }
@@ -2007,6 +2011,7 @@ function saveSetting(key, value) {
   // Coerce numbers
   if (!isNaN(value) && value !== '') value = parseFloat(value);
   db.settings[key] = value;
+  db.settings._updatedAt = Date.now();  // so the most recently edited device wins on sync
   // If a season date changed, recompute the stored knocking-day count from the
   // single source of truth (excludes Sundays + days-off) so every consumer agrees.
   if (key === 'seasonStart' || key === 'seasonEnd') {
@@ -3827,6 +3832,7 @@ function addDayOff() {
   db.daysOff.push(record);
   // A new day-off changes the working-day count — refresh the stored value.
   db.settings.knockingDays = getTotalSeasonWorkingDays();
+  db.settings._updatedAt = Date.now();
   saveLocal();
   upsertDayOff(record);
   scheduleSyncUp();
@@ -3840,6 +3846,7 @@ function addDayOff() {
 function removeDayOff(id) {
   db.daysOff = db.daysOff.filter(d => d.id !== id);
   db.settings.knockingDays = getTotalSeasonWorkingDays();
+  db.settings._updatedAt = Date.now();
   saveLocal();
   deleteDayOffCloud(id);
   scheduleSyncUp();
@@ -4102,6 +4109,7 @@ function wizardNext() {
   // Sundays AND days-off — one source of truth.
   if (db.settings.seasonStart && db.settings.seasonEnd) {
     db.settings.knockingDays = getTotalSeasonWorkingDays();
+  db.settings._updatedAt = Date.now();
   }
   saveLocal();
   initSupabase();
