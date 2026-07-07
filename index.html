@@ -4572,6 +4572,29 @@ function init() {
     }, 1500);
   }
 
+  // Re-sync whenever the app comes back to the foreground. iOS PWAs resume from
+  // the background WITHOUT reloading the page, so without this a device that was
+  // already open would never pull changes made on another device (e.g. a Pulse
+  // update entered on the Mac wouldn't appear on the iPhone). Throttled so rapid
+  // tab switches don't spam the network.
+  let lastForegroundSync = 0;
+  async function foregroundResync() {
+    if (!supabase) return;
+    if (document.visibilityState !== 'visible') return;
+    const now = Date.now();
+    if (now - lastForegroundSync < 4000) return; // throttle: at most once per 4s
+    lastForegroundSync = now;
+    try {
+      // Push any local changes up FIRST (so nothing entered on this device is lost),
+      // then pull the merged cloud state down to pick up other-device changes.
+      await pushAllUp();
+      await syncSilent();
+    } catch(e) { /* silent */ }
+  }
+  document.addEventListener('visibilitychange', foregroundResync);
+  window.addEventListener('focus', foregroundResync);
+  window.addEventListener('pageshow', foregroundResync); // iOS bfcache restore
+
   // Force iOS safe area recalculation on first render
   setTimeout(() => {
     window.scrollTo(0, 1);
