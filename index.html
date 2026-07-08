@@ -2067,16 +2067,12 @@ function applySettings() {
   const kdDisplay = document.getElementById('settingKnockingDaysDisplay');
   if (kdDisplay) kdDisplay.textContent = totalKnockingDays;
 
-  // Elapsed and remaining
+  // Elapsed and remaining — use the SAME function as the dashboard so they can't
+  // disagree. Today counts as remaining (you can still knock it), so elapsed is
+  // simply total minus remaining.
   const todayForKD = new Date(); todayForKD.setHours(0,0,0,0);
-  const { start: kdStart } = getSeasonDates();
-  let kdElapsed = 0;
-  const kdCur = new Date(kdStart);
-  while (kdCur <= todayForKD) {
-    if (!isDayOff(localDateStr(kdCur))) kdElapsed++;
-    kdCur.setDate(kdCur.getDate() + 1);
-  }
-  const kdRemaining = Math.max(0, totalKnockingDays - kdElapsed);
+  const kdRemaining = getWorkingDaysRemaining(todayForKD);
+  const kdElapsed = Math.max(0, totalKnockingDays - kdRemaining);
   const elEl = document.getElementById('settingElapsedDisplay');
   const remEl = document.getElementById('settingRemainingDisplay');
   if (elEl) elEl.textContent = kdElapsed;
@@ -2164,15 +2160,16 @@ function getTotalSeasonWorkingDays() {
 }
 
 function getWorkingDaysRemaining(fromDate) {
+  // Knocking days left = today through season end, inclusive, excluding Sundays
+  // and days off. "Today" always counts (the day isn't over — you can still knock),
+  // regardless of whether it's been logged yet. Used consistently by the dashboard,
+  // Settings, and pace math so all three agree.
   const { end } = getSeasonDates();
-  const todayLogged = db.logs.some(l => l.date === todayStr());
   let count = 0;
   const cur = new Date(fromDate);
-  // If today is already logged, start counting from tomorrow
-  if (todayLogged) cur.setDate(cur.getDate() + 1);
+  cur.setHours(0, 0, 0, 0);
   while (cur <= end) {
-    const ds = localDateStr(cur);
-    if (!isDayOff(ds)) count++;
+    if (!isDayOff(localDateStr(cur))) count++;
     cur.setDate(cur.getDate() + 1);
   }
   return count;
@@ -2219,7 +2216,7 @@ function updateScenario() {
   if (valEl) valEl.textContent = val.toFixed(1);
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const daysLeft = Math.max(0, getWorkingDaysRemaining(today) - 1);
+  const daysLeft = getWorkingDaysRemaining(today);
   const totalSeasonDays = getTotalSeasonWorkingDays();
   const pulse = db.pulses.length > 0 ? db.pulses.sort((a,b) => b.date.localeCompare(a.date))[0] : null;
   const pulseSold = pulse ? parseInt(pulse.sold||0) : 0;
@@ -2276,7 +2273,7 @@ function renderForecast() {
   const today = new Date(); today.setHours(0,0,0,0);
   const { start } = getSeasonDates();
   const totalSeasonDays = getTotalSeasonWorkingDays();
-  const daysLeft = Math.max(0, getWorkingDaysRemaining(today) - 1);
+  const daysLeft = getWorkingDaysRemaining(today);
   const elapsedDays = Math.max(1, totalSeasonDays - daysLeft);
   const accountTarget = parseInt(S('accountTarget'));
   const revTarget = parseInt(S('revenueTarget'));
@@ -2896,7 +2893,7 @@ function renderDashboard() {
   // Projected accounts — cancel-adjusted so this matches the Forecast tab's
   // "at current pace" figure. Future accounts are discounted by the cancel rate.
   const dashCancelRate = authSold > 0 ? pulseInactiveNet / authSold : 0.15;
-  const projectedAccounts = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * (1 - dashCancelRate) * Math.max(0, daysLeft - 1)) : authNet;
+  const projectedAccounts = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * (1 - dashCancelRate) * daysLeft) : authNet;
   const projectedRevenue = daysLeft > 0 ? Math.round(revenueBase + dailyRevAvg * daysLeft) : totalRevenue;
   document.getElementById('kpiProjected').textContent = projectedAccounts + ' accts';
   document.getElementById('kpiCommSub').textContent = `${(currentTier.pct*100)}% · net ~$${Math.round(net).toLocaleString()}`;
@@ -3066,15 +3063,14 @@ function renderDashboard() {
     }
   }
 
-  // Pace — all calculations use elapsedKnockingDays and daysLeft correctly
+  // Pace — all calculations use elapsedKnockingDays and daysLeft consistently.
   const totalSeasonDays = getTotalSeasonWorkingDays();
-  // daysLeft already defined above (remaining days incl today)
-  // Use daysLeft-1 for projections so today isn't double-counted
-  const futureDays = Math.max(0, daysLeft - 1);
-  const neededPerDay = futureDays > 0 ? (accountTarget - authNet) / futureDays : 0;
-  const onPaceFor = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * futureDays) : authNet;
+  // daysLeft = remaining knocking days including today. Used everywhere so the
+  // hero "needed/day", Settings "remaining", and this pace target all agree.
+  const neededPerDay = daysLeft > 0 ? (accountTarget - authNet) / daysLeft : 0;
+  const onPaceFor = elapsedKnockingDays > 0 ? Math.round(authNet + apdAuth * daysLeft) : authNet;
   const surplusN = authNet - Math.round(elapsedKnockingDays * accountTarget / Math.max(1, totalSeasonDays));
-  const projectedRevFull = revenueBase + dailyRevAvg * futureDays;
+  const projectedRevFull = revenueBase + dailyRevAvg * daysLeft;
   const revPace = '$' + fmtK(projectedRevFull);
 
   const todayTarget = neededPerDay;
