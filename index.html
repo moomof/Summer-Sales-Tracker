@@ -1873,7 +1873,18 @@ async function syncUp() {
 async function pushAllUp() {
   if (!supabase) return;
   if (db.logs.length)   await sbFetch('days',            { method: 'POST', body: db.logs,    params: { on_conflict: 'id' } });
-  if (db.pulses.length) await sbFetch('pulse_snapshots', { method: 'POST', body: db.pulses,  params: { on_conflict: 'id' } });
+  // Pulse is a single shared record — only push if THIS device's copy is at least
+  // as new as the cloud's, so we never overwrite a fresher entry from another device.
+  if (db.pulses.length) {
+    const localPulse = db.pulses[0];
+    const cloudRows = await sbFetch('pulse_snapshots', { params: { id: 'eq.current_pulse' } }).catch(() => null);
+    const cloudPulse = cloudRows && cloudRows[0];
+    const lStamp = localPulse.updated_at || localPulse.date || '';
+    const cStamp = cloudPulse ? (cloudPulse.updated_at || cloudPulse.date || '') : '';
+    if (!cloudPulse || lStamp >= cStamp) {
+      await sbFetch('pulse_snapshots', { method: 'POST', body: db.pulses, params: { on_conflict: 'id' } });
+    }
+  }
   if (db.daysOff.length)await sbFetch('days_off',        { method: 'POST', body: db.daysOff, params: { on_conflict: 'id' } });
   await syncUp(); // settings
 }
@@ -1907,7 +1918,17 @@ async function syncFromCloud() {
       sbFetch('settings', { params: { key: 'eq.app_settings' } }).catch(() => null),
     ]);
     if (logs && Array.isArray(logs)) db.logs = logs;
-    if (pulses && Array.isArray(pulses)) db.pulses = pulses;
+    if (pulses && Array.isArray(pulses)) {
+      const cloudPulse = pulses[0];
+      const localPulse = db.pulses[0];
+      if (cloudPulse && localPulse) {
+        const cStamp = cloudPulse.updated_at || cloudPulse.date || '';
+        const lStamp = localPulse.updated_at || localPulse.date || '';
+        db.pulses = cStamp >= lStamp ? pulses : db.pulses;
+      } else {
+        db.pulses = pulses.length ? pulses : db.pulses;
+      }
+    }
     if (daysOff && Array.isArray(daysOff)) db.daysOff = daysOff;
     if (settings && Array.isArray(settings) && settings[0]) {
       try {
@@ -4489,7 +4510,19 @@ async function syncSilent() {
       sbFetch('settings', { params: { key: 'eq.app_settings' } }).catch(() => null),
     ]);
     if (logs) db.logs = logs;
-    if (pulses) db.pulses = pulses;
+    if (pulses) {
+      // Newest-wins for the single pulse record: keep whichever was updated most
+      // recently so a stale device can't overwrite a fresh entry from another.
+      const cloudPulse = pulses[0];
+      const localPulse = db.pulses[0];
+      if (cloudPulse && localPulse) {
+        const cStamp = cloudPulse.updated_at || cloudPulse.date || '';
+        const lStamp = localPulse.updated_at || localPulse.date || '';
+        db.pulses = cStamp >= lStamp ? pulses : db.pulses;
+      } else {
+        db.pulses = pulses.length ? pulses : db.pulses;
+      }
+    }
     if (daysOff) db.daysOff = daysOff;
     if (settings && settings[0]) {
       try {
@@ -4581,9 +4614,11 @@ function init() {
     if (now - lastForegroundSync < 4000) return; // throttle: at most once per 4s
     lastForegroundSync = now;
     try {
-      // Push any local changes up FIRST (so nothing entered on this device is lost),
-      // then pull the merged cloud state down to pick up other-device changes.
-      await pushAllUp();
+      // Pull FIRST so this device learns about changes made elsewhere (e.g. a Pulse
+      // entered on the phone last night) before it pushes anything. Pushing first
+      // would overwrite the cloud's newer single-record pulse with this device's
+      // stale copy. Settings still use newest-wins inside syncSilent, so pulling
+      // first is safe for them too.
       await syncSilent();
     } catch(e) { /* silent */ }
   }
