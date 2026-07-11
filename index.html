@@ -932,6 +932,27 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .text-muted { color: var(--text3); }
 .fade-in { animation: fadeIn 0.3s ease; }
 .chip { display: inline-block; border-radius: 99px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
+
+/* Efficiency date-range selector */
+.eff-range-btn {
+  background: var(--card2); color: var(--text2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 6px 13px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s ease; font-family: inherit;
+}
+.eff-range-btn:hover { color: var(--text); border-color: var(--border2); }
+.eff-range-btn.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.eff-metric {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.eff-metric:last-child { border-bottom: none; }
+.eff-metric-key { font-size: 13.5px; color: var(--text2); }
+.eff-metric-val { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--text); }
+.eff-delta { font-size: 11px; font-weight: 600; margin-left: 7px; }
+.eff-delta.pos { color: var(--green); }
+.eff-delta.neg { color: var(--red); }
 .chip-green { background: rgba(45,216,130,0.15); color: var(--green); }
 .chip-red { background: rgba(255,79,106,0.15); color: var(--red); }
 .chip-amber { background: rgba(255,179,64,0.15); color: var(--amber); }
@@ -1434,6 +1455,29 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
   <!-- Current stats display -->
   <div id="statsDisplay"></div>
+
+  <!-- Efficiency — $ per knock / talk, with date range -->
+  <div class="section-label" style="margin-top:16px;">Efficiency</div>
+  <div class="card mb-12">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="eff-range-btn active" data-range="season" onclick="setEffRange('season')">Season</button>
+      <button class="eff-range-btn" data-range="week" onclick="setEffRange('week')">This Week</button>
+      <button class="eff-range-btn" data-range="month" onclick="setEffRange('month')">This Month</button>
+      <button class="eff-range-btn" data-range="last7" onclick="setEffRange('last7')">Last 7 Days</button>
+      <button class="eff-range-btn" data-range="custom" onclick="setEffRange('custom')">Custom</button>
+    </div>
+    <div id="effCustomDates" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div class="form-field">
+        <label class="form-label">From</label>
+        <input type="date" class="form-input" id="effFrom" onchange="renderEfficiency()">
+      </div>
+      <div class="form-field">
+        <label class="form-label">To</label>
+        <input type="date" class="form-input" id="effTo" onchange="renderEfficiency()">
+      </div>
+    </div>
+    <div id="effDisplay"></div>
+  </div>
 </div>
 
 <div id="page-forecast" class="page">
@@ -2519,6 +2563,7 @@ function renderAll() {
   renderLogHistory();
   renderPulseHistory();
   renderStats();
+  renderEfficiency();
   renderForecast();
   // renderInsights called from renderDashboard
 }
@@ -4082,6 +4127,135 @@ function saveStats() {
   showToast('Stats saved ✓', 'success');
 }
 
+/* ============================================================
+   EFFICIENCY — $ per knock / talk, with selectable date range
+   ============================================================ */
+let effRange = 'season';
+
+function setEffRange(range) {
+  effRange = range;
+  document.querySelectorAll('.eff-range-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === range);
+  });
+  const custom = document.getElementById('effCustomDates');
+  if (custom) custom.style.display = range === 'custom' ? 'grid' : 'none';
+  // Seed custom dates with the season range the first time it's opened.
+  if (range === 'custom') {
+    const f = document.getElementById('effFrom'), t = document.getElementById('effTo');
+    if (f && !f.value) f.value = S('seasonStart');
+    if (t && !t.value) t.value = todayStr();
+  }
+  renderEfficiency();
+}
+
+// Returns {from, to} date strings for the active range.
+function getEffDateRange() {
+  const today = todayStr();
+  if (effRange === 'custom') {
+    return {
+      from: document.getElementById('effFrom')?.value || S('seasonStart'),
+      to:   document.getElementById('effTo')?.value   || today,
+    };
+  }
+  if (effRange === 'week') {
+    const { start } = getSeasonDates();
+    const d = new Date(); d.setHours(0,0,0,0);
+    const wkStart = getWeekStart(getWeekNumber(d, start), start);
+    return { from: localDateStr(wkStart), to: today };
+  }
+  if (effRange === 'month') {
+    return { from: today.slice(0, 7) + '-01', to: today };
+  }
+  if (effRange === 'last7') {
+    const d = new Date(); d.setHours(0,0,0,0);
+    d.setDate(d.getDate() - 6);
+    return { from: localDateStr(d), to: today };
+  }
+  return { from: S('seasonStart'), to: today }; // season
+}
+
+// Totals across logs in [from, to]. Days with 0 knocks are excluded from the
+// knock-based rates so an unlogged-knocks day can't drag the average down.
+function calcEfficiency(from, to) {
+  let knocks = 0, talks = 0, accounts = 0, revenue = 0, days = 0;
+  db.logs.forEach(l => {
+    const d = l.date || '';
+    if (d < from || d > to) return;
+    const k = parseInt(l.knocks) || 0;
+    if (k <= 0) return;            // skip days without knock data
+    const sa = parseInt(l.sold_accounts) || 0;
+    const pm = (parseInt(l.pest) || 0) + (parseInt(l.mosquito) || 0);
+    knocks   += k;
+    talks    += parseInt(l.talks) || 0;
+    accounts += sa > 0 ? sa : pm;
+    revenue  += parseFloat(l.revenue) || 0;
+    days++;
+  });
+  return {
+    knocks, talks, accounts, revenue, days,
+    revPerKnock:  knocks > 0 ? revenue / knocks : 0,
+    revPerTalk:   talks  > 0 ? revenue / talks  : 0,
+    revPerAcct:   accounts > 0 ? revenue / accounts : 0,
+    contactRate:  knocks > 0 ? (talks / knocks) * 100 : 0,   // % of doors that talk
+    closeRate:    talks  > 0 ? (accounts / talks) * 100 : 0, // % of talks that close
+  };
+}
+
+function renderEfficiency() {
+  const el = document.getElementById('effDisplay');
+  if (!el) return;
+  const { from, to } = getEffDateRange();
+  const r = calcEfficiency(from, to);
+  const season = calcEfficiency(S('seasonStart'), todayStr());
+
+  if (r.days === 0) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:14px 0;text-align:center;">
+      No logged days with knock data in this range.</div>`;
+    return;
+  }
+
+  // Delta vs season average — only meaningful when NOT already viewing the season.
+  const showDelta = effRange !== 'season' && season.days > 0;
+  const delta = (val, base, isPct) => {
+    if (!showDelta || base === 0) return '';
+    const diff = val - base;
+    if (Math.abs(diff) < (isPct ? 0.5 : 0.005)) return '';
+    const cls = diff > 0 ? 'pos' : 'neg';
+    // The arrow + colour already convey direction, so show the magnitude only.
+    const mag = isPct
+      ? Math.abs(diff).toFixed(1) + 'pt'
+      : '$' + Math.abs(diff).toFixed(2);
+    return `<span class="eff-delta ${cls}">${diff > 0 ? '▲' : '▼'} ${mag}</span>`;
+  };
+
+  const money = n => '$' + n.toFixed(2);
+  el.innerHTML = `
+    <div class="eff-metric">
+      <span class="eff-metric-key">Revenue per knock</span>
+      <span class="eff-metric-val">${money(r.revPerKnock)}${delta(r.revPerKnock, season.revPerKnock)}</span>
+    </div>
+    <div class="eff-metric">
+      <span class="eff-metric-key">Revenue per talk</span>
+      <span class="eff-metric-val">${money(r.revPerTalk)}${delta(r.revPerTalk, season.revPerTalk)}</span>
+    </div>
+    <div class="eff-metric">
+      <span class="eff-metric-key">Revenue per account</span>
+      <span class="eff-metric-val">${money(r.revPerAcct)}${delta(r.revPerAcct, season.revPerAcct)}</span>
+    </div>
+    <div class="eff-metric">
+      <span class="eff-metric-key">Contact rate <span style="font-size:11px;color:var(--text3);">(talks ÷ knocks)</span></span>
+      <span class="eff-metric-val">${r.contactRate.toFixed(1)}%${delta(r.contactRate, season.contactRate, true)}</span>
+    </div>
+    <div class="eff-metric">
+      <span class="eff-metric-key">Close rate <span style="font-size:11px;color:var(--text3);">(accts ÷ talks)</span></span>
+      <span class="eff-metric-val">${r.closeRate.toFixed(1)}%${delta(r.closeRate, season.closeRate, true)}</span>
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;font-size:11.5px;color:var(--text3);line-height:1.6;">
+      ${r.days} day${r.days === 1 ? '' : 's'} · ${r.knocks.toLocaleString()} knocks · ${r.talks.toLocaleString()} talks · ${r.accounts} accts · $${Math.round(r.revenue).toLocaleString()}
+      ${showDelta ? '<br><span style="color:var(--text3);">▲▼ compared to your season average</span>' : ''}
+    </div>`;
+}
+
 function renderStats() {
   const s = db.settings.vantageStats;
   const display = document.getElementById('statsDisplay');
@@ -4390,7 +4564,7 @@ function switchTab(tab) {
   // (covers the case where a save updated data while another tab was showing).
   if (tab === 'forecast') setTimeout(() => { try { renderForecast(); } catch(e) { console.error('renderForecast:', e); } }, 50);
   if (tab === 'commission') setTimeout(() => { try { renderCommission(); } catch(e) { console.error('renderCommission:', e); } }, 50);
-  if (tab === 'stats') setTimeout(() => { try { renderStats(); } catch(e) { console.error('renderStats:', e); } }, 50);
+  if (tab === 'stats') setTimeout(() => { try { renderStats(); renderEfficiency(); } catch(e) { console.error('renderStats:', e); } }, 50);
   if (tab === 'weekly') setTimeout(() => { try { renderWeekly(); } catch(e) { console.error('renderWeekly:', e); } }, 50);
   if (tab === 'dashboard') setTimeout(() => { try { renderDashboard(); } catch(e) { console.error('renderDashboard:', e); } }, 50);
   // Refresh pulse from cloud when tab opened
