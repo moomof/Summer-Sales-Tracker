@@ -2374,6 +2374,9 @@ function renderForecast() {
       // current active revenue + (avg active revenue per elapsed day) × remaining days.
       const dailyRevAvgFC = elapsedDays > 0 ? pulseActiveRev / elapsedDays : 0;
       const projRev = Math.round(pulseActiveRev + dailyRevAvgFC * daysLeft);
+      // Projected commission at the tier the projected net accounts would reach.
+      const projTierFC = calcTier(projNet);
+      const projGrossComm = Math.round(projRev * projTierFC.pct);
       const needPerDay = daysLeft > 0 ? ((accountTarget - authNet) / daysLeft).toFixed(1) : '--';
       const tierProjections = TIERS.map(t => {
         const needed = Math.max(0, t.min - authNet);
@@ -2383,7 +2386,9 @@ function renderForecast() {
 
       trajCard.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-          ${scenCard('At Current Pace', projNet + ' net accts', projNet >= accountTarget ? 'var(--green)' : 'var(--amber)', '$' + fmtK(projRev) + ' revenue')}
+          ${scenCard('At Current Pace', projNet + ' net accts', projNet >= accountTarget ? 'var(--green)' : 'var(--amber)', 'of ' + accountTarget + ' target')}
+          ${scenCard('Projected Revenue', '$' + fmtK(projRev), 'var(--text)', 'active revenue')}
+          ${scenCard('Projected Commission', '$' + fmtK(projGrossComm), 'var(--green)', 'gross at ' + Math.round(projTierFC.pct * 100) + '% tier')}
           ${scenCard('Target Pace Needed', needPerDay + '/day', parseFloat(needPerDay) <= 3 ? 'var(--green)' : parseFloat(needPerDay) <= 5 ? 'var(--amber)' : 'var(--red)', 'to hit ' + accountTarget + ' accounts')}
           ${scenCard('vs Last Year', (apdAuth - lyAccounts/totalSeasonDays >= 0 ? '+' : '') + (apdAuth - lyAccounts/totalSeasonDays).toFixed(2) + '/day', apdAuth >= lyAccounts/totalSeasonDays ? 'var(--green)' : 'var(--red)', 'LY: ' + lyAccounts + ' total')}
           ${scenCard('Cancel Rate Impact', '-' + Math.round(pulseSold * cancelRate) + ' accounts', cancelRate <= 0.15 ? 'var(--green)' : cancelRate <= 0.25 ? 'var(--amber)' : 'var(--red)', (cancelRate*100).toFixed(0) + '% going inactive')}
