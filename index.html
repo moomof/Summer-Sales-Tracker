@@ -1742,7 +1742,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <label class="form-label">Anon Key</label>
         <input type="text" class="form-input" id="settingSupabaseKey" placeholder="eyJ..." onchange="saveSetting('supabaseKey', this.value); initSupabase();">
       </div>
-      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue. days table needs: sold_accounts, serviced_revenue, serviced_accounts, pending_revenue, pending_accounts, inactive_revenue, inactive_accounts.</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue. days table needs: sold_accounts, serviced_revenue, serviced_accounts, pending_revenue, pending_accounts, inactive_revenue, inactive_accounts.<br><br><strong>For reliable cross-device Pulse sync</strong>, run this once in the Supabase SQL editor: <code style="font-family:var(--font-mono);color:var(--accent)">alter table pulse_snapshots add column if not exists updated_at timestamptz;</code></div>
       <button class="btn btn-ghost btn-full" style="margin-top:12px;" onclick="testSupabaseConnection()">Test Connection</button>
     </div>
   </div>
@@ -1934,7 +1934,7 @@ async function pushAllUp() {
     const lStamp = localPulse.updated_at || localPulse.date || '';
     const cStamp = cloudPulse ? (cloudPulse.updated_at || cloudPulse.date || '') : '';
     if (!cloudPulse || lStamp >= cStamp) {
-      await sbFetch('pulse_snapshots', { method: 'POST', body: db.pulses, params: { on_conflict: 'id' } });
+      await upsertPulse(localPulse);
     }
   }
   if (db.daysOff.length)await sbFetch('days_off',        { method: 'POST', body: db.daysOff, params: { on_conflict: 'id' } });
@@ -2051,7 +2051,15 @@ async function deleteDayOffCloud(id) {
 
 async function upsertPulse(p) {
   if (!supabase) return;
-  await sbFetch('pulse_snapshots', { method: 'POST', body: [p], params: { on_conflict: 'id' } });
+  // Try writing with updated_at (precise sync ordering). If the column doesn't
+  // exist in this project's table yet, PostgREST 400s — retry without it so the
+  // pulse still saves. Running the one-line ALTER TABLE (see settings help)
+  // upgrades sync to precise same-day tie-breaking.
+  const res = await sbFetch('pulse_snapshots', { method: 'POST', body: [p], params: { on_conflict: 'id' } });
+  if (res === null) {
+    const { updated_at, ...pNoStamp } = p;
+    await sbFetch('pulse_snapshots', { method: 'POST', body: [pNoStamp], params: { on_conflict: 'id' } });
+  }
 }
 
 async function deletePulseCloud(id) {
@@ -3893,6 +3901,7 @@ function savePulse() {
   const p = {
     id: 'current_pulse',  // Always the same ID — single overwriting record
     date: todayStr(),
+    updated_at: new Date().toISOString(),  // precise stamp — breaks same-day sync ties
     sold: parseInt(document.getElementById('pulseInputSold').value)||0,
     sold_revenue: parseFloat(document.getElementById('pulseInputSoldRevenue').value)||0,
     serviced: parseInt(document.getElementById('pulseInputServiced').value)||0,
