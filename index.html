@@ -3954,7 +3954,9 @@ function renderPulseTab() {
 
   if (lastUpdated) lastUpdated.textContent = fmtDateFull(latest.date);
 
-  // Pre-fill form with current values
+  // Pre-fill the form with current values. Refresh fields to match the latest
+  // (synced) data so a pull from another device updates what's shown — but never
+  // clobber the field the user is actively typing in.
   const fields = {
     pulseInputSold: latest.sold||0,
     pulseInputSoldRevenue: latest.sold_revenue||0,
@@ -3965,9 +3967,13 @@ function renderPulseTab() {
     pulseInputInactive: latest.inactive||0,
     pulseInputInactiveRevenue: latest.inactive_revenue||0,
   };
+  const activeEl = document.activeElement;
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
-    if (el && !el.value) el.value = val || '';
+    if (!el) return;
+    if (el === activeEl) return;           // don't overwrite what's being typed
+    const newVal = String(val || '');
+    if (el.value !== newVal) el.value = newVal;  // refresh to latest synced value
   });
 
   const activeAccts = (parseInt(latest.serviced)||0) + (parseInt(latest.pending)||0);
