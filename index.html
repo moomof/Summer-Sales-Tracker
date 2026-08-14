@@ -1909,12 +1909,15 @@ async function syncUp() {
   if (!supabase) return;
   setSyncStatus('syncing');
   try {
+    // Never push the Supabase credentials to the cloud — they're per-device and
+    // syncing them lets a blank device wipe another device's saved keys.
+    const { supabaseUrl, supabaseKey, ...syncableSettings } = db.settings;
     // Use PATCH (update) if exists, POST (insert) if not
     const existing = await sbFetch('settings', { params: { key: 'eq.app_settings' } });
     if (existing && existing.length > 0) {
-      await sbFetch('settings?key=eq.app_settings', { method: 'PATCH', body: { value: JSON.stringify(db.settings) } });
+      await sbFetch('settings?key=eq.app_settings', { method: 'PATCH', body: { value: JSON.stringify(syncableSettings) } });
     } else {
-      await sbFetch('settings', { method: 'POST', body: [{ key: 'app_settings', value: JSON.stringify(db.settings) }] });
+      await sbFetch('settings', { method: 'POST', body: [{ key: 'app_settings', value: JSON.stringify(syncableSettings) }] });
     }
     setSyncStatus('idle');
   } catch(e) { setSyncStatus('error'); }
@@ -2006,7 +2009,12 @@ async function syncFromCloud() {
         // Never trust a stored knocking-day count from either device — recompute it
         // fresh from the merged dates + the days-off we just pulled, so both devices
         // always converge on the same number.
+        // Preserve this device's Supabase credentials — they're local-only and must
+        // survive a settings pull (the cloud copy never carries them anymore).
+        const _localUrl = db.settings.supabaseUrl, _localKey = db.settings.supabaseKey;
         db.settings = merged;
+        db.settings.supabaseUrl = _localUrl;
+        db.settings.supabaseKey = _localKey;
         if (merged.seasonStart && merged.seasonEnd) {
           db.settings.knockingDays = getTotalSeasonWorkingDays();
         }
@@ -4912,7 +4920,11 @@ async function syncSilent() {
         } else {
           merged.vantageStats = _cs || _ls || null;
         }
+        // Preserve device-local Supabase credentials across the settings pull.
+        const _lUrl = db.settings.supabaseUrl, _lKey = db.settings.supabaseKey;
         db.settings = merged;
+        db.settings.supabaseUrl = _lUrl;
+        db.settings.supabaseKey = _lKey;
         // Recompute knocking-day count fresh from merged dates + pulled days-off.
         if (merged.seasonStart && merged.seasonEnd) {
           db.settings.knockingDays = getTotalSeasonWorkingDays();
