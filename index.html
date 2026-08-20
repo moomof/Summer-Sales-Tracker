@@ -1736,14 +1736,15 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="card">
       <div class="form-field mb-8">
         <label class="form-label">Supabase URL</label>
-        <input type="text" class="form-input" id="settingSupabaseUrl" placeholder="https://xxx.supabase.co" onchange="saveSetting('supabaseUrl', this.value); initSupabase();">
+        <input type="text" class="form-input" id="settingSupabaseUrl" placeholder="https://xxx.supabase.co" oninput="saveSetting('supabaseUrl', this.value); initSupabase();" onchange="saveSetting('supabaseUrl', this.value); initSupabase();">
       </div>
       <div class="form-field mb-8">
         <label class="form-label">Anon Key</label>
-        <input type="text" class="form-input" id="settingSupabaseKey" placeholder="eyJ..." onchange="saveSetting('supabaseKey', this.value); initSupabase();">
+        <input type="text" class="form-input" id="settingSupabaseKey" placeholder="eyJ..." oninput="saveSetting('supabaseKey', this.value); initSupabase();" onchange="saveSetting('supabaseKey', this.value); initSupabase();">
       </div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue. days table needs: sold_accounts, serviced_revenue, serviced_accounts, pending_revenue, pending_accounts, inactive_revenue, inactive_accounts.<br><br><strong>For reliable cross-device Pulse sync</strong>, run this once in the Supabase SQL editor: <code style="font-family:var(--font-mono);color:var(--accent)">alter table pulse_snapshots add column if not exists updated_at timestamptz;</code></div>
       <button class="btn btn-ghost btn-full" style="margin-top:12px;" onclick="testSupabaseConnection()">Test Connection</button>
+      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:10px;">Version 2026.08.18-keyfix2</div>
     </div>
   </div>
 
@@ -2076,12 +2077,22 @@ async function deletePulseCloud(id) {
 }
 
 async function testSupabaseConnection() {
+  // Commit whatever is currently in the key fields before testing — guards against
+  // iOS Safari not firing input/change before the tap (which left keys unsaved).
+  const urlEl = document.getElementById('settingSupabaseUrl');
+  const keyEl = document.getElementById('settingSupabaseKey');
+  if (urlEl && urlEl.value) db.settings.supabaseUrl = urlEl.value.trim();
+  if (keyEl && keyEl.value) db.settings.supabaseKey = keyEl.value.trim();
+  saveLocal();
+  initSupabase();
   if (!supabase) { showToast('Enter URL & Key first', 'error'); return; }
   setSyncStatus('syncing');
   const result = await sbFetch('days', { params: { limit: 1 } });
   if (result !== null) {
     setSyncStatus('idle');
     showToast('Connection successful! ✓', 'success');
+    // Pull data down now that we're connected.
+    try { await syncSilent(); renderAll(); } catch(e) { console.error('post-connect sync:', e); }
   } else {
     setSyncStatus('error');
     showToast('Connection failed. Check URL & Key.', 'error');
@@ -2092,7 +2103,14 @@ async function testSupabaseConnection() {
    LOCAL STORAGE
    ============================================================ */
 function saveLocal() {
-  localStorage.setItem('ftp_db', JSON.stringify(db));
+  try {
+    localStorage.setItem('ftp_db', JSON.stringify(db));
+    // Redundantly persist the Supabase credentials under their own dedicated keys.
+    // If the main blob ever gets cleared, reset, or overwritten without the keys,
+    // these standalone entries let the app recover the connection on next load.
+    if (db.settings.supabaseUrl) localStorage.setItem('ftp_sb_url', db.settings.supabaseUrl);
+    if (db.settings.supabaseKey) localStorage.setItem('ftp_sb_key', db.settings.supabaseKey);
+  } catch(e) { console.error('saveLocal failed:', e); }
 }
 
 function loadLocal() {
@@ -2110,6 +2128,15 @@ function loadLocal() {
   } catch(e) {
     db.settings = { ...DEFAULT_SETTINGS };
   }
+  // Recover Supabase credentials from their dedicated slots if the main blob is
+  // missing them (e.g. after a storage hiccup or a settings overwrite). The
+  // dedicated slots are the source of truth for the connection.
+  try {
+    const sbUrl = localStorage.getItem('ftp_sb_url');
+    const sbKey = localStorage.getItem('ftp_sb_key');
+    if (sbUrl && !db.settings.supabaseUrl) db.settings.supabaseUrl = sbUrl;
+    if (sbKey && !db.settings.supabaseKey) db.settings.supabaseKey = sbKey;
+  } catch(e) { /* ignore */ }
 }
 
 function saveSetting(key, value) {
