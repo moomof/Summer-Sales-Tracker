@@ -1744,7 +1744,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       </div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px;">Data syncs to your own Supabase project. Free tier is plenty. Needs tables: <code style="font-family:var(--font-mono);color:var(--accent)">days, pulse_snapshots, days_off, settings</code>. pulse_snapshots needs: sold_revenue, serviced_revenue, pending_revenue, inactive_revenue. days table needs: sold_accounts, serviced_revenue, serviced_accounts, pending_revenue, pending_accounts, inactive_revenue, inactive_accounts.<br><br><strong>For reliable cross-device Pulse sync</strong>, run this once in the Supabase SQL editor: <code style="font-family:var(--font-mono);color:var(--accent)">alter table pulse_snapshots add column if not exists updated_at timestamptz;</code></div>
       <button class="btn btn-ghost btn-full" style="margin-top:12px;" onclick="testSupabaseConnection()">Test Connection</button>
-      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:10px;">Version 2026.08.18-keyfix2</div>
+      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:10px;">Version 2026.08.18-AUTOCONNECT</div>
     </div>
   </div>
 
@@ -1861,10 +1861,22 @@ const DEFAULT_SETTINGS = {
 /* ============================================================
    SUPABASE CLIENT (minimal, no npm)
    ============================================================ */
+// Hardcoded Supabase credentials — baked into the app so it ALWAYS connects on
+// load, with nothing to save, lose, or re-enter. This sidesteps every storage /
+// persistence problem: the connection is established from these constants every
+// single time the app opens, on any device, after any refresh.
+const BUILTIN_SUPABASE_URL = 'https://fgqzgrdfkzomhayubnju.supabase.co';
+const BUILTIN_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZncXpncmRma3pvbWhheXVibmp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDgxOTUsImV4cCI6MjA5NDAyNDE5NX0.3_4mruVS3zVPYisWgCyyu8o9EHLorzowsd_h8yZv3yA';
+
 function initSupabase() {
-  const url = db.settings.supabaseUrl || '';
-  const key = db.settings.supabaseKey || '';
+  // Always use the built-in credentials. Fall back to any stored values only if
+  // the built-ins were somehow left blank.
+  const url = BUILTIN_SUPABASE_URL || db.settings.supabaseUrl || '';
+  const key = BUILTIN_SUPABASE_KEY || db.settings.supabaseKey || '';
   if (!url || !key) { supabase = null; return; }
+  // Keep settings in sync so the fields display them and nothing else breaks.
+  db.settings.supabaseUrl = url;
+  db.settings.supabaseKey = key;
   supabase = { url: url.replace(/\/$/, ''), key };
   setSyncStatus('idle');
 }
@@ -2105,12 +2117,25 @@ async function testSupabaseConnection() {
 function saveLocal() {
   try {
     localStorage.setItem('ftp_db', JSON.stringify(db));
-    // Redundantly persist the Supabase credentials under their own dedicated keys.
-    // If the main blob ever gets cleared, reset, or overwritten without the keys,
-    // these standalone entries let the app recover the connection on next load.
     if (db.settings.supabaseUrl) localStorage.setItem('ftp_sb_url', db.settings.supabaseUrl);
     if (db.settings.supabaseKey) localStorage.setItem('ftp_sb_key', db.settings.supabaseKey);
-  } catch(e) { console.error('saveLocal failed:', e); }
+    // Verify the write actually persisted — iOS Safari with "Block All Cookies" or
+    // in a restricted mode silently accepts setItem but stores nothing.
+    const check = localStorage.getItem('ftp_sb_url');
+    if (db.settings.supabaseUrl && check !== db.settings.supabaseUrl) {
+      warnStorageBlocked();
+    }
+  } catch(e) {
+    console.error('saveLocal failed:', e);
+    warnStorageBlocked();
+  }
+}
+
+let _storageWarned = false;
+function warnStorageBlocked() {
+  if (_storageWarned) return;
+  _storageWarned = true;
+  showToast('⚠️ This browser is blocking saved data. Turn OFF "Block All Cookies" in Safari settings, or add the app to your Home Screen.', 'error');
 }
 
 function loadLocal() {
@@ -5000,13 +5025,16 @@ function init() {
 
   renderAll();
 
-  // Background sync on load — silent (no toast, just dot indicator)
+  // Background sync on load — pull data down right away so Log/Pulse/Dashboard
+  // populate as soon as possible, then re-render. Runs on every load because the
+  // built-in credentials mean we're always connected.
   if (supabase) {
-    setTimeout(async () => {
-      await syncSilent();
-      // Push current settings up after sync
-      await syncUp();
-    }, 1500);
+    (async () => {
+      try {
+        await syncSilent();   // pull cloud → local
+        renderAll();          // show the freshly pulled data
+      } catch(e) { console.error('load sync:', e); }
+    })();
   }
 
   // Re-sync whenever the app comes back to the foreground. iOS PWAs resume from
